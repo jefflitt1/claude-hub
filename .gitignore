@@ -1,0 +1,30 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Node.js (if we go that route)
+node_modules/
+npm-debug.log
+.env
+
+# Python (if we go that route)
+__pycache__/
+*.pyc
+venv/
+.env
+
+# SQLite database (don't commit actual data)
+*.db
+*.sqlite
+
+# Secrets and credentials
+*.key
+*.pem
+credentials.json
