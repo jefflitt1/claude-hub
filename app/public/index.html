@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Hub | l7-partners</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #30363d;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f0f6fc;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3fb950;
+    }
+
+    .status-dot.warning { background: #d29922; }
+
+    .section { margin-bottom: 2rem; }
+
+    .section-title {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #8b949e;
+      margin-bottom: 1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: #58a6ff; }
+
+    .card-header {
+      padding: 1rem;
+      border-bottom: 1px solid #30363d;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-type {
+      font-size: 0.75rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      background: #30363d;
+      color: #8b949e;
+    }
+
+    .card-type.knowledge-base { background: #1f6feb33; color: #58a6ff; }
+    .card-type.app { background: #238636; color: #3fb950; }
+    .card-type.workflow { background: #9e6a03; color: #d29922; }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: #8b949e;
+    }
+
+    .card-body {
+      padding: 1rem;
+      display: none;
+    }
+
+    .card.expanded .card-body { display: block; }
+
+    .card-section {
+      margin-bottom: 1rem;
+    }
+
+    .card-section:last-child { margin-bottom: 0; }
+
+    .card-section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #8b949e;
+      margin-bottom: 0.5rem;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      background: #30363d;
+      border-radius: 4px;
+      color: #c9d1d9;
+    }
+
+    .link-list { list-style: none; }
+
+    .link-list li {
+      padding: 0.25rem 0;
+      font-size: 0.875rem;
+    }
+
+    .link-list a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+
+    .link-list a:hover { text-decoration: underline; }
+
+    .meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #30363d;
+    }
+
+    .expand-icon {
+      color: #8b949e;
+      transition: transform 0.2s;
+    }
+
+    .card.expanded .expand-icon { transform: rotate(180deg); }
+
+    .mcp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .mcp-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+    }
+
+    .mcp-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #f0f6fc;
+    }
+
+    .mcp-status {
+      font-size: 0.75rem;
+      color: #3fb950;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #30363d;
+      font-size: 0.75rem;
+      color: #8b949e;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Claude Hub</h1>
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-dot"></span>
+          <span>MCP Connected</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot"></span>
+          <span>n8n Online</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2 class="section-title">Projects & Knowledge Bases</h2>
+      <div class="grid" id="projects-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">MCP Servers</h2>
+      <div class="mcp-grid" id="mcp-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <footer>
+      Claude Hub &middot; claude.l7-partners.com &middot;
+      <a href="https://github.com/jefflitt1/claude-hub" style="color: #58a6ff;">GitHub</a>
+    </footer>
+  </div>
+
+  <script>
+    async function loadData() {
+      const [projectsRes, graphRes] = await Promise.all([
+        fetch('/api/projects'),
+        fetch('/api/graph')
+      ]);
+
+      const projects = await projectsRes.json();
+      const graph = await graphRes.json();
+
+      renderProjects(projects);
+      renderMcpServers(graph.nodes.mcpServers);
+    }
+
+    function renderProjects(projects) {
+      const grid = document.getElementById('projects-grid');
+      grid.innerHTML = projects.map(p => `
+        <div class="card" data-id="${p.id}">
+          <div class="card-header" onclick="toggleCard('${p.id}')">
+            <div>
+              <div class="card-title">${p.name}</div>
+              <div class="card-desc">${p.description}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="card-type ${p.type}">${p.type}</span>
+              <span class="expand-icon">▼</span>
+            </div>
+          </div>
+          <div class="card-body">
+            ${p.sections ? `
+              <div class="card-section">
+                <div class="card-section-title">Sections</div>
+                <div class="tag-list">
+                  ${p.sections.map(s => `<span class="tag">${s}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+            ${p.files ? `
+              <div class="card-section">
+                <div class="card-section-title">Files</div>
+                <ul class="link-list">
+                  ${p.files.map(f => `<li>${f.path} <span style="color:#8b949e">(${f.lines} lines)</span></li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            ${p.connections?.external ? `
+              <div class="card-section">
+                <div class="card-section-title">External Links</div>
+                <ul class="link-list">
+                  ${p.connections.external.map(e => `<li><a href="${e.url}" target="_blank">${e.name}</a> <span style="color:#8b949e">(${e.type})</span></li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            ${p.repo ? `
+              <div class="card-section">
+                <div class="card-section-title">Repository</div>
+                <ul class="link-list">
+                  <li><a href="${p.repo}" target="_blank">${p.repo}</a></li>
+                </ul>
+              </div>
+            ` : ''}
+            ${p.hosting ? `
+              <div class="card-section">
+                <div class="card-section-title">Hosting</div>
+                <div class="tag-list">
+                  <span class="tag">${p.hosting.domain}</span>
+                  <span class="tag">${p.hosting.server}</span>
+                  <span class="tag">${p.hosting.tunnel}</span>
+                </div>
+              </div>
+            ` : ''}
+            <div class="meta">
+              <span>Created: ${p.created}</span>
+              <span>Updated: ${p.updated}</span>
+              <span>Status: ${p.status}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderMcpServers(servers) {
+      const grid = document.getElementById('mcp-grid');
+      grid.innerHTML = servers.map(s => `
+        <div class="mcp-card">
+          <div class="mcp-name">${s.name}</div>
+          <div class="mcp-status">
+            <span class="status-dot"></span>
+            ${s.status}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleCard(id) {
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      card.classList.toggle('expanded');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "n8n-mcp",
+    "name": "n8n MCP Server",
+    "url": "https://n8n.l7-partners.com",
+    "status": "connected",
+    "purpose": "Connect Claude Code to n8n workflows",
+    "capabilities": [
+      "List/create/update workflows",
+      "Trigger webhook workflows",
+      "View executions",
+      "Search n8n nodes"
+    ]
+  },
+  {
+    "id": "gdrive-JGL",
+    "name": "Google Drive (JGL)",
+    "status": "connected",
+    "purpose": "Access Google Drive files for JGL account"
+  },
+  {
+    "id": "gdrive-L7",
+    "name": "Google Drive (L7)",
+    "status": "connected",
+    "purpose": "Access Google Drive files for L7 account"
+  }
+]

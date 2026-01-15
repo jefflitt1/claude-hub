@@ -1,0 +1,54 @@
+[
+  {
+    "id": "magic-agent",
+    "name": "Magic Agent",
+    "description": "Comprehensive magic assistant for close-up, mentalism, and stage magic",
+    "type": "knowledge-base",
+    "status": "active",
+    "created": "2025-01-14",
+    "updated": "2025-01-15",
+    "files": [
+      {
+        "path": "~/magic.md",
+        "description": "Main knowledge base",
+        "lines": 1945
+      }
+    ],
+    "sections": [
+      "App Ecosystem (Marc Kerstein, Greg Rostami, etc.)",
+      "Major Magic Retailers",
+      "Close-Up Magic techniques",
+      "Mentalism methods",
+      "Craft Principles from Ted's Sterling Magic"
+    ],
+    "connections": {
+      "prompts": [],
+      "workflows": [],
+      "external": [
+        { "name": "Ted's Sterling Magic", "url": "https://www.tedssterlingmagic.com", "type": "source" },
+        { "name": "Penguin Magic", "url": "https://penguinmagic.com", "type": "retailer" },
+        { "name": "Vanishing Inc", "url": "https://vanishingincmagic.com", "type": "retailer" }
+      ]
+    }
+  },
+  {
+    "id": "claude-hub",
+    "name": "Claude Hub",
+    "description": "This dashboard - tracks all Claude agents and resources",
+    "type": "app",
+    "status": "building",
+    "created": "2025-01-15",
+    "updated": "2025-01-15",
+    "repo": "https://github.com/jefflitt1/claude-hub",
+    "hosting": {
+      "domain": "claude.l7-partners.com",
+      "server": "Raspberry Pi",
+      "tunnel": "cloudflared"
+    },
+    "connections": {
+      "prompts": [],
+      "workflows": [],
+      "mcpServers": ["n8n-mcp", "gdrive-JGL", "gdrive-L7"]
+    }
+  }
+]
