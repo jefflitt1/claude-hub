@@ -1,0 +1,52 @@
+[
+  {
+    "id": "recap",
+    "name": "Session Recap",
+    "description": "Auto-detect session accomplishments and save to session logs",
+    "trigger": "/recap",
+    "location": "~/.claude/skills/recap.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/recap", "description": "Save this terminal's recap to log file" },
+      { "command": "/recap merge", "description": "Consolidate all logs into session-notes.md" },
+      { "command": "/recap status", "description": "Show pending log files" }
+    ],
+    "project": "claude-hub",
+    "status": "active"
+  },
+  {
+    "id": "frontend-design",
+    "name": "Frontend Design",
+    "description": "Create distinctive, production-grade frontend interfaces with high design quality",
+    "trigger": "/frontend-design",
+    "location": "plugin",
+    "scope": "plugin",
+    "commands": [
+      { "command": "/frontend-design", "description": "Build web components, pages, or applications" }
+    ],
+    "project": null,
+    "status": "active"
+  },
+  {
+    "id": "n8n-setup",
+    "name": "n8n Setup",
+    "description": "Configure and troubleshoot n8n MCP server connections",
+    "trigger": "context-aware",
+    "location": "~/.claude/skills/n8n-setup.md",
+    "scope": "personal",
+    "commands": [],
+    "project": "claude-hub",
+    "status": "active"
+  },
+  {
+    "id": "n8n",
+    "name": "n8n Workflows",
+    "description": "Build and manage n8n workflows via MCP",
+    "trigger": "context-aware",
+    "location": "~/.claude/skills/n8n.md",
+    "scope": "personal",
+    "commands": [],
+    "project": "claude-hub",
+    "status": "active"
+  }
+]

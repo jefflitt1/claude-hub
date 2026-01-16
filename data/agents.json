@@ -1,0 +1,49 @@
+[
+  {
+    "id": "recap-agent",
+    "name": "Session Recap Agent",
+    "description": "Auto-detects session accomplishments and saves to session logs. Handles concurrent terminals safely.",
+    "type": "skill-based",
+    "status": "active",
+    "trigger": "/recap",
+    "capabilities": [
+      "Auto-detect completed tasks from conversation",
+      "Save session logs with timestamps",
+      "Merge multiple session logs",
+      "Handle concurrent terminal sessions"
+    ],
+    "project": "claude-hub",
+    "skillFile": "~/.claude/skills/recap.md"
+  },
+  {
+    "id": "magic-agent",
+    "name": "Magic Knowledge Agent",
+    "description": "Comprehensive magic assistant for close-up, mentalism, and stage magic techniques",
+    "type": "knowledge-based",
+    "status": "active",
+    "trigger": "context-aware",
+    "capabilities": [
+      "Magic app recommendations",
+      "Technique explanations",
+      "Retailer information",
+      "Performance craft advice"
+    ],
+    "project": "magic-agent",
+    "knowledgeFile": "~/magic.md"
+  },
+  {
+    "id": "explore-agent",
+    "name": "Codebase Explorer",
+    "description": "Fast agent for exploring codebases, finding files, and answering questions about code structure",
+    "type": "built-in",
+    "status": "active",
+    "trigger": "automatic",
+    "capabilities": [
+      "Find files by pattern",
+      "Search code for keywords",
+      "Answer codebase questions"
+    ],
+    "project": null,
+    "skillFile": null
+  }
+]
