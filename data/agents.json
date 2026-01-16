@@ -1,5 +1,23 @@
 [
   {
+    "id": "l7-codebase-agent",
+    "name": "L7 Codebase Agent",
+    "description": "Claude Code agent for direct editing of l7partners-rewrite React codebase - bug fixes, refactors, features",
+    "type": "codebase",
+    "status": "active",
+    "trigger": "context-aware",
+    "capabilities": [
+      "Edit React/TypeScript components",
+      "Fix bugs and improve performance",
+      "Add new features and pages",
+      "Refactor code structure",
+      "Update Supabase integrations"
+    ],
+    "project": "l7-partners",
+    "skills": [],
+    "codebasePath": "~/l7partners-rewrite/"
+  },
+  {
     "id": "l7-chatbot-agent",
     "name": "L7 Partners AI Assistant",
     "description": "AI chatbot for L7 Partners TMS admins - answers questions about tenants, properties, and operations",
