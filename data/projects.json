@@ -1,12 +1,47 @@
 [
   {
+    "id": "l7-partners",
+    "name": "L7 Partners Platform",
+    "description": "Full-stack property management platform with TMS, tenant portal, and AI assistant",
+    "type": "app",
+    "category": "app",
+    "status": "active",
+    "created": "2025-01-01",
+    "updated": "2026-01-16",
+    "repo": "https://github.com/jefflitt1/l7partners-rewrite",
+    "hosting": {
+      "domain": "l7-partners.com",
+      "server": "Lovable/Cloudflare"
+    },
+    "tags": ["property-management", "ai-chatbot", "tenant-portal", "supabase"],
+    "sections": [
+      "TMS (Tenant Management System)",
+      "Tenant Portal",
+      "Admin Dashboard",
+      "AI Chatbot (WebhookChatbot)",
+      "Document Management",
+      "Maintenance Requests"
+    ],
+    "connections": {
+      "prompts": [],
+      "workflows": ["l7-chatbot-workflow"],
+      "mcpServers": [],
+      "agents": ["l7-chatbot-agent"],
+      "external": [
+        { "name": "Lovable Project", "url": "https://lovable.dev/projects/0623dc91-517d-423f-8ad2-54a46bcdd8ac", "type": "builder" }
+      ]
+    }
+  },
+  {
     "id": "magic-agent",
     "name": "Magic Agent",
     "description": "Comprehensive magic assistant for close-up, mentalism, and stage magic",
     "type": "knowledge-base",
+    "category": "knowledge-base",
     "status": "active",
     "created": "2025-01-14",
     "updated": "2025-01-15",
+    "tags": ["magic", "mentalism", "performance"],
     "files": [
       {
         "path": "~/magic.md",
@@ -24,6 +59,7 @@
     "connections": {
       "prompts": [],
       "workflows": [],
+      "agents": ["magic-agent"],
       "external": [
         { "name": "Ted's Sterling Magic", "url": "https://www.tedssterlingmagic.com", "type": "source" },
         { "name": "Penguin Magic", "url": "https://penguinmagic.com", "type": "retailer" },
@@ -34,21 +70,31 @@
   {
     "id": "claude-hub",
     "name": "Claude Hub",
-    "description": "This dashboard - tracks all Claude agents and resources",
+    "description": "Dashboard tracking all Claude agents, skills, prompts, and workflows",
     "type": "app",
-    "status": "building",
+    "category": "app",
+    "status": "active",
     "created": "2025-01-15",
-    "updated": "2025-01-15",
+    "updated": "2026-01-16",
     "repo": "https://github.com/jefflitt1/claude-hub",
     "hosting": {
       "domain": "claude.l7-partners.com",
       "server": "Raspberry Pi",
       "tunnel": "cloudflared"
     },
+    "tags": ["dashboard", "knowledge-graph", "automation"],
+    "sections": [
+      "Projects & Knowledge Bases",
+      "Agents & Skills",
+      "MCP Servers",
+      "n8n Workflows",
+      "Session Management"
+    ],
     "connections": {
       "prompts": [],
-      "workflows": [],
-      "mcpServers": ["n8n-mcp", "gdrive-JGL", "gdrive-L7"]
+      "workflows": ["github-supabase-sync"],
+      "mcpServers": ["n8n-mcp", "gdrive-JGL", "gdrive-L7"],
+      "agents": ["recap-agent"]
     }
   }
 ]

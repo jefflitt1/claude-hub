@@ -1,10 +1,30 @@
 [
   {
+    "id": "github-supabase-sync",
+    "name": "GitHub → Supabase Project Sync",
+    "description": "Syncs project data from GitHub repos to Supabase when pushed",
+    "platform": "n8n",
+    "status": "active",
+    "triggers": ["webhook", "github-push"],
+    "webhookUrl": "https://webhooks.l7-partners.com/webhook/github-project-sync",
+    "project": "claude-hub"
+  },
+  {
+    "id": "l7-chatbot-workflow",
+    "name": "L7 Partners Chatbot",
+    "description": "AI chatbot workflow for TMS admin queries via webhook",
+    "platform": "n8n",
+    "status": "active",
+    "triggers": ["webhook", "chat"],
+    "webhookUrl": "https://webhooks.l7-partners.com/webhook/29b8d0ff-ccf3-439e-a4b6-e4858f5809b0",
+    "project": "l7-partners"
+  },
+  {
     "id": "n8n-health-check",
     "name": "n8n Health Check",
     "description": "Verify n8n instance is running and accessible",
     "platform": "n8n",
-    "status": "available",
+    "status": "active",
     "triggers": ["manual", "mcp"],
     "project": "claude-hub"
   }

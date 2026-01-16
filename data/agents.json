@@ -1,5 +1,22 @@
 [
   {
+    "id": "l7-chatbot-agent",
+    "name": "L7 Partners AI Assistant",
+    "description": "AI chatbot for L7 Partners TMS admins - answers questions about tenants, properties, and operations",
+    "type": "webhook-based",
+    "status": "active",
+    "trigger": "chat-widget",
+    "webhookUrl": "https://webhooks.l7-partners.com/webhook/29b8d0ff-ccf3-439e-a4b6-e4858f5809b0",
+    "capabilities": [
+      "Answer admin questions about TMS",
+      "Query tenant and property data",
+      "Provide operational insights",
+      "Assist with troubleshooting"
+    ],
+    "project": "l7-partners",
+    "skills": []
+  },
+  {
     "id": "recap-agent",
     "name": "Session Recap Agent",
     "description": "Auto-detects session accomplishments and saves to session logs. Handles concurrent terminals safely.",
@@ -13,6 +30,7 @@
       "Handle concurrent terminal sessions"
     ],
     "project": "claude-hub",
+    "skills": ["recap"],
     "skillFile": "~/.claude/skills/recap.md"
   },
   {
@@ -29,6 +47,7 @@
       "Performance craft advice"
     ],
     "project": "magic-agent",
+    "skills": [],
     "knowledgeFile": "~/magic.md"
   },
   {
@@ -44,6 +63,6 @@
       "Answer codebase questions"
     ],
     "project": null,
-    "skillFile": null
+    "skills": []
   }
 ]
