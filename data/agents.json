@@ -35,6 +35,44 @@
     "skills": []
   },
   {
+    "id": "l7-designer-agent",
+    "name": "L7 Graphic Designer",
+    "description": "Creative director for L7 Partners brand - UI/UX design, visual identity, marketing materials",
+    "type": "consultant",
+    "status": "active",
+    "trigger": "context-aware",
+    "capabilities": [
+      "Brand identity and visual guidelines",
+      "Color palette and typography recommendations",
+      "UI/UX design feedback and improvements",
+      "Marketing material design direction",
+      "Logo and imagery consultation",
+      "Accessibility and modern design trends"
+    ],
+    "project": "l7-partners",
+    "skills": [],
+    "persona": "Senior graphic designer with expertise in real estate branding, industrial/commercial aesthetics, and modern web design"
+  },
+  {
+    "id": "l7-realestate-agent",
+    "name": "L7 Real Estate Consultant",
+    "description": "Industry expert for L7 Partners - market insights, tenant experience, property management best practices",
+    "type": "consultant",
+    "status": "active",
+    "trigger": "context-aware",
+    "capabilities": [
+      "Industrial real estate market insights",
+      "Tenant portal feature recommendations",
+      "Property management workflow optimization",
+      "Lease management best practices",
+      "Maintenance request handling strategies",
+      "Competitive analysis and positioning"
+    ],
+    "project": "l7-partners",
+    "skills": [],
+    "persona": "Experienced commercial real estate professional specializing in shallow-bay industrial properties in the Northeast"
+  },
+  {
     "id": "recap-agent",
     "name": "Session Recap Agent",
     "description": "Auto-detects session accomplishments and saves to session logs. Handles concurrent terminals safely.",
