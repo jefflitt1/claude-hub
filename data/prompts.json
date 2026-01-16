@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "id": "magic-agent-context",
+    "name": "Magic Agent Context",
+    "type": "knowledge-base",
+    "description": "Comprehensive magic knowledge including apps, retailers, techniques, and craft principles",
+    "project": "magic-agent",
+    "file": "~/magic.md",
+    "sections": [
+      "App Ecosystem",
+      "Major Retailers",
+      "Close-Up Magic",
+      "Mentalism",
+      "Craft Principles"
+    ]
+  },
+  {
+    "id": "claude-hub-context",
+    "name": "Claude Hub Project Context",
+    "type": "system",
+    "description": "Project instructions for Claude Hub development",
+    "project": "claude-hub",
+    "file": "~/claude-agents/CLAUDE.md"
+  }
+]

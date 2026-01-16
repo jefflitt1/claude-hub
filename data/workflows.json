@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "n8n-health-check",
+    "name": "n8n Health Check",
+    "description": "Verify n8n instance is running and accessible",
+    "platform": "n8n",
+    "status": "available",
+    "triggers": ["manual", "mcp"],
+    "project": "claude-hub"
+  }
+]

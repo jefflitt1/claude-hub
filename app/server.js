@@ -36,6 +36,24 @@ app.get('/api/projects/:id', (req, res) => {
   res.json(project);
 });
 
+// API: Get MCP servers
+app.get('/api/mcp-servers', (req, res) => {
+  const mcpServers = loadJSON('mcp-servers.json') || [];
+  res.json(mcpServers);
+});
+
+// API: Get prompts
+app.get('/api/prompts', (req, res) => {
+  const prompts = loadJSON('prompts.json') || [];
+  res.json(prompts);
+});
+
+// API: Get workflows
+app.get('/api/workflows', (req, res) => {
+  const workflows = loadJSON('workflows.json') || [];
+  res.json(workflows);
+});
+
 // API: Get all connections (for graph view)
 app.get('/api/graph', (req, res) => {
   const projects = loadJSON('projects.json') || [];

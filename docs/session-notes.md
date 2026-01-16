@@ -1,10 +1,10 @@
 # Claude Hub Session Notes
-**Last Updated:** 2025-01-15
+**Last Updated:** 2026-01-15
 **Resume context for next session**
 
 ---
 
-## Session Summary: 2025-01-15
+## Session Summary: 2026-01-15
 
 ### Completed This Session
 
@@ -33,7 +33,11 @@
 
 ## Open Items / Next Steps
 
-### On Pi (need to complete)
+### In Progress (Jeff handling separately)
+- **Pi Storage** - Main disk at 98%, fixing before continuing
+- **Pi MCP Setup** - n8n-mcp and gdrive credentials being configured
+
+### On Pi (after storage fix)
 
 ```bash
 # 1. Clone the repo
@@ -42,42 +46,23 @@ git clone https://github.com/jefflitt1/claude-hub.git
 cd claude-hub/app
 npm install
 
-# 2. Set up n8n MCP server
-claude mcp add n8n-mcp --transport stdio -- npx n8n-mcp --stdio
-claude mcp add-env n8n-mcp N8N_API_URL https://n8n.l7-partners.com
-claude mcp add-env n8n-mcp N8N_API_KEY "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiYWFmZmY3OS00YjE2LTRkZTItYTg1OC0yYzcyYTQwZmU3ZGIiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU2ODM3MzUxfQ.Zv9rHt2_u2a-Tbb2YsluqxlM8QH8W5z1bznmo6Qgzf8"
-claude mcp add-env n8n-mcp MCP_MODE stdio
-
-# 3. Verify MCP working
-claude
-# Type: /mcp
-
-# 4. Deploy Claude Hub
-cd ~/claude-hub/app
+# 2. Deploy with pm2
 pm2 start server.js --name claude-hub
-
-# 5. Add cloudflared route (edit ~/.cloudflared/config.yml)
-# Add:
-#   - hostname: claude.l7-partners.com
-#     service: http://localhost:3000
-
-# 6. Restart cloudflared
-sudo systemctl restart cloudflared
-
-# 7. Add DNS in Cloudflare: claude.l7-partners.com → CNAME → tunnel
 ```
 
-### Google Drive MCPs (optional for Pi)
-- Need to copy OAuth credentials from Mac to Pi
-- Files needed:
-  - `~/.config/gdrive-mcp/jgl/gcp-oauth.keys.json`
-  - `~/.config/gdrive-mcp/jgl/.gdrive-server-credentials.json`
-  - `~/.config/gdrive-mcp/l7/gcp-oauth.keys.json`
-  - `~/.config/gdrive-mcp/l7/.gdrive-server-credentials.json`
+*Note: cloudflared already configured and working - claude.l7-partners.com is live*
 
-### Disk Space Warning
-- Pi main disk at 98% (2.4GB free)
-- Consider cleanup or moving data to `/media/jeffn8n/PIUSB` (95GB free)
+### UI Configuration (Claude + Lovable)
+
+**Goal:** Better dashboard UI at https://claude.l7-partners.com
+
+**Claude's tasks:**
+1. Structure data correctly in JSON files (projects, MCP servers, workflows)
+2. Create prompts for Lovable to build the visual components
+
+**Deliverables:**
+- Clean data schema for dashboard
+- Lovable prompts for: project cards, knowledge graph visualization, MCP server status
 
 ---
 
@@ -100,9 +85,9 @@ Mac (Development)              Raspberry Pi (Production)
 
 | Server | Mac | Pi | URL |
 |--------|-----|-----|-----|
-| n8n-mcp | ✅ | Pending | https://n8n.l7-partners.com |
-| gdrive-JGL | ✅ | Optional | - |
-| gdrive-L7 | ✅ | Optional | - |
+| n8n-mcp | ✅ | In progress | https://n8n.l7-partners.com |
+| gdrive-JGL | ✅ | In progress | - |
+| gdrive-L7 | ✅ | In progress | - |
 
 ---
 
