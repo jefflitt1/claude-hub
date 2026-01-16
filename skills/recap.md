@@ -1,0 +1,109 @@
+# Session Recap Skill
+
+**Trigger:** `/recap` or "recap this session"
+
+## Instructions
+
+You are the Session Recap agent. Your job is to auto-detect what was accomplished in this session and update the session notes. Multiple terminals may run this skill concurrently, so you must handle conflicts.
+
+### Step 1: Generate Session ID
+
+Create a unique session identifier:
+```
+SESSION_ID = {terminal_type}_{timestamp}
+Example: mac_20260115_2245
+```
+
+### Step 2: Auto-Detect Accomplishments
+
+Analyze the conversation history to identify:
+- **Completed tasks** - What was built, fixed, configured, or deployed?
+- **Key decisions** - Architecture choices, tool selections, approaches taken
+- **New open items** - Tasks discovered but not completed
+- **Blockers resolved** - Problems that were solved
+- **Credentials/URLs added** - New services, endpoints, or keys
+
+DO NOT ask the user what was accomplished. Infer it from the conversation.
+
+### Step 3: Write to Session Log (Append-Safe)
+
+Write your recap to a timestamped log file to avoid conflicts:
+
+```
+~/claude-agents/docs/session-logs/{DATE}_{SESSION_ID}.md
+```
+
+Format:
+```markdown
+# Session Recap: {SESSION_ID}
+**Time:** {timestamp}
+**Terminal:** {mac|pi|other}
+
+## Completed
+- Item 1
+- Item 2
+
+## Decisions Made
+- Decision 1
+
+## New Open Items
+- Item 1
+
+## Notes
+Any additional context
+```
+
+### Step 4: Merge to Main Notes (If Requested)
+
+Only merge to `session-notes.md` if:
+- User explicitly says "merge" or "finalize"
+- OR this is the last/primary terminal closing
+
+When merging:
+1. Read all log files from today: `~/claude-agents/docs/session-logs/YYYYMMDD_*.md`
+2. Deduplicate completed items
+3. Update `session-notes.md` with consolidated info
+4. Move merged log files to `~/claude-agents/docs/session-logs/archive/`
+
+### Step 5: Commit and Push
+
+```bash
+cd ~/claude-agents
+git add -A
+git commit -m "Session recap: {brief_summary}"
+git push
+```
+
+---
+
+## Concurrency Handling
+
+Multiple terminals can safely run `/recap` because:
+1. Each writes to a **unique log file** (timestamped)
+2. Main `session-notes.md` is only updated during explicit **merge**
+3. Git handles the final sync
+
+---
+
+## Example Output
+
+```
+Recap saved to: ~/claude-agents/docs/session-logs/20260115_mac_2245.md
+
+Detected:
+- 3 completed items
+- 1 new open item
+- 0 blockers
+
+Run `/recap merge` to consolidate all session logs into session-notes.md
+```
+
+---
+
+## Quick Commands
+
+| Command | Action |
+|---------|--------|
+| `/recap` | Save this terminal's recap to log file |
+| `/recap merge` | Consolidate all logs into session-notes.md |
+| `/recap status` | Show pending log files |

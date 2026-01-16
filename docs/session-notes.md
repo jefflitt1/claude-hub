@@ -1,83 +1,104 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-15
+**Last Updated:** 2026-01-15 (Session 2)
 **Resume context for next session**
 
 ---
 
-## Session Summary: 2026-01-15
+## Session Summary: 2026-01-15 (Evening)
 
 ### Completed This Session
 
-1. **Magic Agent Knowledge Base** - Added "Craft Principles" section to `~/magic.md`
-   - Extracted from Ted's Sterling Magic learning pages
-   - Covers: shell/insert systems, rough & smooth cards, sleights, combination strategies
-   - ~260 lines added to knowledge base
+1. **Pi Disk Space Fixed** - Freed 47GB (98% → 55%)
+   - Moved `~/backups` (18GB) to USB at `/media/jeffn8n/PIUSB/pi-backups/home-backups`
+   - Moved `/var/backups/n8n` (31GB) to `/media/jeffn8n/PIUSB/pi-backups/var-n8n-backups`
+   - Moved n8n backup tarballs to USB
 
-2. **GitHub Setup**
-   - Installed `gh` CLI on Mac
-   - Authenticated as `jefflitt1`
-   - Created repo: https://github.com/jefflitt1/claude-hub
+2. **Pi Setup Completed**
+   - Claude Hub running on pm2 (port 3003)
+   - MCP servers configured (n8n-mcp, gdrive-jgl, gdrive-l7)
+   - cloudflared routing working
 
-3. **Claude Hub MVP Built**
-   - Express.js server with JSON data store
-   - Landing page with expandable project cards
-   - API endpoints: `/api/projects`, `/api/graph`
-   - Tracks: Magic Agent, Claude Hub, MCP servers
+3. **GitHub → Supabase Sync Pipeline Built**
+   - n8n workflow: `GitHub → Supabase Project Sync`
+   - Webhook URL: `https://webhooks.l7-partners.com/webhook/github-project-sync`
+   - Flow: GitHub push → n8n webhook → Extract data → Upsert to Supabase → Lovable displays
+   - Fixed Supabase auth (switched from legacy to new secret key)
+   - Fixed RLS policies for frontend read access
 
-4. **Pi Setup Started**
-   - Installed Claude Code CLI on Pi (`sudo npm install -g @anthropic-ai/claude-code`)
-   - Authenticated Claude on Pi
-   - Pi specs: Debian Bookworm ARM64, Node v18.20.8, n8n in Docker
+4. **GitHub Webhook Added**
+   - Added to `jefflitt1/claude-hub` repo
+   - Tested end-to-end: push → n8n → Supabase → Lovable dashboard updates
+
+5. **Lovable Dashboard Live**
+   - URL: https://claude.l7-partners.com
+   - Connected to Supabase tables: `claude_projects`, `claude_agents`, `claude_mcp_servers`, `claude_prompts`, `claude_workflows`
+   - Auto-updates when GitHub repos are pushed
 
 ---
 
 ## Open Items / Next Steps
 
-### In Progress (Jeff handling separately)
-- **Pi Storage** - Main disk at 98%, fixing before continuing
-- **Pi MCP Setup** - n8n-mcp and gdrive credentials being configured
+### High Priority
 
-### On Pi (after storage fix)
+1. **Add GitHub webhooks to other repos** - Any repo you want tracked needs the webhook:
+   ```bash
+   gh api repos/jefflitt1/REPO_NAME/hooks \
+     --method POST \
+     -f name='web' \
+     -F active=true \
+     -f 'events[]=push' \
+     -f 'config[url]=https://webhooks.l7-partners.com/webhook/github-project-sync' \
+     -f 'config[content_type]=json'
+   ```
 
-```bash
-# 1. Clone the repo
-cd ~
-git clone https://github.com/jefflitt1/claude-hub.git
-cd claude-hub/app
-npm install
+2. **Session Recap Agent** - Create a skill/agent that:
+   - Reads current session context
+   - Updates session-notes.md automatically
+   - Tracks open items and completed work
+   - Can be called with `/recap` or similar
 
-# 2. Deploy with pm2
-pm2 start server.js --name claude-hub
-```
+### Optional
 
-*Note: cloudflared already configured and working - claude.l7-partners.com is live*
-
-### UI Configuration (Claude + Lovable)
-
-**Goal:** Better dashboard UI at https://claude.l7-partners.com
-
-**Claude's tasks:**
-1. Structure data correctly in JSON files (projects, MCP servers, workflows)
-2. Create prompts for Lovable to build the visual components
-
-**Deliverables:**
-- Clean data schema for dashboard
-- Lovable prompts for: project cards, knowledge graph visualization, MCP server status
+3. **Pi GitHub Sync** - Clone repos on Pi and set up git pull automation
+4. **Add more project types** - Track agents, prompts, workflows in addition to projects
+5. **Dashboard enhancements** - Ask Lovable to add filtering, search, detailed views
 
 ---
 
-## Architecture
+## Architecture (Current)
 
 ```
 Mac (Development)              Raspberry Pi (Production)
-├── Claude Code CLI            ├── Claude Code CLI (just installed)
-├── Interactive editing        ├── n8n (Docker)
-├── ~/magic.md knowledge base  ├── Claude Hub web app (to deploy)
+├── Claude Code CLI            ├── Claude Code CLI
+├── Interactive editing        ├── n8n (Docker) - workflows
+├── ~/magic.md knowledge base  ├── Claude Hub (pm2, port 3003)
 ├── ~/claude-agents/ (repo)    ├── cloudflared tunnel
-└── Push to GitHub             └── Pulls from GitHub
+└── Push to GitHub ──────────► └── Webhook receives pushes
+         │
+         ▼
+    GitHub Webhook
+         │
+         ▼
+    n8n Workflow (webhooks.l7-partners.com)
+         │
+         ▼
+    Supabase (donnmhbwhpjlmpnwgdqr.supabase.co)
+         │
+         ▼
+    Lovable Dashboard (claude.l7-partners.com)
 ```
 
-**Domain:** claude.l7-partners.com → Pi via cloudflared
+---
+
+## Key Credentials & URLs
+
+| Service | URL/Key |
+|---------|---------|
+| Lovable Dashboard | https://claude.l7-partners.com |
+| n8n | https://n8n.l7-partners.com |
+| n8n Webhooks | https://webhooks.l7-partners.com |
+| Supabase | https://donnmhbwhpjlmpnwgdqr.supabase.co |
+| GitHub Repo | https://github.com/jefflitt1/claude-hub |
 
 ---
 
@@ -85,9 +106,9 @@ Mac (Development)              Raspberry Pi (Production)
 
 | Server | Mac | Pi | URL |
 |--------|-----|-----|-----|
-| n8n-mcp | ✅ | In progress | https://n8n.l7-partners.com |
-| gdrive-JGL | ✅ | In progress | - |
-| gdrive-L7 | ✅ | In progress | - |
+| n8n-mcp | ✅ | ✅ | https://n8n.l7-partners.com |
+| gdrive-JGL | ✅ | ✅ | - |
+| gdrive-L7 | ✅ | ✅ | - |
 
 ---
 
@@ -97,24 +118,27 @@ Mac (Development)              Raspberry Pi (Production)
 |------|----------|---------|
 | magic.md | ~/magic.md | Magic agent knowledge base |
 | CLAUDE.md | ~/claude-agents/CLAUDE.md | Project context |
-| projects.json | ~/claude-agents/data/projects.json | Tracked projects |
-| server.js | ~/claude-agents/app/server.js | Claude Hub Express app |
+| session-notes.md | ~/claude-agents/docs/session-notes.md | This file - session continuity |
+| server.js | ~/claude-agents/app/server.js | Claude Hub Express app (legacy) |
 
 ---
 
-## Commands to Resume
+## Commands Reference
 
 ```bash
-# On Mac - test Claude Hub locally
-cd ~/claude-agents/app && npm start
-# Visit http://localhost:3000
-
-# On Pi - complete setup
-# Follow "Open Items" section above
-
-# Push changes from Mac
+# Push changes and auto-sync to dashboard
 cd ~/claude-agents && git add -A && git commit -m "Update" && git push
 
-# Pull changes on Pi
-cd ~/claude-hub && git pull
+# Add webhook to a new repo
+gh api repos/jefflitt1/REPO_NAME/hooks --method POST -f name='web' -F active=true -f 'events[]=push' -f 'config[url]=https://webhooks.l7-partners.com/webhook/github-project-sync' -f 'config[content_type]=json'
+
+# Check n8n workflow executions
+# Visit https://n8n.l7-partners.com → Executions
+
+# SSH to Pi
+ssh jeffn8n@<pi-ip>
+
+# Check Claude Hub on Pi
+pm2 status
+pm2 logs claude-hub
 ```

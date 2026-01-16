@@ -19,27 +19,32 @@ Mac (Development)          Raspberry Pi (Production)
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express
-- **Data:** JSON files (upgradeable to SQLite)
-- **Frontend:** Vanilla HTML/CSS/JS
-- **Hosting:** Raspberry Pi via cloudflared
+- **Frontend:** Lovable (React) at https://claude.l7-partners.com
+- **Database:** Supabase (PostgreSQL)
+- **Automation:** n8n at https://n8n.l7-partners.com
+- **Hosting:** Cloudflare (Lovable) + Raspberry Pi (n8n)
+
+## Skills
+
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| recap | `/recap` | Auto-detect session accomplishments, save to log |
+| recap merge | `/recap merge` | Consolidate all session logs into session-notes.md |
+
+Skills are defined in `skills/` directory. Multiple terminals can run skills concurrently.
 
 ## Project Structure
 
 ```
 claude-hub/
 ├── CLAUDE.md              # This file - project context
-├── app/                   # Web application
-│   ├── server.js          # Express server
-│   ├── package.json       # Dependencies
-│   └── public/            # Static frontend
-│       └── index.html     # Dashboard UI
-├── data/                  # JSON data store
-│   ├── projects.json      # Projects & knowledge bases
-│   ├── mcp-servers.json   # MCP server registry
-│   ├── prompts.json       # Saved prompts
-│   └── workflows.json     # n8n workflow registry
-├── docs/                  # Design specs and notes
+├── skills/                # Custom Claude skills
+│   └── recap.md           # Session recap skill
+├── docs/
+│   ├── session-notes.md   # Running session notes
+│   └── session-logs/      # Per-terminal recap logs
+├── app/                   # Legacy Express app (replaced by Lovable)
+├── data/                  # Legacy JSON data (replaced by Supabase)
 ├── prompts/               # System instruction files
 ├── projects/              # Project-specific configs
 └── configs/               # Machine-specific configs
