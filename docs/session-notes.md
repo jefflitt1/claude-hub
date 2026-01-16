@@ -1,6 +1,27 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 5)
+**Last Updated:** 2026-01-16 (Session 6)
 **Resume context for next session**
+
+---
+
+## Session Summary: 2026-01-16 (Session 6)
+
+### Daily Agent Digest Workflow Fixed
+- Diagnosed missing connection from "Get Session Notes" to Merge node
+- Discovered n8n Merge v3 only supports 2 inputs (not 3)
+- Redesigned workflow: removed Merge node, connected all 3 data sources directly to Code node
+- Updated workflow via n8n MCP API (multiple iterations)
+- Workflow URL: https://n8n.l7-partners.com/workflow/2fwvrmN2I3PDcXRz
+
+### Workflow Architecture
+```
+Trigger (6am) → Get Projects  ─┐
+              → Get Agents    ─┼→ Code Node → Claude API → Gmail → If Urgent → SMS
+              → Get Session   ─┘
+```
+
+- Email: jglittell@gmail.com (via jeff@l7-partners.com Gmail)
+- SMS: 6318383779@vtext.com (Verizon gateway, free)
 
 ---
 
@@ -112,7 +133,8 @@
 
 ### High Priority
 
-1. **Verify n8n workflow syncs new entity types** - Check if agents/skills sync to Supabase
+1. **Test Daily Digest workflow** - Run test to confirm end-to-end execution and email delivery
+2. **Verify n8n workflow syncs new entity types** - Check if agents/skills sync to Supabase
 2. **Add `claude_skills` table to Supabase** - If not auto-created by workflow
 3. **Update Lovable dashboard** - Display agents and skills sections
 4. **Submit Lovable prompt** - Hero section and WhyChoose card visual enhancements (ready in conversation)
