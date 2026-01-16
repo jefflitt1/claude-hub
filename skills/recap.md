@@ -100,6 +100,90 @@ Run `/recap merge` to consolidate all session logs into session-notes.md
 
 ---
 
+## /recap merge Instructions
+
+When user runs `/recap merge`, follow these steps:
+
+### Step 1: Find All Pending Logs
+
+```bash
+ls ~/claude-agents/docs/session-logs/*.md 2>/dev/null | grep -v archive
+```
+
+If no files found, respond: "No session logs to merge."
+
+### Step 2: Read and Consolidate
+
+1. Read each log file in `~/claude-agents/docs/session-logs/`
+2. Combine all "Completed" items (deduplicate if same item appears twice)
+3. Combine all "Decisions Made"
+4. Combine all "New Open Items"
+5. Note which terminals/sessions contributed
+
+### Step 3: Update session-notes.md
+
+Read `~/claude-agents/docs/session-notes.md` and update:
+
+1. **Update "Last Updated"** - Set to current date/session
+2. **Add to "Completed This Session"** - Merge new completed items
+3. **Update "Open Items"** - Add new items, remove completed ones
+4. **Update any changed status** - MCP servers, architecture, etc.
+
+Preserve the existing structure. Only modify sections that need updates.
+
+### Step 4: Archive Merged Logs
+
+```bash
+mkdir -p ~/claude-agents/docs/session-logs/archive
+mv ~/claude-agents/docs/session-logs/*.md ~/claude-agents/docs/session-logs/archive/
+```
+
+### Step 5: Commit and Push
+
+```bash
+cd ~/claude-agents
+git add -A
+git commit -m "Merge session recaps: {date}"
+git push
+```
+
+### Example Output
+
+```
+Merged 3 session logs into session-notes.md:
+- mac_20260115_2216 (8 items)
+- pi_20260115_2230 (2 items)
+- mac_20260115_2245 (4 items)
+
+Archived to: ~/claude-agents/docs/session-logs/archive/
+
+Changes:
+- Added 12 completed items (2 duplicates removed)
+- Added 3 new open items
+- Removed 2 completed open items
+```
+
+---
+
+## /recap status Instructions
+
+When user runs `/recap status`:
+
+1. List all pending log files in `~/claude-agents/docs/session-logs/`
+2. Show count of items in each
+3. Show last merge date from session-notes.md
+
+Example output:
+```
+Pending session logs:
+- 20260115_mac_2216.md (8 completed, 2 open)
+- 20260115_pi_2230.md (2 completed, 0 open)
+
+Last merge: 2026-01-15 (Session 2)
+```
+
+---
+
 ## Quick Commands
 
 | Command | Action |
