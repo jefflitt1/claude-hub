@@ -1,0 +1,276 @@
+{
+  "name": "Daily Agent Status Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule",
+      "name": "Daily 6AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "claude_projects",
+        "returnAll": true
+      },
+      "id": "getProjects",
+      "name": "Get Active Projects",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "claude_agents",
+        "returnAll": true
+      },
+      "id": "getAgents",
+      "name": "Get All Agents",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [250, 400],
+      "credentials": {
+        "supabaseApi": {
+          "id": "1",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://raw.githubusercontent.com/jefflitt1/claude-hub/main/docs/session-notes.md",
+        "options": {}
+      },
+      "id": "getSessionNotes",
+      "name": "Get Session Notes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [250, 600]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "mergeData",
+      "name": "Merge All Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all items\nconst allItems = $input.all();\n\n// Separate by type\nconst projects = [];\nconst agents = [];\nlet sessionNotes = '';\n\nfor (const item of allItems) {\n  const data = item.json;\n  \n  // Projects have 'repo' or 'hosting'\n  if (data.repo || data.hosting) {\n    projects.push({\n      name: data.name,\n      description: data.description,\n      status: data.status,\n      repo: data.repo\n    });\n  }\n  // Agents have 'capabilities'\n  else if (data.capabilities) {\n    agents.push({\n      name: data.name,\n      project: data.project,\n      type: data.type,\n      capabilities: data.capabilities\n    });\n  }\n  // Session notes is raw text\n  else if (typeof data.data === 'string') {\n    sessionNotes = data.data;\n  }\n}\n\nconst today = new Date();\nconst dateStr = today.toLocaleDateString('en-US', { \n  weekday: 'long', \n  year: 'numeric', \n  month: 'long', \n  day: 'numeric' \n});\n\nreturn [{\n  json: {\n    projects,\n    agents,\n    sessionNotes: sessionNotes.substring(0, 4000),\n    date: dateStr\n  }\n}];"
+      },
+      "id": "prepareContext",
+      "name": "Prepare Agent Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"You are generating a daily status digest for Jeff. Today is {{ $json.date }}.\\n\\nActive Projects:\\n{{ JSON.stringify($json.projects, null, 2) }}\\n\\nAgents:\\n{{ JSON.stringify($json.agents, null, 2) }}\\n\\nRecent Session Notes:\\n{{ $json.sessionNotes }}\\n\\nGenerate a concise daily digest email with:\\n1. Brief greeting\\n2. For each project: current status, what's in progress, blockers needing attention\\n3. Summary of open items from session notes\\n4. Any reminders or follow-ups\\n\\nAt the end, add exactly one line: URGENCY_LEVEL: none OR attention OR urgent\\n(urgent = critical blockers/failures, attention = items needing review, none = all good)\\n\\nKeep it concise. Use markdown.\"\n    }\n  ]\n}"
+      },
+      "id": "claudeAPI",
+      "name": "Claude API - Generate Digest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "2",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst content = response.content?.[0]?.text || 'No response generated';\n\n// Extract urgency level\nconst urgencyMatch = content.match(/URGENCY_LEVEL:\\s*(none|attention|urgent)/i);\nconst urgencyLevel = urgencyMatch ? urgencyMatch[1].toLowerCase() : 'none';\n\n// Clean content for email\nconst cleanContent = content.replace(/URGENCY_LEVEL:\\s*(none|attention|urgent)/gi, '').trim();\n\nreturn [{\n  json: {\n    digest: cleanContent,\n    urgencyLevel,\n    isUrgent: urgencyLevel === 'urgent',\n    needsAttention: urgencyLevel === 'attention' || urgencyLevel === 'urgent',\n    date: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parseResponse",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "sendTo": "jglittell@gmail.com",
+        "subject": "=Daily Agent Digest - {{ $now.format('MMM D, YYYY') }}",
+        "emailType": "text",
+        "message": "={{ $json.digest }}",
+        "options": {}
+      },
+      "id": "sendEmail",
+      "name": "Send Daily Digest Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1500, 400],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3",
+          "name": "Gmail jeff@l7-partners.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "urgent-check",
+              "leftValue": "={{ $json.isUrgent }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "checkUrgent",
+      "name": "Check if Urgent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1750, 400]
+    },
+    {
+      "parameters": {
+        "sendTo": "6318383779@vtext.com",
+        "subject": "URGENT: Agent Alert",
+        "emailType": "text",
+        "message": "Urgent items need attention. Check email for full digest.",
+        "options": {}
+      },
+      "id": "sendSMS",
+      "name": "Send Urgent SMS",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2000, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3",
+          "name": "Gmail jeff@l7-partners.com"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "noAction",
+      "name": "No Urgent Action",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2000, 500]
+    }
+  ],
+  "connections": {
+    "Daily 6AM Trigger": {
+      "main": [
+        [
+          { "node": "Get Active Projects", "type": "main", "index": 0 },
+          { "node": "Get All Agents", "type": "main", "index": 0 },
+          { "node": "Get Session Notes", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Active Projects": {
+      "main": [
+        [{ "node": "Merge All Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get All Agents": {
+      "main": [
+        [{ "node": "Merge All Data", "type": "main", "index": 1 }]
+      ]
+    },
+    "Get Session Notes": {
+      "main": [
+        [{ "node": "Merge All Data", "type": "main", "index": 2 }]
+      ]
+    },
+    "Merge All Data": {
+      "main": [
+        [{ "node": "Prepare Agent Context", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Agent Context": {
+      "main": [
+        [{ "node": "Claude API - Generate Digest", "type": "main", "index": 0 }]
+      ]
+    },
+    "Claude API - Generate Digest": {
+      "main": [
+        [{ "node": "Parse Claude Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Claude Response": {
+      "main": [
+        [{ "node": "Send Daily Digest Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Daily Digest Email": {
+      "main": [
+        [{ "node": "Check if Urgent", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check if Urgent": {
+      "main": [
+        [{ "node": "Send Urgent SMS", "type": "main", "index": 0 }],
+        [{ "node": "No Urgent Action", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveDataSuccessExecution": "all",
+    "timezone": "America/New_York"
+  }
+}
