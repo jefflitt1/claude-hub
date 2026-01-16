@@ -30,8 +30,22 @@ Mac (Development)          Raspberry Pi (Production)
 |-------|---------|---------|
 | recap | `/recap` | Auto-detect session accomplishments, save to log |
 | recap merge | `/recap merge` | Consolidate all session logs into session-notes.md |
+| recap status | `/recap status` | Show pending session logs |
 
-Skills are defined in `skills/` directory. Multiple terminals can run skills concurrently.
+Skills are registered in `~/.claude/skills/` (personal) or `.claude/skills/` (project).
+
+## Auto-Recap Behavior
+
+**IMPORTANT:** Automatically run `/recap` (without asking) when ANY of these conditions are met:
+
+1. **Long session** - Conversation exceeds ~50 turns or significant work completed
+2. **Major milestone** - Feature completed, bug fixed, or deployment done
+3. **Session ending** - User says "done", "thanks", "bye", or similar
+4. **Context getting full** - Before context window compression would lose details
+
+After auto-recap, run `/recap merge` if there are 3+ pending session logs.
+
+Do NOT ask "should I run recap?" - just do it when thresholds are met.
 
 ## Project Structure
 
