@@ -1,6 +1,39 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 4)
+**Last Updated:** 2026-01-16 (Session 5)
 **Resume context for next session**
+
+---
+
+## Session Summary: 2026-01-16 (Session 5) - JGL Capital
+
+### Markplex Scraper v2 Completed
+- Built Playwright-based scraper (`~/jgl-capital/scripts/markplex-scraper.js`)
+- Fixed login URL issue (site changed from `/wp-login.php` to `/login/`)
+- Successfully scraped **445 files** (103 programs, 232 tutorials, 104 quicktips, 6 training)
+- Total content: **4.5MB** of markdown with embedded EasyLanguage code blocks
+
+### Quant Knowledge Base Created
+- Updated `~/jgl-capital/.claude/skills/tradestation/markplex-knowledge.md` with actual code examples:
+  - Vector Operations, QuickSort, Dictionary Class patterns
+  - Global Dictionary Sender/Receiver for cross-chart communication
+  - Price Series Provider for multi-timeframe calculations
+  - Trailing Stop visualization patterns
+- Added "Patterns for Self-Weighting Portfolio System" section
+
+### Strategy Recommendations Document
+- Created `~/jgl-capital/data/analysis/markplex-learnings-summary.md`
+- Recommended architecture: Master Trading App + GlobalDictionary + Individual Charts
+- 4-phase implementation roadmap
+- Key gotchas from Markplex content analysis
+
+### Files Created/Updated
+| File | Purpose |
+|------|---------|
+| `~/jgl-capital/scripts/markplex-scraper.js` | Playwright scraper for Markplex |
+| `~/jgl-capital/data/markplex-tutorials/` | 445 scraped content files |
+| `~/jgl-capital/.claude/skills/tradestation/markplex-knowledge.md` | EasyLanguage patterns KB |
+| `~/jgl-capital/data/analysis/markplex-learnings-summary.md` | Strategy recommendations |
+| `~/jgl-capital/.claude/agents/quant.md` | Updated with Markplex patterns |
 
 ---
 
