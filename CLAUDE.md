@@ -38,10 +38,11 @@ Skills are registered in `~/.claude/skills/` (personal) or `.claude/skills/` (pr
 
 **IMPORTANT:** Automatically run `/recap` (without asking) when ANY of these conditions are met:
 
-1. **Long session** - Conversation exceeds ~50 turns or significant work completed
-2. **Major milestone** - Feature completed, bug fixed, or deployment done
-3. **Session ending** - User says "done", "thanks", "bye", or similar
-4. **Context getting full** - Before context window compression would lose details
+1. **"exit" command** - ALWAYS run recap before processing exit
+2. **Long session** - Conversation exceeds ~50 turns or significant work completed
+3. **Major milestone** - Feature completed, bug fixed, or deployment done
+4. **Session ending** - User says "done", "thanks", "bye", or similar
+5. **Context getting full** - Before context window compression would lose details
 
 After auto-recap, run `/recap merge` if there are 3+ pending session logs.
 
