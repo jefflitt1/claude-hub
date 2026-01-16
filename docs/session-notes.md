@@ -1,12 +1,44 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 3)
+**Last Updated:** 2026-01-16 (Session 4)
 **Resume context for next session**
 
 ---
 
-## Session Summary: 2026-01-16
+## Session Summary: 2026-01-16 (Session 4)
 
-### Completed This Session
+### L7 Partners Design Review
+- Comprehensive site review from Graphic Designer perspective (brand, colors, typography, UI/UX)
+- Comprehensive site review from Real Estate Consultant perspective (industry language, features, tenant experience)
+- Priority recommendations compiled (high/medium/low)
+
+### L7 Partners Code Fixes (Pushed)
+- Footer: Replaced text "L7" badge with actual logo image
+- Footer: Replaced placeholder Twitter link with functional phone link
+- Contact form: Added visual divider with "Space Requirements" label
+
+### Magic Infrastructure Documentation
+- Reviewed all magic components on Resources page
+- Documented app integrations: WebFX (card), CubeSmith (cube), Streets Pro (maps), Inject (Something Extra), Modern Oracle (8 Ball)
+- Updated `~/magic.md` with full "L7 Partners Magic Infrastructure" section
+- Updated `~/l7partners-rewrite/CLAUDE.md` with magic infrastructure summary
+
+### Magic Widget Real-Time Updates (Pushed)
+- Card Prediction (WebFX): 3-second polling for real-time updates
+- Cube Prediction (CubeSmith): 3-second polling for real-time updates
+- MagicMapsWidget: Supabase real-time subscription for instant updates
+- MagicMapsWidget: 30-second expiration polling (preserves natural revert)
+- Cross-fade transitions when images change
+- Fixed blob URL memory cleanup bug
+- Each widget now operates with isolated state
+
+### Recap Skill Updated
+- Auto-merge now runs automatically after `/recap` (no prompt needed)
+
+---
+
+## Session Summary: 2026-01-16 (Session 3)
+
+### Completed
 
 1. **Recap Skill Registered** - Created `~/.claude/skills/recap.md` with YAML frontmatter
    - `/recap` - save session log
@@ -50,11 +82,13 @@
 1. **Verify n8n workflow syncs new entity types** - Check if agents/skills sync to Supabase
 2. **Add `claude_skills` table to Supabase** - If not auto-created by workflow
 3. **Update Lovable dashboard** - Display agents and skills sections
+4. **Submit Lovable prompt** - Hero section and WhyChoose card visual enhancements (ready in conversation)
 
-### Optional
+### Deferred
 
-4. **Dashboard enhancements** - Filtering, search, detailed views
-5. **Consider Pi redundancy** - For n8n workflows
+5. **Portal/TMS backend work** - Payment history views, lease views, communication logs, clear heights field
+6. **Dashboard enhancements** - Filtering, search, detailed views
+7. **Consider Pi redundancy** - For n8n workflows
 
 ---
 
