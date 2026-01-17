@@ -1,7 +1,40 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 21)
+**Last Updated:** 2026-01-17 (Session 22)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 22)
+
+### Backup Infrastructure & Credential Security
+
+**Credential Security:**
+- Fixed GitHub → Supabase Project Sync workflow to use `$env.SUPABASE_SERVICE_KEY` instead of hardcoded key
+- Exposed key needs rotation: `sb_secret_qJbJIZZ7l...` (in workflow version history)
+
+**Memory Graph Protection:**
+- Backed up Memory Graph to Supabase (18 entities, 22 relations)
+- Created `memory_graph_backups` table with JSONB storage for entities/relations
+- Created Daily Memory Graph Backup workflow (cSXBlzLBmD5KuFSJ)
+
+**Health Check & Observability:**
+- Created System Health Check workflow (btzTPdQPMQNBwujF) - checks n8n, Supabase, Claude Hub every 6 hours
+- Created `system_health_checks` table for storing health check results
+- Created `observability_dashboard` view for visualization
+
+**Backup Workflows:**
+- Created Weekly Backup workflow (w1st7CarxGp6LYM7) - backs up n8n workflows and Supabase tables
+- Created Workflow Test Suite (AejN400NwnXOUW84) for JSON parsing validation
+
+**n8n API Limitation Discovered:**
+- Cannot activate/deactivate workflows via API - must use n8n UI
+- 3 workflows pending activation: System Health Check, Weekly Backup, Daily Memory Graph Backup
+
+**User Action Required:**
+1. Set `SUPABASE_SERVICE_KEY` env var in n8n Docker container
+2. Rotate exposed Supabase key in Supabase dashboard
+3. Manually activate 3 workflows in n8n UI at https://n8n.l7-partners.com
 
 ---
 
