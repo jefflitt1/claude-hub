@@ -1,7 +1,42 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 14)
+**Last Updated:** 2026-01-17 (Session 15)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 15)
+
+### Daily Digest Workflow Fixed
+Fixed JSON escaping issue in "Daily Agent Status Digest" workflow:
+- Problem: `JSON.stringify()` inside n8n expressions produced nested JSON that broke outer structure
+- Solution: Build complete API body as JavaScript object in Code node, serialize once with `JSON.stringify($json.apiBody)`
+- Workflow ID: 2fwvrmN2I3PDcXRz
+
+### GitHub to Supabase Sync Workflow Enhanced
+Updated sync workflow to fetch and sync agents/skills on push:
+
+**New Flow:**
+```
+Webhook -> Extract -> Upsert Project -> Is Claude Hub?
+                                              | Yes
+                        +---------------------+---------------------+
+                        v                                           v
+               Fetch Agents JSON                           Fetch Skills JSON
+                        v                                           v
+               Transform Agents                            Transform Skills
+                        v                                           v
+                Upsert Agents                               Upsert Skills
+```
+
+- Fetches from raw.githubusercontent.com/jefflitt1/claude-hub/main/data/
+- Transforms JSON to match Supabase table schemas
+- Workflow ID: KQ2bleG4vj728I4f
+
+### Supabase API Key Issue Discovered
+Sync workflow triggered successfully but failed at Supabase upsert:
+- Error: "Legacy API keys are disabled" (disabled 2025-09-16)
+- Fix needed: Re-enable legacy keys in Supabase dashboard OR update workflow with new publishable/secret keys
 
 ---
 
