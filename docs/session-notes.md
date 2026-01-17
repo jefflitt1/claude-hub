@@ -174,6 +174,71 @@ curl -I https://l7-partners.com
 curl -I https://claude.l7-partners.com
 ```
 
+---
+
+## ALSO FIX: Telegram Approval Workflow Issues (2026-01-17)
+
+### Problems Observed
+1. **Approve button stuck on loading** - Clicking Approve/Deny in Telegram shows loading spinner but never completes
+2. **Message not updating** - When approved locally in terminal, Telegram message should update to "Approved" or "Expired" but stays active
+3. **Response not registering** - Telegram approval doesn't seem to reach the polling script
+
+### Components (from Session 8)
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| approval-handler.py | `~/.claude/approval-handler.py` | Hook script - sends to n8n, polls Redis |
+| settings.json | `~/.claude/settings.json` | PermissionRequest hook config |
+| n8n workflow | "Claude Code Mobile Approvals" | Sends Telegram notification, handles callback |
+| Redis | Pi (192.168.4.147:6379) | Stores approval responses |
+| Telegram bot | @claudeterminal1463bot | Sends notifications |
+
+### Flow (how it should work)
+```
+Claude Code permission request
+    ↓
+approval-handler.py (hook)
+    ↓
+n8n webhook (sends Telegram message with buttons)
+    ↓
+User clicks Approve/Deny in Telegram
+    ↓
+Telegram callback → n8n callback URL
+    ↓
+n8n writes response to Redis
+    ↓
+approval-handler.py polls Redis, gets response
+    ↓
+Returns approve/deny to Claude Code
+```
+
+### Likely Issues to Investigate
+1. **n8n callback handler** - Is it correctly writing to Redis when button is clicked?
+2. **Redis key format** - Does the callback use the same key the polling script expects?
+3. **Telegram callback URL** - Is the webhook configured correctly in n8n?
+4. **Message editing** - n8n should edit the Telegram message after response (not implemented?)
+
+### Debug Commands
+```bash
+# Check Redis on Pi
+ssh pi-local "redis-cli -h localhost keys '*'"
+ssh pi-local "redis-cli -h localhost get 'approval:5DC18C'"  # Use actual ID
+
+# Check n8n workflow logs
+# Go to https://n8n.l7-partners.com → Claude Code Mobile Approvals → Executions
+
+# Test Redis connectivity from Mac
+redis-cli -h 192.168.4.147 ping
+
+# Check approval-handler.py
+cat ~/.claude/approval-handler.py
+```
+
+### Files to Review
+- `~/.claude/approval-handler.py` - Check polling logic, Redis key format
+- n8n workflow - Check callback handling, Redis write, message editing
+
+---
+
 ### Current Cloudflare DNS Records (as of tonight)
 These are the tunnel subdomains that SHOULD remain unchanged:
 - admin → cfargotunnel.com (Proxied)
