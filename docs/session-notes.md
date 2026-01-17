@@ -1,7 +1,27 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 10)
+**Last Updated:** 2026-01-16 (Session 11)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-16 (Session 11)
+
+### Apple Notes Sync Implemented
+Set up automatic sync of session-notes.md to Apple Notes for mobile access:
+- Created Apple Note "Claude Session Notes"
+- Git post-commit hook triggers sync when session-notes.md is committed
+- Installed pandoc for markdown-to-HTML conversion
+- Fixed UTF-8 encoding (arrows, box-drawing chars converted to ASCII)
+
+**How it works:**
+```
+/recap runs -> commits session-notes.md -> post-commit hook
+    -> pandoc converts to HTML -> updates Apple Note
+```
+
+**Files created:**
+- `.git/hooks/post-commit` - Sync hook script
 
 ---
 
