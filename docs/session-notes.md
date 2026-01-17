@@ -1,7 +1,7 @@
 # Claude Hub Session Notes
 **Last Updated:** 2026-01-16 (Session 10)
 **Resume context for next session**
-**Apple Notes:** Auto-syncs on commit with HTML formatting
+**Apple Notes:** Auto-syncs on commit (cleaned for readability)
 
 ---
 
