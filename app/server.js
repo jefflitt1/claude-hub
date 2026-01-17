@@ -81,6 +81,27 @@ app.get('/api/graph', (req, res) => {
   });
 });
 
+// API: Health check for n8n instance
+app.get('/api/health/n8n', async (req, res) => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch('https://n8n.l7-partners.com/healthz', {
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (response.ok) {
+      res.json({ status: 'online', url: 'https://n8n.l7-partners.com' });
+    } else {
+      res.json({ status: 'degraded', url: 'https://n8n.l7-partners.com' });
+    }
+  } catch (error) {
+    res.json({ status: 'offline', error: error.message });
+  }
+});
+
 // Serve main page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

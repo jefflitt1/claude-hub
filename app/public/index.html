@@ -447,9 +447,9 @@
           <span class="status-dot"></span>
           <span>MCP Connected</span>
         </div>
-        <div class="status-item">
-          <span class="status-dot"></span>
-          <span>n8n Online</span>
+        <div class="status-item" id="n8n-status">
+          <span class="status-dot warning"></span>
+          <span>n8n Checking...</span>
         </div>
       </div>
     </header>
@@ -677,7 +677,34 @@
       card.classList.toggle('expanded');
     }
 
+    async function checkN8nHealth() {
+      const statusEl = document.getElementById('n8n-status');
+      try {
+        const res = await fetch('/api/health/n8n');
+        const data = await res.json();
+        const dot = statusEl.querySelector('.status-dot');
+        const text = statusEl.querySelector('span:last-child');
+
+        if (data.status === 'online') {
+          dot.className = 'status-dot';
+          text.textContent = 'n8n Online';
+        } else if (data.status === 'degraded') {
+          dot.className = 'status-dot warning';
+          text.textContent = 'n8n Degraded';
+        } else {
+          dot.className = 'status-dot warning';
+          text.textContent = 'n8n Offline';
+        }
+      } catch (error) {
+        const dot = statusEl.querySelector('.status-dot');
+        const text = statusEl.querySelector('span:last-child');
+        dot.className = 'status-dot warning';
+        text.textContent = 'n8n Unknown';
+      }
+    }
+
     loadData();
+    checkN8nHealth();
   </script>
 </body>
 </html>

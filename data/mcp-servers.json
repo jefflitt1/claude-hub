@@ -4,9 +4,10 @@
     "name": "n8n MCP Server",
     "url": "https://n8n.l7-partners.com",
     "purpose": "Connect Claude Code to n8n workflows",
+    "status": "active",
     "platforms": {
       "mac": "connected",
-      "pi": "configuring"
+      "pi": "connected"
     },
     "capabilities": [
       "List/create/update workflows",
@@ -14,52 +15,199 @@
       "View executions",
       "Search n8n nodes"
     ],
+    "usedBy": ["claude-hub", "l7-partners"]
+  },
+  {
+    "id": "gmail",
+    "name": "Gmail (Personal)",
+    "purpose": "Access Gmail for jglittell@gmail.com",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "connected"
+    },
+    "capabilities": [
+      "List messages",
+      "Search emails",
+      "Send emails",
+      "Find messages"
+    ],
     "usedBy": ["claude-hub"]
   },
   {
-    "id": "gdrive-JGL",
-    "name": "Google Drive (JGL)",
+    "id": "gmail-l7",
+    "name": "Gmail (L7 Partners)",
+    "purpose": "Access Gmail for jeff@jglcap.com",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "connected"
+    },
+    "capabilities": [
+      "List messages",
+      "Search emails",
+      "Send emails",
+      "Find messages"
+    ],
+    "usedBy": ["l7-partners"]
+  },
+  {
+    "id": "gdrive-jgl",
+    "name": "Google Drive (Personal)",
     "purpose": "Access Google Drive files for JGL account",
+    "status": "active",
     "platforms": {
       "mac": "connected",
-      "pi": "configuring"
+      "pi": "connected"
     },
     "capabilities": [
       "Search files",
-      "Read documents"
+      "Read documents",
+      "Read/write Sheets"
     ],
     "usedBy": ["claude-hub"]
   },
   {
-    "id": "gdrive-L7",
-    "name": "Google Drive (L7)",
+    "id": "gdrive-l7",
+    "name": "Google Drive (L7 Partners)",
     "purpose": "Access Google Drive files for L7 account",
+    "status": "active",
     "platforms": {
       "mac": "connected",
-      "pi": "configuring"
+      "pi": "connected"
     },
     "capabilities": [
       "Search files",
-      "Read documents"
+      "Read documents",
+      "Read/write Sheets"
     ],
-    "usedBy": ["claude-hub"]
+    "usedBy": ["l7-partners"]
   },
   {
     "id": "supabase-l7",
     "name": "Supabase (L7 Partners)",
-    "url": "https://mcp.supabase.com/mcp?project_ref=donnmhbwhpjlmpnwgdqr",
+    "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co",
     "purpose": "Direct database access to L7 Partners Supabase project",
+    "status": "active",
     "platforms": {
-      "mac": "pending-auth",
+      "mac": "connected",
+      "pi": "not-supported"
+    },
+    "capabilities": [
+      "Query database tables",
+      "Execute SQL queries",
+      "Insert/update/delete rows",
+      "List storage buckets and files"
+    ],
+    "usedBy": ["l7-partners", "claude-hub"],
+    "note": "Doesn't work on Pi due to package bug with stdio mode"
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "purpose": "Access GitHub repositories and issues",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "connected"
+    },
+    "capabilities": [
+      "Repository management",
+      "Issues and PRs",
+      "File operations",
+      "Search code"
+    ],
+    "usedBy": ["claude-hub", "l7-partners"],
+    "gateway": "MCP_DOCKER"
+  },
+  {
+    "id": "memory",
+    "name": "Memory Graph",
+    "purpose": "Persistent knowledge graph for context and learnings",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "connected"
+    },
+    "capabilities": [
+      "Create entities",
+      "Add relations",
+      "Search nodes",
+      "Read graph"
+    ],
+    "usedBy": ["claude-hub"],
+    "gateway": "MCP_DOCKER"
+  },
+  {
+    "id": "brave",
+    "name": "Brave Search",
+    "purpose": "Web, news, image, and video search",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
       "pi": "not-configured"
     },
     "capabilities": [
-      "Query database tables and views",
-      "Execute SQL queries",
-      "Access L7 properties, tenants, leases, units",
-      "Read property financials",
-      "Manage Claude Hub data"
+      "Web search",
+      "News search",
+      "Image search",
+      "Video search",
+      "Local search"
     ],
-    "usedBy": ["l7-partners", "claude-hub"]
+    "usedBy": ["claude-hub"],
+    "gateway": "MCP_DOCKER"
+  },
+  {
+    "id": "playwright",
+    "name": "Playwright Browser",
+    "purpose": "Browser automation and web scraping",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "not-configured"
+    },
+    "capabilities": [
+      "Navigate pages",
+      "Click elements",
+      "Fill forms",
+      "Take screenshots",
+      "Execute JavaScript"
+    ],
+    "usedBy": ["claude-hub"],
+    "gateway": "MCP_DOCKER"
+  },
+  {
+    "id": "puppeteer",
+    "name": "Puppeteer Browser",
+    "purpose": "Headless browser automation",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "connected"
+    },
+    "capabilities": [
+      "Navigate pages",
+      "Screenshot capture",
+      "PDF generation"
+    ],
+    "usedBy": ["claude-hub"],
+    "gateway": "MCP_DOCKER"
+  },
+  {
+    "id": "deepwiki",
+    "name": "DeepWiki",
+    "purpose": "Repository documentation and analysis",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "not-configured"
+    },
+    "capabilities": [
+      "Read repository docs",
+      "Analyze codebase",
+      "Get project summaries"
+    ],
+    "usedBy": ["claude-hub"],
+    "gateway": "MCP_DOCKER"
   }
 ]

@@ -12,10 +12,21 @@
     "syncs": ["claude_projects", "claude_agents", "claude_skills"]
   },
   {
+    "id": "daily-agent-digest",
+    "name": "Daily Agent Status Digest",
+    "description": "Daily summary of agent activity, workflow executions, and system health sent via email",
+    "platform": "n8n",
+    "n8nWorkflowId": "2fwvrmN2I3PDcXRz",
+    "status": "active",
+    "triggers": ["schedule", "daily"],
+    "project": "claude-hub"
+  },
+  {
     "id": "l7-chatbot-workflow",
     "name": "L7 Partners Chatbot",
     "description": "AI chatbot workflow for TMS admin queries via webhook",
     "platform": "n8n",
+    "n8nWorkflowId": "enXArZitFcJovFlF",
     "status": "active",
     "triggers": ["webhook", "chat"],
     "webhookUrl": "https://webhooks.l7-partners.com/webhook/29b8d0ff-ccf3-439e-a4b6-e4858f5809b0",
@@ -24,7 +35,7 @@
   {
     "id": "n8n-health-check",
     "name": "n8n Health Check",
-    "description": "Verify n8n instance is running and accessible",
+    "description": "Verify n8n instance is running and accessible via MCP",
     "platform": "n8n",
     "status": "active",
     "triggers": ["manual", "mcp"],
