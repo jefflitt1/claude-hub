@@ -1,7 +1,34 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 20)
+**Last Updated:** 2026-01-17 (Session 21)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 21)
+
+### Best Practices Implementation - Data Consistency & Component Optimization
+
+**Database Schema Improvements:**
+- Consolidated project_ids (kept: claude-hub, l7partners-rewrite, l7-knowledge, magic-agent; deleted duplicates)
+- Added FK constraints on claude_session_logs, claude_skills, claude_tasks → claude_projects
+- Added new columns to session_logs: tokens_used, context_percentage, skills_invoked
+
+**Skill Enhancements:**
+- Updated /recap skill with token tracking and Supabase integration
+- Added Step 0 (auto-logging) to all 6 skills: recap, done, context-loader, deal-analysis, n8n, n8n-setup
+- Tested /context skill - confirmed working with memory graph, session logs, and tasks
+
+**Memory Graph Completion:**
+- Added 3 new entities: Context Loader Skill, Done Skill, n8n Skill
+- Added 5 new relations connecting skills to their dependencies and targets
+- Total: 18 entities, 22 relations
+
+**Component Optimizations:**
+- TokenUsageChart: Parallel data fetching, error state UI, useMemo for computed values
+- SkillUsageSparklines: Pre-indexed O(1) lookups, proper error handling, memoized computations
+
+**Build Status:** Passes with no TypeScript errors
 
 ---
 
