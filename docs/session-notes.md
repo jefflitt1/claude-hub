@@ -1,6 +1,34 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 7)
+**Last Updated:** 2026-01-16 (Session 8)
 **Resume context for next session**
+
+---
+
+## Session Summary: 2026-01-16 (Session 8)
+
+### Claude Code Mobile Approval System
+Built end-to-end mobile approval system for Claude Code permission requests:
+
+**Components Created:**
+- `~/.claude/approval-handler.py` - Hook script that sends requests to n8n, polls Redis for responses
+- `~/.claude/settings.json` - PermissionRequest hook configuration
+- n8n workflow "Claude Code Mobile Approvals" - Telegram notifications with inline Approve/Deny buttons
+- Telegram bot @claudeterminal1463bot
+
+**Infrastructure:**
+- Standalone Redis installed on Pi (192.168.4.147:6379)
+- Firewall ports opened (6379, 6380)
+- Telegram webhook → n8n callback URL
+- Environment variables in `~/.zshrc`
+
+**Flow:**
+```
+Claude Code → approval-handler.py → n8n webhook → Telegram notification
+     ↑                                                    ↓
+     └──────────── Redis ←──────────────────── Approve/Deny button
+```
+
+**Note:** Hook only fires for tools NOT in allowedTools list (Bash, Read, Write are pre-approved)
 
 ---
 
