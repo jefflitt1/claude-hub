@@ -102,13 +102,29 @@ All user-controlled data is escaped before rendering:
 2. **Private Repository:** Code not publicly accessible
 3. **No Secrets in Code:** Use environment variables for sensitive data
 
+## Webhook Authentication
+
+**Implemented:** GitHub webhook signature validation using HMAC-SHA256.
+
+The `GitHub → Supabase Project Sync` workflow validates incoming webhooks using the `X-Hub-Signature-256` header. Requests without valid signatures are rejected.
+
+**Environment variables required in n8n:**
+```
+GITHUB_WEBHOOK_SECRET=d4cf7af178d9067b93fb7aa8fae36828e78ce690689f558927043e09542ef58e
+SUPABASE_SERVICE_KEY=<your-service-role-key>
+SUPABASE_ANON_KEY=<your-anon-key>
+TELEGRAM_CHAT_ID=<your-telegram-chat-id>
+```
+
+**Note:** The signature validation node allows requests through if `GITHUB_WEBHOOK_SECRET` is not set (backwards compatibility). Once the env var is configured, all requests must be properly signed.
+
 ## Checklist
 
 - [x] XSS protection implemented
 - [x] Error handling with graceful degradation
 - [x] Structured logging
 - [x] Private repository
-- [ ] Webhook authentication (optional)
+- [x] Webhook authentication (GitHub HMAC-SHA256)
 - [ ] API authentication (if public)
 - [ ] Rate limiting (if public)
 - [ ] Input validation (if write endpoints added)

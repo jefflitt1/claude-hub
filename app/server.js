@@ -109,6 +109,90 @@ app.get('/api/graph', (req, res) => {
   });
 });
 
+// Supabase configuration
+const SUPABASE_URL = 'https://donnmhbwhpjlmpnwgdqr.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvbm5taGJ3aHBqbG1wbndnZHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM4NDQ5MTQsImV4cCI6MjAzOTQyMDkxNH0.gaKTM-xnLEZOzGZ7pe22_9KZPOeUJtRh-T5T4lUxb4E';
+
+// API: Get n8n workflows from Supabase (grouped by project)
+app.get('/api/n8n-workflows', async (req, res) => {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/n8n_workflows?select=*&order=project.asc,name.asc`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.status}`);
+    }
+
+    const workflows = await response.json();
+
+    // Group by project
+    const grouped = workflows.reduce((acc, workflow) => {
+      const project = workflow.project || 'Uncategorized';
+      if (!acc[project]) {
+        acc[project] = {
+          name: project,
+          workflows: [],
+          activeCount: 0,
+          totalCount: 0
+        };
+      }
+      acc[project].workflows.push(workflow);
+      acc[project].totalCount++;
+      if (workflow.active) acc[project].activeCount++;
+      return acc;
+    }, {});
+
+    // Convert to array and sort by total count
+    const projectGroups = Object.values(grouped).sort((a, b) => b.totalCount - a.totalCount);
+
+    // Calculate stats
+    const stats = {
+      total: workflows.length,
+      active: workflows.filter(w => w.active).length,
+      production: workflows.filter(w => w.status === 'production').length,
+      wip: workflows.filter(w => w.status === 'WIP').length,
+      deprecated: workflows.filter(w => w.status === 'deprecated').length
+    };
+
+    res.json({ projectGroups, stats, workflows });
+  } catch (error) {
+    log('error', 'supabase_error', { error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API: Get workflow categories
+app.get('/api/workflow-categories', async (req, res) => {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/workflow_categories?select=*&order=display_order.asc`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Supabase error: ${response.status}`);
+    }
+
+    const categories = await response.json();
+    res.json(categories);
+  } catch (error) {
+    log('error', 'supabase_error', { error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // API: Health check for n8n instance
 app.get('/api/health/n8n', async (req, res) => {
   try {
