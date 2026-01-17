@@ -1,7 +1,40 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 16)
+**Last Updated:** 2026-01-17 (Session 17)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 17)
+
+### /done Skill Created
+Created end-of-session skill to ensure progress is always logged:
+- `/done` runs recap, merges to session-notes.md, commits, and confirms ready to exit
+- Use instead of typing `exit` directly
+- Location: `~/.claude/skills/done/SKILL.md`
+
+### Session Management Hooks Verified
+Confirmed Claude Code supports `SessionEnd` hook event:
+- Fires when user exits, logs out, or clears session
+- Could be used for automated cleanup/reminders
+- Hooks can run shell commands but NOT Claude skills directly
+
+### Daily Digest Workflow Verified Working
+- Tested execution 4771 succeeded (2:34pm today)
+- Emails sent successfully to jglittell@gmail.com
+- 6am scheduled run failed due to OLD workflow version (before JSON fix)
+- Current version with Code node approach is working
+
+### claude.l7-partners.com DNS Verified Working
+- Site is live and protected by Cloudflare Access
+- Returns 302 redirect to Cloudflare Access login (as intended)
+- Main site l7-partners.com also working (HTTP 200 via Netlify)
+
+### Supabase MCP Blocker Identified
+- Supabase NOT in Docker Desktop MCP catalog (only in CLI registry)
+- Supabase legacy API keys disabled since 2025-09-16
+- Need to re-enable legacy keys OR get new publishable/secret keys
+- Dashboard: https://supabase.com/dashboard/project/donnmhbwhpjlmpnwgdqr/settings/api
 
 ---
 
