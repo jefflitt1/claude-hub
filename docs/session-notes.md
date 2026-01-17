@@ -1,7 +1,36 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 12)
+**Last Updated:** 2026-01-17 (Session 13)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 13)
+
+### Telegram Approval Cleanup Feature Implemented
+Fixed issue where Telegram approval messages stayed active after terminal approval:
+
+**Changes Made:**
+- `~/.claude/approval-handler.py` - Added cleanup webhook call on timeout/exit, signal handlers (SIGTERM, SIGINT), atexit handlers
+- n8n workflow "Claude Code Mobile Approvals" - Added 7 new nodes for cleanup flow
+
+**New Nodes Added to Workflow:**
+- Store Message ID (Redis) - Saves message_id after sending Telegram
+- Cleanup Webhook - New endpoint `/webhook/claude-cleanup`
+- Get Message ID (Redis) - Retrieves stored message_id
+- Parse Cleanup (Code) - Determines status text/emoji
+- Has Message? (If) - Checks if message exists
+- Edit Message (Cleanup) - Updates Telegram message
+- Delete Message Key (Redis) - Cleans up Redis
+
+**Behavior:**
+- Timeout (120s) → Telegram shows "⏱️ EXPIRED"
+- Ctrl+C → Telegram shows "🚫 CANCELLED"
+- Telegram approval → Shows "✅ APPROVED by {user}" (existing)
+
+**Infrastructure:**
+- Configured Cloudflare Access `/api/*` bypass for n8n API programmatic access
+- n8n API key already configured in MCP (no .zshrc needed)
 
 ---
 
@@ -210,69 +239,6 @@ whois l7-partners.com | grep -i "name server"
 curl -I https://l7-partners.com
 curl -I https://claude.l7-partners.com
 ```
-
----
-
-## ALSO FIX: Telegram Approval Workflow Issues (2026-01-17)
-
-### Problems Observed
-1. **Approve button stuck on loading** - Clicking Approve/Deny in Telegram shows loading spinner but never completes
-2. **Message not updating** - When approved locally in terminal, Telegram message should update to "Approved" or "Expired" but stays active
-3. **Response not registering** - Telegram approval doesn't seem to reach the polling script
-
-### Components (from Session 8)
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| approval-handler.py | `~/.claude/approval-handler.py` | Hook script - sends to n8n, polls Redis |
-| settings.json | `~/.claude/settings.json` | PermissionRequest hook config |
-| n8n workflow | "Claude Code Mobile Approvals" | Sends Telegram notification, handles callback |
-| Redis | Pi (192.168.4.147:6379) | Stores approval responses |
-| Telegram bot | @claudeterminal1463bot | Sends notifications |
-
-### Flow (how it should work)
-```
-Claude Code permission request
-    ↓
-approval-handler.py (hook)
-    ↓
-n8n webhook (sends Telegram message with buttons)
-    ↓
-User clicks Approve/Deny in Telegram
-    ↓
-Telegram callback → n8n callback URL
-    ↓
-n8n writes response to Redis
-    ↓
-approval-handler.py polls Redis, gets response
-    ↓
-Returns approve/deny to Claude Code
-```
-
-### Likely Issues to Investigate
-1. **n8n callback handler** - Is it correctly writing to Redis when button is clicked?
-2. **Redis key format** - Does the callback use the same key the polling script expects?
-3. **Telegram callback URL** - Is the webhook configured correctly in n8n?
-4. **Message editing** - n8n should edit the Telegram message after response (not implemented?)
-
-### Debug Commands
-```bash
-# Check Redis on Pi
-ssh pi-local "redis-cli -h localhost keys '*'"
-ssh pi-local "redis-cli -h localhost get 'approval:5DC18C'"  # Use actual ID
-
-# Check n8n workflow logs
-# Go to https://n8n.l7-partners.com → Claude Code Mobile Approvals → Executions
-
-# Test Redis connectivity from Mac
-redis-cli -h 192.168.4.147 ping
-
-# Check approval-handler.py
-cat ~/.claude/approval-handler.py
-```
-
-### Files to Review
-- `~/.claude/approval-handler.py` - Check polling logic, Redis key format
-- n8n workflow - Check callback handling, Redis write, message editing
 
 ---
 
