@@ -1,7 +1,45 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 17)
+**Last Updated:** 2026-01-17 (Session 18)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 18)
+
+### Parent-Child Hierarchy Completed in Supabase & Frontend
+
+**Database Changes (Supabase):**
+- Added `parent_id` column to `claude_projects` table
+- Updated `exec_sql` PostgreSQL function to support DDL commands
+- Created `l7-partners` parent project (category: business)
+- Set `parent_id = 'l7-partners'` on `jefflitt1-l7partners-rewrite` and `l7-knowledge`
+- Deleted duplicate `claude-hub` entry (the "building" status one)
+
+**Frontend Enhancements (ClaudeCatalog.tsx):**
+1. **Hierarchical Project View** - Parents display with indented children below
+2. **Parent-Child Graph Links** - Orange dashed lines in Knowledge Graph
+3. **Business Category Styling** - Orange color for organizational parent projects
+4. **Aggregate Task Stats** - Parents show combined task counts from all children with "incl. sub-projects" badge
+5. **Hierarchy Filter** - All/Top-level/Children filter buttons
+6. **Collapsible Children** - Click sub-project badge to collapse/expand children
+7. **Updated Graph Legend** - Added Business category and Parent→Child link indicator
+8. **Regenerated Supabase Types** - `parent_id` now in TypeScript types
+
+**Current Hierarchy:**
+```
+L7 Partners (Business) ← parent
+├── l7partners-rewrite (App)
+└── L7 Knowledge Base (KB)
+
+Claude Hub (App) - standalone
+Magic Agent (KB) - standalone
+Code Assistant (App) - standalone
+```
+
+**Outstanding Manual Cleanup (Supabase MCP disconnected):**
+- Delete `jefflitt1-test-repo` test entry
+- Consider renaming `jefflitt1-l7partners-rewrite` → `l7partners-rewrite` for consistency
 
 ---
 
