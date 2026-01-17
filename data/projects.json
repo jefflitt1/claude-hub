@@ -6,9 +6,9 @@
     "type": "business",
     "category": "real-estate",
     "status": "active",
+    "parentId": null,
     "created": "2025-01-01",
     "updated": "2026-01-17",
-    "repo": "https://github.com/jefflitt1/l7partners-rewrite",
     "hosting": {
       "domain": "l7-partners.com",
       "server": "Lovable/Cloudflare"
@@ -52,23 +52,47 @@
       "google-sheets": { "status": "active", "purpose": "Pro formas, analysis" },
       "costar": { "status": "planned", "purpose": "Market data, comps" }
     },
+    "connections": {
+      "prompts": ["l7-deals-prompt"],
+      "workflows": ["l7-chatbot-workflow", "lease-expiration-alerts", "investor-report-automation"],
+      "mcpServers": ["gdrive-L7", "n8n-mcp"],
+      "agents": ["l7-chatbot-agent", "l7-realestate-agent", "l7-deals-agent", "l7-investor-agent"],
+      "external": [
+        { "name": "QuickBooks", "url": "https://quickbooks.intuit.com", "type": "integration" },
+        { "name": "CoStar", "url": "https://www.costar.com", "type": "data-source" }
+      ]
+    }
+  },
+  {
+    "id": "l7partners-rewrite",
+    "name": "l7partners-rewrite",
+    "description": "Main web application for L7 Partners - TMS, Tenant Portal, Admin Dashboard, AI Chatbot",
+    "type": "app",
+    "category": "app",
+    "status": "active",
+    "parentId": "l7-partners",
+    "created": "2025-06-01",
+    "updated": "2026-01-17",
+    "repo": "https://github.com/jefflitt1/l7partners-rewrite",
+    "hosting": {
+      "domain": "l7-partners.com",
+      "server": "Lovable/Cloudflare"
+    },
+    "tags": ["react", "typescript", "supabase", "lovable"],
     "sections": [
       "TMS (Tenant Management System)",
       "Tenant Portal",
       "Admin Dashboard",
       "AI Chatbot (WebhookChatbot)",
-      "Document Management",
-      "Deal Analysis Tools"
+      "Document Management"
     ],
     "connections": {
-      "prompts": ["l7-deals-prompt"],
-      "workflows": ["l7-chatbot-workflow", "lease-expiration-alerts", "investor-report-automation"],
-      "mcpServers": ["gdrive-L7", "n8n-mcp"],
-      "agents": ["l7-chatbot-agent", "l7-codebase-agent", "l7-realestate-agent", "l7-designer-agent", "l7-deals-agent", "l7-investor-agent", "l7-docs-agent"],
+      "prompts": [],
+      "workflows": ["l7-chatbot-workflow"],
+      "mcpServers": [],
+      "agents": ["l7-codebase-agent", "l7-designer-agent", "l7-docs-agent"],
       "external": [
-        { "name": "Lovable Project", "url": "https://lovable.dev/projects/0623dc91-517d-423f-8ad2-54a46bcdd8ac", "type": "builder" },
-        { "name": "QuickBooks", "url": "https://quickbooks.intuit.com", "type": "integration" },
-        { "name": "CoStar", "url": "https://www.costar.com", "type": "data-source" }
+        { "name": "Lovable Project", "url": "https://lovable.dev/projects/0623dc91-517d-423f-8ad2-54a46bcdd8ac", "type": "builder" }
       ]
     }
   },
@@ -79,6 +103,7 @@
     "type": "knowledge-base",
     "category": "knowledge-base",
     "status": "active",
+    "parentId": null,
     "created": "2025-01-14",
     "updated": "2025-01-15",
     "tags": ["magic", "mentalism", "performance"],
@@ -114,6 +139,7 @@
     "type": "app",
     "category": "app",
     "status": "active",
+    "parentId": null,
     "created": "2025-01-15",
     "updated": "2026-01-16",
     "repo": "https://github.com/jefflitt1/claude-hub",

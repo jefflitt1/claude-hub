@@ -1,7 +1,37 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 15)
+**Last Updated:** 2026-01-17 (Session 16)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 16)
+
+### Parent-Child Project Hierarchy Implemented
+Designed and implemented hierarchical project structure with `parentId` field:
+
+**Data Model Changes (`projects.json`):**
+- Added `parentId` field to all projects (null = top-level, parent's id = child)
+- L7 Partners (parentId: null) - top-level business umbrella
+- l7partners-rewrite (parentId: "l7-partners") - child app under L7 Partners
+- Magic Agent (parentId: null) - top-level standalone
+- Claude Hub (parentId: null) - top-level standalone
+
+**Structural Changes:**
+- Moved repo link from L7 Partners to l7partners-rewrite (where code lives)
+- Split agents: business-level on parent (chatbot, realestate, deals, investor), codebase-level on child (codebase, designer, docs)
+
+**Duplicate Claude Hub Issue Identified:**
+- Dashboard showing two Claude Hub entries from Supabase (not local JSON)
+- One "building" status, one "active" with URL - keep the active one
+
+**Pending Supabase Changes (needs MCP auth):**
+```sql
+ALTER TABLE projects ADD COLUMN parent_id TEXT REFERENCES projects(id);
+-- Then update: l7partners-rewrite.parent_id = 'l7-partners'
+-- Consider: L7 Knowledge Base.parent_id = 'l7-partners'
+-- Delete: duplicate Claude Hub entry
+```
 
 ---
 
@@ -542,7 +572,8 @@ Trigger (6am) → Get Projects  ─┐
 
 ### High Priority
 
-1. **Activate Supabase MCP** - Restart Claude Code, authenticate via browser popup on first use
+1. **Update Supabase schema for parent-child hierarchy** - Add `parent_id` column, update records, delete duplicate Claude Hub
+2. **Activate Supabase MCP** - Restart Claude Code, authenticate via browser popup on first use
 2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
 3. **Fix claude.l7-partners.com DNS** - Restore access and add Cloudflare Access protection
    - Fix Cloudflare DNS for l7-partners.com (CNAME to apex-loadbalancer.netlify.com)
