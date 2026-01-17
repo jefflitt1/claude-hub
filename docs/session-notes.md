@@ -1,7 +1,48 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 13)
+**Last Updated:** 2026-01-17 (Session 14)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 14)
+
+### L7 Partners Business Infrastructure Built
+Expanded L7 Partners from a "website project" to a comprehensive business entity:
+
+**Project Structure Expansion (`projects.json`):**
+- 5 business domains: Property Management (active), Acquisitions (building), Investor Relations (planned), Asset Management (planned), Leasing (planned)
+- Integrations tracking: Google Drive, Sheets (active), QuickBooks, CoStar (planned)
+- Connections to agents and skills
+
+**New Agents Added (`agents.json`):**
+- `l7-deals-agent` - Acquisitions consultant with screening, underwriting, pro forma capabilities
+- `l7-investor-agent` - Investor relations consultant (planned)
+- `l7-docs-agent` - Document processor for OMs, rent rolls, leases (planned)
+
+**Deals Agent Knowledge Base Created (`~/claude-agents/prompts/l7-deals.md`):**
+- L7 investment criteria (shallow-bay industrial, 20k-150k SF, NE US, 7-9.5% cap rates)
+- Return targets (15-20% IRR, 1.8-2.2x equity multiple)
+- Deal killer checklist
+- Pro forma framework
+- Due diligence checklist
+- Investment memo template
+
+**Deal Analysis Skill Created (`~/.claude/skills/deal-analysis/skill.md`):**
+- `/deal-analysis` - Interactive deal screening
+- `/deal-analysis quick` - Rapid go/no-go with minimal inputs
+- `/deal-analysis full` - Comprehensive analysis with pro forma
+
+**Supabase MCP Configured:**
+- Added `supabase-l7` HTTP MCP server to `~/.claude.json`
+- Uses OAuth method (browser-based, no PAT needed)
+- Restricted to L7 project: `donnmhbwhpjlmpnwgdqr`
+- Status: Pending authentication (restart Claude Code, then browser popup on first use)
+
+**Database Schema Reviewed:**
+- L7 data lives in `l7` schema with public views: `properties_l7`, `tenants_l7`, `leases_l7`, `units_l7`
+- Found 2 of 3 properties in migrations: '200' (200 East 2nd), '191' (191 East 2nd - development)
+- 261 Suburban Ave may be in live database only
 
 ---
 
@@ -466,7 +507,9 @@ Trigger (6am) → Get Projects  ─┐
 
 ### High Priority
 
-1. **Fix claude.l7-partners.com DNS** - Restore access and add Cloudflare Access protection
+1. **Activate Supabase MCP** - Restart Claude Code, authenticate via browser popup on first use
+2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
+3. **Fix claude.l7-partners.com DNS** - Restore access and add Cloudflare Access protection
    - Fix Cloudflare DNS for l7-partners.com (CNAME to apex-loadbalancer.netlify.com)
    - Verify Netlify DNS verification passes
    - Add claude as domain alias in Netlify
@@ -479,9 +522,12 @@ Trigger (6am) → Get Projects  ─┐
 
 ### Deferred
 
-5. **Portal/TMS backend work** - Payment history views, lease views, communication logs, clear heights field
-6. **Dashboard enhancements** - Filtering, search, detailed views
-7. **Consider Pi redundancy** - For n8n workflows
+1. **Build l7-investor-agent knowledge base** - Create prompts/l7-investor.md with investor relations guidance
+2. **Build l7-docs-agent knowledge base** - Create prompts/l7-docs.md for document processing
+3. **Create additional L7 skills** - /lease-summary, /investor-update, /market-report
+4. **Portal/TMS backend work** - Payment history views, lease views, communication logs, clear heights field
+5. **Dashboard enhancements** - Filtering, search, detailed views
+6. **Consider Pi redundancy** - For n8n workflows
 
 ---
 
@@ -541,6 +587,7 @@ Mac (Development)              Raspberry Pi (Production)
 | n8n-mcp | ✅ | ✅ | https://n8n.l7-partners.com |
 | gdrive-JGL | ✅ | ✅ | - |
 | gdrive-L7 | ✅ | ✅ | - |
+| supabase-l7 | Pending | - | https://mcp.supabase.com (OAuth) |
 
 ### MCP Gateway (Pi - Supergateway over SSE)
 | Server | Port | Local URL | Status |
