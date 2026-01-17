@@ -21,11 +21,175 @@ User → Cloudflare DNS → Netlify (for Lovable apps)
 - Discovered: claude.l7 should point to Netlify (same app as main site with subdomain routing)
 - Netlify shows "Pending DNS verification" - needs CNAME to `apex-loadbalancer.netlify.com`
 
-### Still Pending (DNS Fix)
-1. Fix Cloudflare DNS for l7-partners.com (CNAME to apex-loadbalancer.netlify.com)
-2. Add claude.l7-partners.com as domain alias in Netlify
-3. Add CNAME for claude pointing to Netlify
-4. Add Cloudflare Access policy for claude.l7-partners.com
+---
+
+## RESUME HERE: Fix claude.l7-partners.com (2026-01-17)
+
+### Background / What Happened
+- `claude.l7-partners.com` was WORKING but publicly accessible
+- User wanted to add Cloudflare Access protection (login gate)
+- We incorrectly tried to fix DNS, breaking things
+- The site is part of the l7partners-rewrite Lovable app (same codebase as l7-partners.com)
+- React app detects subdomain and shows ClaudeCatalog component at root
+
+### Current Broken State
+- `l7-partners.com` - May have DNS issues (Netlify shows "Pending DNS verification")
+- `claude.l7-partners.com` - DNS not configured, getting errors
+
+### Architecture Understanding
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Lovable (visual IDE) - https://lovable.dev/projects/...    │
+│     │                                                       │
+│     ├── Pushes code to → GitHub (jefflitt1/l7partners-rewrite)
+│     │                                                       │
+│     └── Auto-deploys to → Netlify                           │
+│            │                                                │
+│            │  Netlify subdomain: peaceful-meringue-0d4813.netlify.app
+│            │  Netlify load balancer: apex-loadbalancer.netlify.com
+│            │                                                │
+│  User → Cloudflare DNS → Netlify servers                    │
+│                                                             │
+│  For Pi services (n8n, etc.):                               │
+│  User → Cloudflare DNS → Cloudflare Tunnel → Raspberry Pi   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key URLs & Dashboards
+
+| Service | URL |
+|---------|-----|
+| Cloudflare DNS | https://dash.cloudflare.com → l7-partners.com → DNS |
+| Cloudflare Tunnels | https://one.dash.cloudflare.com → Networks → Tunnels |
+| Cloudflare Access | https://one.dash.cloudflare.com → Access → Applications |
+| Netlify Dashboard | https://app.netlify.com → L7 Partners → l7-partners.com project |
+| Lovable Project | https://lovable.dev/projects/0623dc91-517d-423f-8ad2-54a46bcdd8ac |
+
+### Netlify's DNS Requirements (from their dashboard)
+For apex domain (l7-partners.com):
+- **Recommended:** CNAME to `apex-loadbalancer.netlify.com`
+- **Fallback:** A record to `75.2.60.5`
+
+For subdomains (claude.l7-partners.com):
+- CNAME to `peaceful-meringue-0d4813.netlify.app`
+
+### What Cloudflare DNS Should Look Like (Target State)
+
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| CNAME | l7-partners.com (or @) | apex-loadbalancer.netlify.com | DNS only (gray) |
+| CNAME | www | peaceful-meringue-0d4813.netlify.app | DNS only (gray) |
+| CNAME | claude | peaceful-meringue-0d4813.netlify.app | DNS only (gray) |
+| CNAME | n8n | c5935af7-7aba-453a-888e-73059ac1489d.cfargotunnel.com | Proxied (orange) |
+| CNAME | admin | c5935af7-7aba-453a-888e-73059ac1489d.cfargotunnel.com | Proxied (orange) |
+| ... other tunnel subdomains ... | | |
+
+**Important:** Netlify domains need "DNS only" (gray cloud) for SSL verification to work.
+Tunnel domains need "Proxied" (orange cloud) for Cloudflare protection.
+
+### Step-by-Step Fix Instructions
+
+#### Step 1: Fix Main Domain (l7-partners.com)
+1. Go to Cloudflare DNS: https://dash.cloudflare.com → l7-partners.com → DNS
+2. **DELETE** any A records for `l7-partners.com` (there were two: 99.83.229.7 and 75.2.60.5)
+3. **ADD** new record:
+   - Type: CNAME
+   - Name: `@` (or `l7-partners.com`)
+   - Target: `apex-loadbalancer.netlify.com`
+   - Proxy status: DNS only (gray cloud)
+4. Wait 1-2 minutes
+5. Test: `dig @8.8.8.8 l7-partners.com +short` - should show Netlify IPs
+6. Test: Visit https://l7-partners.com in incognito
+
+#### Step 2: Verify Netlify DNS Verification
+1. Go to Netlify: https://app.netlify.com → l7-partners.com project → Domain settings
+2. Check if `l7-partners.com` shows "Live" instead of "Pending DNS verification"
+3. If still pending, wait a few more minutes for propagation
+
+#### Step 3: Add claude Subdomain in Netlify
+1. In Netlify Domain settings, click "Add domain alias"
+2. Enter: `claude.l7-partners.com`
+3. It should verify quickly (TXT record `_lovable.claude` already exists in Cloudflare)
+
+#### Step 4: Add claude DNS Record in Cloudflare
+1. Go to Cloudflare DNS
+2. **ADD** new record:
+   - Type: CNAME
+   - Name: `claude`
+   - Target: `peaceful-meringue-0d4813.netlify.app`
+   - Proxy status: DNS only (gray cloud)
+3. Wait 1-2 minutes
+4. Test: Visit https://claude.l7-partners.com in incognito
+5. Should show the Claude Catalog page
+
+#### Step 5: Add Cloudflare Access Protection
+1. Go to Cloudflare Zero Trust: https://one.dash.cloudflare.com
+2. Navigate: Access → Applications → Add an application
+3. Select: Self-hosted
+4. Configure:
+   - Application name: Claude Catalog
+   - Session duration: 24 hours (or preference)
+   - Application domain: `claude.l7-partners.com`
+5. Add policy:
+   - Policy name: Allow Jeff
+   - Action: Allow
+   - Include rule: Emails ending in `@yourdomain.com` OR specific email `your@email.com`
+6. Save
+
+#### Step 6: Test Everything
+1. https://l7-partners.com - Should load main site
+2. https://claude.l7-partners.com - Should show Cloudflare Access login, then Claude Catalog after auth
+3. https://n8n.l7-partners.com - Should still work (unchanged)
+
+### Troubleshooting
+
+**If main site still broken after Step 1:**
+- Flush local DNS: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`
+- Test with Google DNS: `dig @8.8.8.8 l7-partners.com +short`
+- Check Netlify dashboard for specific error messages
+
+**If claude subdomain shows "Site not found" from Netlify:**
+- Make sure Step 3 was completed (added as domain alias in Netlify)
+- Check Netlify Domain settings shows `claude.l7-partners.com` as verified
+
+**If Cloudflare Access not triggering:**
+- Make sure the application domain exactly matches `claude.l7-partners.com`
+- Check that DNS is set to "DNS only" (gray cloud) - Access works with both, but verify
+
+### Commands for Debugging
+```bash
+# Check what DNS returns
+dig @8.8.8.8 l7-partners.com +short
+dig @8.8.8.8 claude.l7-partners.com +short
+
+# Flush local DNS cache (Mac)
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+
+# Check nameservers
+whois l7-partners.com | grep -i "name server"
+
+# Test HTTP response
+curl -I https://l7-partners.com
+curl -I https://claude.l7-partners.com
+```
+
+### Current Cloudflare DNS Records (as of tonight)
+These are the tunnel subdomains that SHOULD remain unchanged:
+- admin → cfargotunnel.com (Proxied)
+- bot → cfargotunnel.com (Proxied)
+- kibana → cfargotunnel.com (Proxied)
+- kuma → cfargotunnel.com (Proxied)
+- metabase → cfargotunnel.com (Proxied)
+- n8n → cfargotunnel.com (Proxied)
+- ssh → cfargotunnel.com (Proxied)
+- supabase → cfargotunnel.com (Proxied)
+- vnc → cfargotunnel.com (Proxied)
+- webhooks → cfargotunnel.com (Proxied)
+
+These need to be fixed:
+- l7-partners.com → CNAME to apex-loadbalancer.netlify.com (DNS only)
+- www → CNAME to peaceful-meringue-0d4813.netlify.app (DNS only) [may already be correct]
+- claude → CNAME to peaceful-meringue-0d4813.netlify.app (DNS only) [needs to be added]
 
 ---
 
