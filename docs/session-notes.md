@@ -1,6 +1,31 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 8)
+**Last Updated:** 2026-01-16 (Session 9)
 **Resume context for next session**
+
+---
+
+## Session Summary: 2026-01-16 (Session 9)
+
+### DNS/Hosting Architecture Clarified
+Documented relationship between services for L7 Partners:
+```
+Lovable (IDE) → GitHub (code) → Netlify (hosting)
+                                    ↓
+User → Cloudflare DNS → Netlify (for Lovable apps)
+                     → Cloudflare Tunnel → Pi (for n8n, etc.)
+```
+
+### claude.l7-partners.com Issues Investigated
+- Original problem: Site was accessible but needed Cloudflare Access protection
+- Incorrectly attempted DNS fixes which broke things
+- Discovered: claude.l7 should point to Netlify (same app as main site with subdomain routing)
+- Netlify shows "Pending DNS verification" - needs CNAME to `apex-loadbalancer.netlify.com`
+
+### Still Pending (DNS Fix)
+1. Fix Cloudflare DNS for l7-partners.com (CNAME to apex-loadbalancer.netlify.com)
+2. Add claude.l7-partners.com as domain alias in Netlify
+3. Add CNAME for claude pointing to Netlify
+4. Add Cloudflare Access policy for claude.l7-partners.com
 
 ---
 
@@ -208,11 +233,16 @@ Trigger (6am) → Get Projects  ─┐
 
 ### High Priority
 
-1. **Test Daily Digest workflow** - Run test to confirm end-to-end execution and email delivery
-2. **Verify n8n workflow syncs new entity types** - Check if agents/skills sync to Supabase
-2. **Add `claude_skills` table to Supabase** - If not auto-created by workflow
-3. **Update Lovable dashboard** - Display agents and skills sections
-4. **Submit Lovable prompt** - Hero section and WhyChoose card visual enhancements (ready in conversation)
+1. **Fix claude.l7-partners.com DNS** - Restore access and add Cloudflare Access protection
+   - Fix Cloudflare DNS for l7-partners.com (CNAME to apex-loadbalancer.netlify.com)
+   - Verify Netlify DNS verification passes
+   - Add claude as domain alias in Netlify
+   - Add CNAME for claude pointing to Netlify subdomain
+   - Add Cloudflare Access policy
+2. **Test Daily Digest workflow** - Run test to confirm end-to-end execution and email delivery
+3. **Verify n8n workflow syncs new entity types** - Check if agents/skills sync to Supabase
+4. **Add `claude_skills` table to Supabase** - If not auto-created by workflow
+5. **Update Lovable dashboard** - Display agents and skills sections
 
 ### Deferred
 
