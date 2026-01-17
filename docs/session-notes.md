@@ -1,6 +1,53 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 6)
+**Last Updated:** 2026-01-16 (Session 7)
 **Resume context for next session**
+
+---
+
+## Session Summary: 2026-01-16 (Session 7)
+
+### MCP Gateway Installed on Pi
+- Installed Supergateway to expose MCP servers over HTTP/SSE
+- 7 MCP servers running in Docker containers
+- Location: `~/mcp-gateway/docker-compose.yml`
+
+### MCP Servers Running
+
+| Service | Port | Endpoint | Status |
+|---------|------|----------|--------|
+| Filesystem | 8808 | `http://localhost:8808/sse` | ✅ Working |
+| Memory | 8810 | `http://localhost:8810/sse` | ✅ Working |
+| GitHub | 8812 | `http://localhost:8812/sse` | ✅ Working |
+| Brave Search | 8813 | `http://localhost:8813/sse` | Needs API key |
+| Puppeteer | 8814 | `http://localhost:8814/sse` | ✅ Working |
+| Slack | 8815 | `http://localhost:8815/sse` | Needs token |
+| PostgreSQL | 8816 | `http://localhost:8816/sse` | Needs connection URL |
+
+### Files Created on Pi
+| File | Purpose |
+|------|---------|
+| `~/mcp-gateway/docker-compose.yml` | 7 MCP server definitions |
+| `~/mcp-gateway/.env.example` | Template for API keys |
+
+### Still Pending
+1. **Cloudflare tunnel routes** - Add `mcp-fs.l7-partners.com` etc. in Cloudflare dashboard
+2. **n8n workflow for MCP** - n8n API blocked by Cloudflare Access (needs service token)
+3. **API keys** - Configure Brave, Slack, PostgreSQL credentials in `.env`
+
+### Management Commands
+```bash
+# SSH to Pi (use local when on same network)
+ssh pi-local
+
+# View MCP logs
+cd ~/mcp-gateway && docker compose logs -f
+
+# Restart all MCP servers
+cd ~/mcp-gateway && docker compose restart
+
+# Test endpoint
+curl -s http://localhost:8808/sse -H 'Accept: text/event-stream' | head -2
+```
 
 ---
 
@@ -154,17 +201,20 @@ Mac (Development)              Raspberry Pi (Production)
 ├── Claude Code CLI            ├── Claude Code CLI
 ├── ~/.claude/skills/          ├── n8n (Docker) - workflows
 ├── ~/claude-agents/ (repo)    ├── ~/claude-hub/ (auto-syncs)
-└── Push to GitHub ──────────► └── Cron pulls every 5 min
-         │
+├── MCP: n8n, gdrive           ├── MCP Gateway (ports 8808-8816)
+└── Push to GitHub ──────────► │   ├── Filesystem, Memory, GitHub
+         │                     │   ├── Puppeteer, Brave, Slack
+         │                     │   └── PostgreSQL
+         │                     └── Cron pulls every 5 min
          ▼
     GitHub Webhook
          │
          ▼
     n8n Workflow (webhooks.l7-partners.com)
-         │
-         ▼
-    Supabase (donnmhbwhpjlmpnwgdqr.supabase.co)
-         │
+         │                              │
+         ▼                              ▼
+    Supabase                    MCP Gateway (local)
+         │                      n8n → localhost:880x/sse
          ▼
     Lovable Dashboard (claude.l7-partners.com)
 ```
@@ -194,11 +244,23 @@ Mac (Development)              Raspberry Pi (Production)
 
 ## MCP Servers
 
+### Claude Desktop / Claude Code MCP
 | Server | Mac | Pi | URL |
 |--------|-----|-----|-----|
 | n8n-mcp | ✅ | ✅ | https://n8n.l7-partners.com |
 | gdrive-JGL | ✅ | ✅ | - |
 | gdrive-L7 | ✅ | ✅ | - |
+
+### MCP Gateway (Pi - Supergateway over SSE)
+| Server | Port | Local URL | Status |
+|--------|------|-----------|--------|
+| Filesystem | 8808 | http://localhost:8808/sse | ✅ |
+| Memory | 8810 | http://localhost:8810/sse | ✅ |
+| GitHub | 8812 | http://localhost:8812/sse | ✅ |
+| Brave | 8813 | http://localhost:8813/sse | Needs key |
+| Puppeteer | 8814 | http://localhost:8814/sse | ✅ |
+| Slack | 8815 | http://localhost:8815/sse | Needs token |
+| PostgreSQL | 8816 | http://localhost:8816/sse | Needs URL |
 
 ---
 
@@ -227,6 +289,12 @@ ssh pi          # Remote (cloudflared)
 
 # Check Pi services
 ssh pi-local "pm2 status; tail -5 ~/claude-hub/sync.log"
+
+# MCP Gateway management
+ssh pi-local "cd ~/mcp-gateway && docker compose ps"           # Status
+ssh pi-local "cd ~/mcp-gateway && docker compose logs -f"      # Logs
+ssh pi-local "cd ~/mcp-gateway && docker compose restart"      # Restart all
+ssh pi-local "curl -s http://localhost:8808/sse | head -2"     # Test endpoint
 
 # Add webhook to a repo
 gh api repos/jefflitt1/REPO_NAME/hooks --method POST -f name='web' -F active=true -f 'events[]=push' -f 'config[url]=https://webhooks.l7-partners.com/webhook/github-project-sync' -f 'config[content_type]=json'
