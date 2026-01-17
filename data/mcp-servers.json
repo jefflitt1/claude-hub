@@ -43,5 +43,23 @@
       "Read documents"
     ],
     "usedBy": ["claude-hub"]
+  },
+  {
+    "id": "supabase-l7",
+    "name": "Supabase (L7 Partners)",
+    "url": "https://mcp.supabase.com/mcp?project_ref=donnmhbwhpjlmpnwgdqr",
+    "purpose": "Direct database access to L7 Partners Supabase project",
+    "platforms": {
+      "mac": "pending-auth",
+      "pi": "not-configured"
+    },
+    "capabilities": [
+      "Query database tables and views",
+      "Execute SQL queries",
+      "Access L7 properties, tenants, leases, units",
+      "Read property financials",
+      "Manage Claude Hub data"
+    ],
+    "usedBy": ["l7-partners", "claude-hub"]
   }
 ]

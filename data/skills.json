@@ -1,5 +1,21 @@
 [
   {
+    "id": "deal-analysis",
+    "name": "Deal Analysis",
+    "description": "Quick commercial real estate deal screening and analysis for L7 Partners acquisitions",
+    "trigger": "/deal-analysis",
+    "location": "~/.claude/skills/deal-analysis/skill.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/deal-analysis", "description": "Start interactive deal analysis" },
+      { "command": "/deal-analysis quick", "description": "Rapid screening with minimal inputs" },
+      { "command": "/deal-analysis full", "description": "Comprehensive analysis with pro forma" }
+    ],
+    "project": "l7-partners",
+    "domain": "acquisitions",
+    "status": "active"
+  },
+  {
     "id": "recap",
     "name": "Session Recap",
     "description": "Auto-detect session accomplishments and save to session logs",

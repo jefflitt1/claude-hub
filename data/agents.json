@@ -60,6 +60,7 @@
     "type": "consultant",
     "status": "active",
     "trigger": "context-aware",
+    "domain": "property-management",
     "capabilities": [
       "Industrial real estate market insights",
       "Tenant portal feature recommendations",
@@ -71,6 +72,72 @@
     "project": "l7-partners",
     "skills": [],
     "persona": "Experienced commercial real estate professional specializing in shallow-bay industrial properties in the Northeast"
+  },
+  {
+    "id": "l7-deals-agent",
+    "name": "L7 Deals & Acquisitions Agent",
+    "description": "Deal analysis specialist - underwriting, pro formas, comps analysis, investment thesis development",
+    "type": "consultant",
+    "status": "active",
+    "trigger": "context-aware",
+    "domain": "acquisitions",
+    "capabilities": [
+      "Quick deal screening and go/no-go analysis",
+      "Pro forma modeling and cash flow projections",
+      "Cap rate and valuation analysis",
+      "Comparable sales research",
+      "Risk assessment and due diligence checklists",
+      "Investment memo drafting",
+      "Rent roll analysis",
+      "Market rent comparisons",
+      "Return metrics (IRR, cash-on-cash, equity multiple)"
+    ],
+    "project": "l7-partners",
+    "skills": ["deal-analysis"],
+    "persona": "Senior acquisitions analyst with 15+ years in commercial real estate investments, specializing in industrial assets. Expert in financial modeling, market analysis, and investment thesis development.",
+    "knowledgeFile": "~/claude-agents/prompts/l7-deals.md"
+  },
+  {
+    "id": "l7-investor-agent",
+    "name": "L7 Investor Relations Agent",
+    "description": "Investor communications specialist - quarterly reports, distribution notices, investor updates",
+    "type": "consultant",
+    "status": "active",
+    "trigger": "context-aware",
+    "domain": "investor-relations",
+    "capabilities": [
+      "Quarterly investor report drafting",
+      "Distribution calculation and notices",
+      "Property performance summaries",
+      "Market update communications",
+      "Capital call documentation",
+      "Investor Q&A responses",
+      "Annual meeting materials"
+    ],
+    "project": "l7-partners",
+    "skills": ["investor-update"],
+    "persona": "Investor relations professional with deep understanding of real estate syndications, fund structures, and institutional investor expectations."
+  },
+  {
+    "id": "l7-docs-agent",
+    "name": "L7 Document Processing Agent",
+    "description": "Document intelligence - extract key data from leases, LOIs, financials, and legal documents",
+    "type": "processor",
+    "status": "active",
+    "trigger": "context-aware",
+    "domain": "operations",
+    "capabilities": [
+      "Lease abstraction and key term extraction",
+      "LOI analysis and comparison",
+      "Financial statement data extraction",
+      "Due diligence document review",
+      "Rent roll parsing and validation",
+      "Insurance certificate verification",
+      "Estoppel certificate review"
+    ],
+    "project": "l7-partners",
+    "skills": ["lease-summary"],
+    "persona": "Commercial real estate paralegal with expertise in lease administration, due diligence, and document management."
   },
   {
     "id": "recap-agent",

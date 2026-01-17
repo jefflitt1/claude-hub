@@ -1,34 +1,74 @@
 [
   {
     "id": "l7-partners",
-    "name": "L7 Partners Platform",
-    "description": "Full-stack property management platform with TMS, tenant portal, and AI assistant",
-    "type": "app",
-    "category": "app",
+    "name": "L7 Partners",
+    "description": "Commercial real estate investment and management company - acquisitions, asset management, investor relations, and property operations",
+    "type": "business",
+    "category": "real-estate",
     "status": "active",
     "created": "2025-01-01",
-    "updated": "2026-01-16",
+    "updated": "2026-01-17",
     "repo": "https://github.com/jefflitt1/l7partners-rewrite",
     "hosting": {
       "domain": "l7-partners.com",
       "server": "Lovable/Cloudflare"
     },
-    "tags": ["property-management", "ai-chatbot", "tenant-portal", "supabase"],
+    "tags": ["real-estate", "industrial", "property-management", "investments", "acquisitions"],
+    "domains": {
+      "property-management": {
+        "name": "Property Management",
+        "description": "Day-to-day operations, tenant relations, maintenance",
+        "status": "active",
+        "apps": ["l7-partners.com/tms", "l7-partners.com/portal"]
+      },
+      "acquisitions": {
+        "name": "Acquisitions & Deals",
+        "description": "Deal sourcing, underwriting, due diligence, closings",
+        "status": "building",
+        "apps": []
+      },
+      "investor-relations": {
+        "name": "Investor Relations",
+        "description": "Investor communications, quarterly reports, distributions",
+        "status": "planned",
+        "apps": []
+      },
+      "asset-management": {
+        "name": "Asset Management",
+        "description": "Property performance optimization, capex planning, valuations",
+        "status": "planned",
+        "apps": []
+      },
+      "leasing": {
+        "name": "Leasing & Brokerage",
+        "description": "Tenant sourcing, lease negotiations, broker relationships",
+        "status": "planned",
+        "apps": []
+      }
+    },
+    "integrations": {
+      "quickbooks": { "status": "planned", "purpose": "Financial tracking, invoicing" },
+      "google-drive": { "status": "active", "purpose": "Document storage", "mcpServer": "gdrive-L7" },
+      "google-sheets": { "status": "active", "purpose": "Pro formas, analysis" },
+      "costar": { "status": "planned", "purpose": "Market data, comps" }
+    },
     "sections": [
       "TMS (Tenant Management System)",
       "Tenant Portal",
       "Admin Dashboard",
       "AI Chatbot (WebhookChatbot)",
       "Document Management",
-      "Maintenance Requests"
+      "Deal Analysis Tools"
     ],
     "connections": {
-      "prompts": [],
-      "workflows": ["l7-chatbot-workflow"],
-      "mcpServers": [],
-      "agents": ["l7-chatbot-agent"],
+      "prompts": ["l7-deals-prompt"],
+      "workflows": ["l7-chatbot-workflow", "lease-expiration-alerts", "investor-report-automation"],
+      "mcpServers": ["gdrive-L7", "n8n-mcp"],
+      "agents": ["l7-chatbot-agent", "l7-codebase-agent", "l7-realestate-agent", "l7-designer-agent", "l7-deals-agent", "l7-investor-agent", "l7-docs-agent"],
       "external": [
-        { "name": "Lovable Project", "url": "https://lovable.dev/projects/0623dc91-517d-423f-8ad2-54a46bcdd8ac", "type": "builder" }
+        { "name": "Lovable Project", "url": "https://lovable.dev/projects/0623dc91-517d-423f-8ad2-54a46bcdd8ac", "type": "builder" },
+        { "name": "QuickBooks", "url": "https://quickbooks.intuit.com", "type": "integration" },
+        { "name": "CoStar", "url": "https://www.costar.com", "type": "data-source" }
       ]
     }
   },
