@@ -204,6 +204,116 @@
       gap: 0.25rem;
     }
 
+    /* Agent card styles */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+
+    .agent-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .agent-card:hover { border-color: #58a6ff; }
+
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+
+    .agent-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f0f6fc;
+    }
+
+    .agent-type {
+      font-size: 0.7rem;
+      padding: 0.125rem 0.4rem;
+      border-radius: 10px;
+      background: #30363d;
+      color: #8b949e;
+    }
+
+    .agent-type.codebase { background: #238636; color: #3fb950; }
+    .agent-type.consultant { background: #1f6feb33; color: #58a6ff; }
+    .agent-type.webhook-based { background: #9e6a03; color: #d29922; }
+    .agent-type.skill-based { background: #6e40c9; color: #a371f7; }
+    .agent-type.knowledge-based { background: #da3633; color: #f85149; }
+    .agent-type.processor { background: #1f6feb33; color: #79c0ff; }
+    .agent-type.built-in { background: #30363d; color: #c9d1d9; }
+
+    .agent-desc {
+      font-size: 0.8rem;
+      color: #8b949e;
+      margin-bottom: 0.75rem;
+    }
+
+    .agent-caps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .agent-cap {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      background: #21262d;
+      border-radius: 3px;
+      color: #8b949e;
+    }
+
+    /* Skill card styles */
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .skill-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .skill-card:hover { border-color: #a371f7; }
+
+    .skill-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+    }
+
+    .skill-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #f0f6fc;
+    }
+
+    .skill-trigger {
+      font-size: 0.7rem;
+      font-family: monospace;
+      padding: 0.15rem 0.4rem;
+      background: #6e40c933;
+      border-radius: 4px;
+      color: #a371f7;
+    }
+
+    .skill-desc {
+      font-size: 0.75rem;
+      color: #8b949e;
+    }
+
     footer {
       margin-top: 3rem;
       padding-top: 1rem;
@@ -238,6 +348,20 @@
     </section>
 
     <section class="section">
+      <h2 class="section-title">Agents</h2>
+      <div class="agent-grid" id="agents-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Skills</h2>
+      <div class="skill-grid" id="skills-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <section class="section">
       <h2 class="section-title">MCP Servers</h2>
       <div class="mcp-grid" id="mcp-grid">
         <!-- Populated by JS -->
@@ -252,15 +376,21 @@
 
   <script>
     async function loadData() {
-      const [projectsRes, graphRes] = await Promise.all([
+      const [projectsRes, graphRes, agentsRes, skillsRes] = await Promise.all([
         fetch('/api/projects'),
-        fetch('/api/graph')
+        fetch('/api/graph'),
+        fetch('/api/agents'),
+        fetch('/api/skills')
       ]);
 
       const projects = await projectsRes.json();
       const graph = await graphRes.json();
+      const agents = await agentsRes.json();
+      const skills = await skillsRes.json();
 
       renderProjects(projects);
+      renderAgents(agents);
+      renderSkills(skills);
       renderMcpServers(graph.nodes.mcpServers);
     }
 
@@ -327,6 +457,38 @@
               <span>Status: ${p.status}</span>
             </div>
           </div>
+        </div>
+      `).join('');
+    }
+
+    function renderAgents(agents) {
+      const grid = document.getElementById('agents-grid');
+      grid.innerHTML = agents.map(a => `
+        <div class="agent-card">
+          <div class="agent-header">
+            <div class="agent-name">${a.name}</div>
+            <span class="agent-type ${a.type}">${a.type}</span>
+          </div>
+          <div class="agent-desc">${a.description}</div>
+          ${a.capabilities && a.capabilities.length > 0 ? `
+            <div class="agent-caps">
+              ${a.capabilities.slice(0, 4).map(c => `<span class="agent-cap">${c}</span>`).join('')}
+              ${a.capabilities.length > 4 ? `<span class="agent-cap">+${a.capabilities.length - 4} more</span>` : ''}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderSkills(skills) {
+      const grid = document.getElementById('skills-grid');
+      grid.innerHTML = skills.map(s => `
+        <div class="skill-card">
+          <div class="skill-header">
+            <div class="skill-name">${s.name}</div>
+            ${s.trigger && s.trigger !== 'context-aware' ? `<span class="skill-trigger">${s.trigger}</span>` : ''}
+          </div>
+          <div class="skill-desc">${s.description}</div>
         </div>
       `).join('');
     }

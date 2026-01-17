@@ -54,15 +54,29 @@ app.get('/api/workflows', (req, res) => {
   res.json(workflows);
 });
 
+// API: Get agents
+app.get('/api/agents', (req, res) => {
+  const agents = loadJSON('agents.json') || [];
+  res.json(agents);
+});
+
+// API: Get skills
+app.get('/api/skills', (req, res) => {
+  const skills = loadJSON('skills.json') || [];
+  res.json(skills);
+});
+
 // API: Get all connections (for graph view)
 app.get('/api/graph', (req, res) => {
   const projects = loadJSON('projects.json') || [];
   const prompts = loadJSON('prompts.json') || [];
   const mcpServers = loadJSON('mcp-servers.json') || [];
   const workflows = loadJSON('workflows.json') || [];
+  const agents = loadJSON('agents.json') || [];
+  const skills = loadJSON('skills.json') || [];
 
   res.json({
-    nodes: { projects, prompts, mcpServers, workflows },
+    nodes: { projects, prompts, mcpServers, workflows, agents, skills },
     // Connections are defined within each entity
   });
 });

@@ -2,12 +2,14 @@
   {
     "id": "github-supabase-sync",
     "name": "GitHub → Supabase Project Sync",
-    "description": "Syncs project data from GitHub repos to Supabase when pushed",
+    "description": "Syncs project data, agents, and skills from claude-hub repo to Supabase on git push",
     "platform": "n8n",
+    "n8nWorkflowId": "KQ2bleG4vj728I4f",
     "status": "active",
     "triggers": ["webhook", "github-push"],
     "webhookUrl": "https://webhooks.l7-partners.com/webhook/github-project-sync",
-    "project": "claude-hub"
+    "project": "claude-hub",
+    "syncs": ["claude_projects", "claude_agents", "claude_skills"]
   },
   {
     "id": "l7-chatbot-workflow",
