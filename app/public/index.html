@@ -314,6 +314,120 @@
       color: #8b949e;
     }
 
+    /* Workflow card styles */
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .workflow-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .workflow-card:hover { border-color: #d29922; }
+
+    .workflow-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+    }
+
+    .workflow-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #f0f6fc;
+    }
+
+    .workflow-status {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 10px;
+      background: #238636;
+      color: #3fb950;
+    }
+
+    .workflow-status.inactive {
+      background: #30363d;
+      color: #8b949e;
+    }
+
+    .workflow-desc {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-bottom: 0.5rem;
+    }
+
+    .workflow-triggers {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .workflow-trigger {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      background: #9e6a0333;
+      border-radius: 3px;
+      color: #d29922;
+    }
+
+    /* Prompt card styles */
+    .prompt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .prompt-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .prompt-card:hover { border-color: #79c0ff; }
+
+    .prompt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.35rem;
+    }
+
+    .prompt-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #f0f6fc;
+    }
+
+    .prompt-type {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 10px;
+      background: #1f6feb33;
+      color: #79c0ff;
+    }
+
+    .prompt-type.system { background: #6e40c933; color: #a371f7; }
+
+    .prompt-desc {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-bottom: 0.5rem;
+    }
+
+    .prompt-file {
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: #58a6ff;
+    }
+
     footer {
       margin-top: 3rem;
       padding-top: 1rem;
@@ -362,6 +476,20 @@
     </section>
 
     <section class="section">
+      <h2 class="section-title">Workflows</h2>
+      <div class="workflow-grid" id="workflows-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Prompts</h2>
+      <div class="prompt-grid" id="prompts-grid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <section class="section">
       <h2 class="section-title">MCP Servers</h2>
       <div class="mcp-grid" id="mcp-grid">
         <!-- Populated by JS -->
@@ -376,21 +504,27 @@
 
   <script>
     async function loadData() {
-      const [projectsRes, graphRes, agentsRes, skillsRes] = await Promise.all([
+      const [projectsRes, graphRes, agentsRes, skillsRes, workflowsRes, promptsRes] = await Promise.all([
         fetch('/api/projects'),
         fetch('/api/graph'),
         fetch('/api/agents'),
-        fetch('/api/skills')
+        fetch('/api/skills'),
+        fetch('/api/workflows'),
+        fetch('/api/prompts')
       ]);
 
       const projects = await projectsRes.json();
       const graph = await graphRes.json();
       const agents = await agentsRes.json();
       const skills = await skillsRes.json();
+      const workflows = await workflowsRes.json();
+      const prompts = await promptsRes.json();
 
       renderProjects(projects);
       renderAgents(agents);
       renderSkills(skills);
+      renderWorkflows(workflows);
+      renderPrompts(prompts);
       renderMcpServers(graph.nodes.mcpServers);
     }
 
@@ -489,6 +623,38 @@
             ${s.trigger && s.trigger !== 'context-aware' ? `<span class="skill-trigger">${s.trigger}</span>` : ''}
           </div>
           <div class="skill-desc">${s.description}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderWorkflows(workflows) {
+      const grid = document.getElementById('workflows-grid');
+      grid.innerHTML = workflows.map(w => `
+        <div class="workflow-card">
+          <div class="workflow-header">
+            <div class="workflow-name">${w.name}</div>
+            <span class="workflow-status ${w.status !== 'active' ? 'inactive' : ''}">${w.status}</span>
+          </div>
+          <div class="workflow-desc">${w.description}</div>
+          ${w.triggers && w.triggers.length > 0 ? `
+            <div class="workflow-triggers">
+              ${w.triggers.map(t => `<span class="workflow-trigger">${t}</span>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderPrompts(prompts) {
+      const grid = document.getElementById('prompts-grid');
+      grid.innerHTML = prompts.map(p => `
+        <div class="prompt-card">
+          <div class="prompt-header">
+            <div class="prompt-name">${p.name}</div>
+            <span class="prompt-type ${p.type}">${p.type}</span>
+          </div>
+          <div class="prompt-desc">${p.description}</div>
+          ${p.file ? `<div class="prompt-file">${p.file}</div>` : ''}
         </div>
       `).join('');
     }

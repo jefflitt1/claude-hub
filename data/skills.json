@@ -1,5 +1,33 @@
 [
   {
+    "id": "context-loader",
+    "name": "Context Loader",
+    "description": "Load relevant context from recent sessions and memory graph at session start",
+    "trigger": "/context",
+    "location": "~/.claude/skills/context-loader/SKILL.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/context", "description": "Load context for current project" },
+      { "command": "/context all", "description": "Load all recent context across projects" },
+      { "command": "/context [project]", "description": "Load context for specific project" }
+    ],
+    "project": "claude-hub",
+    "status": "active"
+  },
+  {
+    "id": "done",
+    "name": "Done",
+    "description": "End-of-session command. Saves recap, merges to session-notes, commits, and confirms ready to exit",
+    "trigger": "/done",
+    "location": "~/.claude/skills/done/SKILL.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/done", "description": "Complete session, save recap, merge, commit, and prepare to exit" }
+    ],
+    "project": "claude-hub",
+    "status": "active"
+  },
+  {
     "id": "deal-analysis",
     "name": "Deal Analysis",
     "description": "Quick commercial real estate deal screening and analysis for L7 Partners acquisitions",
