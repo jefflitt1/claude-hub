@@ -1,7 +1,24 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-16 (Session 11)
+**Last Updated:** 2026-01-17 (Session 12)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 12)
+
+### Consistent Formatting for Apple Notes and Email Digest
+Unified the markdown formatting between Apple Notes sync and n8n email digest:
+- Found Apple Notes formatting in `.git/hooks/post-commit` (pandoc GFM to HTML)
+- Updated n8n "Daily Agent Status Digest" workflow Claude API prompt
+- Both outputs now use consistent formatting rules:
+  - `#` main, `##` sections, `###` subsections
+  - `---` horizontal rules between sections
+  - `**Bold:**` for inline labels
+  - `-` dash for bullets (not asterisks)
+  - No emojis, concise one-line bullets
+
+**Workflow updated:** Daily Agent Status Digest (ID: 2fwvrmN2I3PDcXRz)
 
 ---
 
