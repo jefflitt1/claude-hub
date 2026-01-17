@@ -92,5 +92,35 @@
     "commands": [],
     "project": "claude-hub",
     "status": "active"
+  },
+  {
+    "id": "investor-update",
+    "name": "Investor Update",
+    "description": "Generate quarterly investor reports, distribution notices, and LP communications for L7 Partners",
+    "trigger": "context-aware",
+    "location": "planned",
+    "scope": "personal",
+    "commands": [
+      { "command": "/investor-update quarterly", "description": "Generate quarterly investor report" },
+      { "command": "/investor-update distribution", "description": "Create distribution notice" }
+    ],
+    "project": "l7-partners",
+    "domain": "investor-relations",
+    "status": "planned"
+  },
+  {
+    "id": "lease-summary",
+    "name": "Lease Summary",
+    "description": "Extract and summarize key terms from commercial lease documents for L7 Partners",
+    "trigger": "context-aware",
+    "location": "planned",
+    "scope": "personal",
+    "commands": [
+      { "command": "/lease-summary", "description": "Analyze lease document and extract key terms" },
+      { "command": "/lease-summary compare", "description": "Compare multiple leases side-by-side" }
+    ],
+    "project": "l7-partners",
+    "domain": "operations",
+    "status": "planned"
   }
 ]

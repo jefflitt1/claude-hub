@@ -1,7 +1,39 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 19)
+**Last Updated:** 2026-01-17 (Session 20)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 20)
+
+### Best Practices Review & Security Hardening
+
+**Security Fixes:**
+- Added `escapeHtml()` function to sanitize all template literals (XSS prevention)
+- All render functions now escape user-controlled data before DOM insertion
+
+**Error Handling Improvements:**
+- Replaced `Promise.all` with `Promise.allSettled` - individual API failures don't crash dashboard
+- Added try-catch wrapper around JSON file loading with structured error logging
+- Added global Express error handler and 404 handler
+
+**UX Improvements:**
+- Added loading spinner CSS and states while data loads
+- Error states displayed in individual sections if API calls fail
+
+**Server Improvements:**
+- Added request logging middleware (method, path, status, duration)
+- Structured JSON logging via `log()` utility function
+- Warnings logged for missing files, errors for parse failures
+
+**Documentation:**
+- Created comprehensive `README.md` with architecture, API docs, data schemas
+- Created `docs/SECURITY.md` documenting webhook URL considerations
+
+**Data Fixes:**
+- Fixed projects.json prompt reference (l7-deals-prompt → l7-deals, l7-knowledge)
+- Added missing skills to skills.json (investor-update, lease-summary) with status: planned
 
 ---
 

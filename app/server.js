@@ -5,19 +5,47 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Simple logging utility
+function log(level, message, data = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = { timestamp, level, message, ...data };
+  console.log(JSON.stringify(logEntry));
+}
+
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    log('info', 'request', {
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      duration: Date.now() - start
+    });
+  });
+  next();
+});
 
 // Load data
 const dataPath = path.join(__dirname, '..', 'data');
 
 function loadJSON(filename) {
   const filePath = path.join(dataPath, filename);
-  if (fs.existsSync(filePath)) {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  try {
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(content);
+    }
+    log('warn', 'file_not_found', { filename });
+    return null;
+  } catch (error) {
+    log('error', 'json_parse_error', { filename, error: error.message });
+    return null;
   }
-  return null;
 }
 
 // API: Get all projects
@@ -107,6 +135,22 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// 404 handler
+app.use((req, res) => {
+  log('warn', 'not_found', { path: req.path });
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  log('error', 'unhandled_error', {
+    path: req.path,
+    error: err.message,
+    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+  });
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 app.listen(PORT, () => {
-  console.log(`Claude Hub running at http://localhost:${PORT}`);
+  log('info', 'server_started', { port: PORT, url: `http://localhost:${PORT}` });
 });

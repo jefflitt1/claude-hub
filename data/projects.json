@@ -53,7 +53,7 @@
       "costar": { "status": "planned", "purpose": "Market data, comps" }
     },
     "connections": {
-      "prompts": ["l7-deals-prompt"],
+      "prompts": ["l7-deals", "l7-knowledge"],
       "workflows": ["l7-chatbot-workflow", "lease-expiration-alerts", "investor-report-automation"],
       "mcpServers": ["gdrive-L7", "n8n-mcp"],
       "agents": ["l7-chatbot-agent", "l7-realestate-agent", "l7-deals-agent", "l7-investor-agent"],

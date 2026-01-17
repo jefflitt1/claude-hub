@@ -436,6 +436,38 @@
       color: #8b949e;
       text-align: center;
     }
+
+    /* Loading states */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: #8b949e;
+    }
+
+    .loading-spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 0.75rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      padding: 1rem;
+      background: #da363333;
+      border: 1px solid #da3633;
+      border-radius: 6px;
+      color: #f85149;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 <body>
@@ -503,42 +535,103 @@
   </div>
 
   <script>
+    // XSS prevention - escape HTML entities
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Show loading state in a grid
+    function showLoading(gridId) {
+      const grid = document.getElementById(gridId);
+      if (grid) {
+        grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading...</div>';
+      }
+    }
+
+    // Show error state in a grid
+    function showError(gridId, message) {
+      const grid = document.getElementById(gridId);
+      if (grid) {
+        grid.innerHTML = `<div class="error-message">Failed to load: ${escapeHtml(message)}</div>`;
+      }
+    }
+
     async function loadData() {
-      const [projectsRes, graphRes, agentsRes, skillsRes, workflowsRes, promptsRes] = await Promise.all([
-        fetch('/api/projects'),
-        fetch('/api/graph'),
-        fetch('/api/agents'),
-        fetch('/api/skills'),
-        fetch('/api/workflows'),
-        fetch('/api/prompts')
+      // Show loading states
+      showLoading('projects-grid');
+      showLoading('agents-grid');
+      showLoading('skills-grid');
+      showLoading('workflows-grid');
+      showLoading('prompts-grid');
+      showLoading('mcp-grid');
+
+      // Use Promise.allSettled for error boundaries - individual failures won't break everything
+      const results = await Promise.allSettled([
+        fetch('/api/projects').then(r => r.json()),
+        fetch('/api/graph').then(r => r.json()),
+        fetch('/api/agents').then(r => r.json()),
+        fetch('/api/skills').then(r => r.json()),
+        fetch('/api/workflows').then(r => r.json()),
+        fetch('/api/prompts').then(r => r.json())
       ]);
 
-      const projects = await projectsRes.json();
-      const graph = await graphRes.json();
-      const agents = await agentsRes.json();
-      const skills = await skillsRes.json();
-      const workflows = await workflowsRes.json();
-      const prompts = await promptsRes.json();
+      const [projectsResult, graphResult, agentsResult, skillsResult, workflowsResult, promptsResult] = results;
 
-      renderProjects(projects);
-      renderAgents(agents);
-      renderSkills(skills);
-      renderWorkflows(workflows);
-      renderPrompts(prompts);
-      renderMcpServers(graph.nodes.mcpServers);
+      // Render each section independently - failures don't cascade
+      if (projectsResult.status === 'fulfilled') {
+        renderProjects(projectsResult.value);
+      } else {
+        showError('projects-grid', projectsResult.reason?.message || 'Unknown error');
+      }
+
+      if (agentsResult.status === 'fulfilled') {
+        renderAgents(agentsResult.value);
+      } else {
+        showError('agents-grid', agentsResult.reason?.message || 'Unknown error');
+      }
+
+      if (skillsResult.status === 'fulfilled') {
+        renderSkills(skillsResult.value);
+      } else {
+        showError('skills-grid', skillsResult.reason?.message || 'Unknown error');
+      }
+
+      if (workflowsResult.status === 'fulfilled') {
+        renderWorkflows(workflowsResult.value);
+      } else {
+        showError('workflows-grid', workflowsResult.reason?.message || 'Unknown error');
+      }
+
+      if (promptsResult.status === 'fulfilled') {
+        renderPrompts(promptsResult.value);
+      } else {
+        showError('prompts-grid', promptsResult.reason?.message || 'Unknown error');
+      }
+
+      if (graphResult.status === 'fulfilled' && graphResult.value.nodes?.mcpServers) {
+        renderMcpServers(graphResult.value.nodes.mcpServers);
+      } else {
+        showError('mcp-grid', graphResult.reason?.message || 'Unknown error');
+      }
     }
 
     function renderProjects(projects) {
       const grid = document.getElementById('projects-grid');
       grid.innerHTML = projects.map(p => `
-        <div class="card" data-id="${p.id}">
-          <div class="card-header" onclick="toggleCard('${p.id}')">
+        <div class="card" data-id="${escapeHtml(p.id)}">
+          <div class="card-header" onclick="toggleCard('${escapeHtml(p.id)}')">
             <div>
-              <div class="card-title">${p.name}</div>
-              <div class="card-desc">${p.description}</div>
+              <div class="card-title">${escapeHtml(p.name)}</div>
+              <div class="card-desc">${escapeHtml(p.description)}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="card-type ${p.type}">${p.type}</span>
+              <span class="card-type ${escapeHtml(p.type)}">${escapeHtml(p.type)}</span>
               <span class="expand-icon">▼</span>
             </div>
           </div>
@@ -547,7 +640,7 @@
               <div class="card-section">
                 <div class="card-section-title">Sections</div>
                 <div class="tag-list">
-                  ${p.sections.map(s => `<span class="tag">${s}</span>`).join('')}
+                  ${p.sections.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}
                 </div>
               </div>
             ` : ''}
@@ -555,7 +648,7 @@
               <div class="card-section">
                 <div class="card-section-title">Files</div>
                 <ul class="link-list">
-                  ${p.files.map(f => `<li>${f.path} <span style="color:#8b949e">(${f.lines} lines)</span></li>`).join('')}
+                  ${p.files.map(f => `<li>${escapeHtml(f.path)} <span style="color:#8b949e">(${escapeHtml(f.lines)} lines)</span></li>`).join('')}
                 </ul>
               </div>
             ` : ''}
@@ -563,7 +656,7 @@
               <div class="card-section">
                 <div class="card-section-title">External Links</div>
                 <ul class="link-list">
-                  ${p.connections.external.map(e => `<li><a href="${e.url}" target="_blank">${e.name}</a> <span style="color:#8b949e">(${e.type})</span></li>`).join('')}
+                  ${p.connections.external.map(e => `<li><a href="${escapeHtml(e.url)}" target="_blank">${escapeHtml(e.name)}</a> <span style="color:#8b949e">(${escapeHtml(e.type)})</span></li>`).join('')}
                 </ul>
               </div>
             ` : ''}
@@ -571,7 +664,7 @@
               <div class="card-section">
                 <div class="card-section-title">Repository</div>
                 <ul class="link-list">
-                  <li><a href="${p.repo}" target="_blank">${p.repo}</a></li>
+                  <li><a href="${escapeHtml(p.repo)}" target="_blank">${escapeHtml(p.repo)}</a></li>
                 </ul>
               </div>
             ` : ''}
@@ -579,16 +672,16 @@
               <div class="card-section">
                 <div class="card-section-title">Hosting</div>
                 <div class="tag-list">
-                  <span class="tag">${p.hosting.domain}</span>
-                  <span class="tag">${p.hosting.server}</span>
-                  <span class="tag">${p.hosting.tunnel}</span>
+                  ${p.hosting.domain ? `<span class="tag">${escapeHtml(p.hosting.domain)}</span>` : ''}
+                  ${p.hosting.server ? `<span class="tag">${escapeHtml(p.hosting.server)}</span>` : ''}
+                  ${p.hosting.tunnel ? `<span class="tag">${escapeHtml(p.hosting.tunnel)}</span>` : ''}
                 </div>
               </div>
             ` : ''}
             <div class="meta">
-              <span>Created: ${p.created}</span>
-              <span>Updated: ${p.updated}</span>
-              <span>Status: ${p.status}</span>
+              <span>Created: ${escapeHtml(p.created)}</span>
+              <span>Updated: ${escapeHtml(p.updated)}</span>
+              <span>Status: ${escapeHtml(p.status)}</span>
             </div>
           </div>
         </div>
@@ -600,13 +693,13 @@
       grid.innerHTML = agents.map(a => `
         <div class="agent-card">
           <div class="agent-header">
-            <div class="agent-name">${a.name}</div>
-            <span class="agent-type ${a.type}">${a.type}</span>
+            <div class="agent-name">${escapeHtml(a.name)}</div>
+            <span class="agent-type ${escapeHtml(a.type)}">${escapeHtml(a.type)}</span>
           </div>
-          <div class="agent-desc">${a.description}</div>
+          <div class="agent-desc">${escapeHtml(a.description)}</div>
           ${a.capabilities && a.capabilities.length > 0 ? `
             <div class="agent-caps">
-              ${a.capabilities.slice(0, 4).map(c => `<span class="agent-cap">${c}</span>`).join('')}
+              ${a.capabilities.slice(0, 4).map(c => `<span class="agent-cap">${escapeHtml(c)}</span>`).join('')}
               ${a.capabilities.length > 4 ? `<span class="agent-cap">+${a.capabilities.length - 4} more</span>` : ''}
             </div>
           ` : ''}
@@ -619,10 +712,10 @@
       grid.innerHTML = skills.map(s => `
         <div class="skill-card">
           <div class="skill-header">
-            <div class="skill-name">${s.name}</div>
-            ${s.trigger && s.trigger !== 'context-aware' ? `<span class="skill-trigger">${s.trigger}</span>` : ''}
+            <div class="skill-name">${escapeHtml(s.name)}</div>
+            ${s.trigger && s.trigger !== 'context-aware' ? `<span class="skill-trigger">${escapeHtml(s.trigger)}</span>` : ''}
           </div>
-          <div class="skill-desc">${s.description}</div>
+          <div class="skill-desc">${escapeHtml(s.description)}</div>
         </div>
       `).join('');
     }
@@ -632,13 +725,13 @@
       grid.innerHTML = workflows.map(w => `
         <div class="workflow-card">
           <div class="workflow-header">
-            <div class="workflow-name">${w.name}</div>
-            <span class="workflow-status ${w.status !== 'active' ? 'inactive' : ''}">${w.status}</span>
+            <div class="workflow-name">${escapeHtml(w.name)}</div>
+            <span class="workflow-status ${w.status !== 'active' ? 'inactive' : ''}">${escapeHtml(w.status)}</span>
           </div>
-          <div class="workflow-desc">${w.description}</div>
+          <div class="workflow-desc">${escapeHtml(w.description)}</div>
           ${w.triggers && w.triggers.length > 0 ? `
             <div class="workflow-triggers">
-              ${w.triggers.map(t => `<span class="workflow-trigger">${t}</span>`).join('')}
+              ${w.triggers.map(t => `<span class="workflow-trigger">${escapeHtml(t)}</span>`).join('')}
             </div>
           ` : ''}
         </div>
@@ -650,11 +743,11 @@
       grid.innerHTML = prompts.map(p => `
         <div class="prompt-card">
           <div class="prompt-header">
-            <div class="prompt-name">${p.name}</div>
-            <span class="prompt-type ${p.type}">${p.type}</span>
+            <div class="prompt-name">${escapeHtml(p.name)}</div>
+            <span class="prompt-type ${escapeHtml(p.type)}">${escapeHtml(p.type)}</span>
           </div>
-          <div class="prompt-desc">${p.description}</div>
-          ${p.file ? `<div class="prompt-file">${p.file}</div>` : ''}
+          <div class="prompt-desc">${escapeHtml(p.description)}</div>
+          ${p.file ? `<div class="prompt-file">${escapeHtml(p.file)}</div>` : ''}
         </div>
       `).join('');
     }
@@ -663,10 +756,10 @@
       const grid = document.getElementById('mcp-grid');
       grid.innerHTML = servers.map(s => `
         <div class="mcp-card">
-          <div class="mcp-name">${s.name}</div>
+          <div class="mcp-name">${escapeHtml(s.name)}</div>
           <div class="mcp-status">
             <span class="status-dot"></span>
-            ${s.status}
+            ${escapeHtml(s.status)}
           </div>
         </div>
       `).join('');
