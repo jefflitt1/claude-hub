@@ -1,7 +1,21 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 23)
+**Last Updated:** 2026-01-17 (Session 24)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 24)
+
+### n8n Workflow Authentication Fix
+- Fixed "GitHub → Supabase Project Sync" workflow (KQ2bleG4vj728I4f)
+- Original error: "access to env vars denied" from Code nodes using `$env.SUPABASE_SERVICE_KEY`
+- Previous fix attempt used `genericCredentialType` which didn't inject auth headers
+- Solution: Changed HTTP Request nodes to use `predefinedCredentialType` with `nodeCredentialType: "supabaseApi"`
+- Tested execution 5359 - completed successfully
+- Verified data upserted to Supabase, cleaned up test record
+
+**Technical Note:** For HTTP Request nodes calling Supabase API, use `predefinedCredentialType` (not `genericCredentialType`) to properly inject `apikey` and `Authorization` headers.
 
 ---
 
