@@ -12,10 +12,15 @@
 - Original error: "access to env vars denied" from Code nodes using `$env.SUPABASE_SERVICE_KEY`
 - Previous fix attempt used `genericCredentialType` which didn't inject auth headers
 - Solution: Changed HTTP Request nodes to use `predefinedCredentialType` with `nodeCredentialType: "supabaseApi"`
-- Tested execution 5359 - completed successfully
-- Verified data upserted to Supabase, cleaned up test record
 
-**Technical Note:** For HTTP Request nodes calling Supabase API, use `predefinedCredentialType` (not `genericCredentialType`) to properly inject `apikey` and `Authorization` headers.
+### Supabase Schema & Field Mapping Fixes
+- Added missing `domain` column to `claude_skills` table
+- Fixed Transform Skills code node field mappings:
+  - `trigger_command` → `trigger`
+  - `project` → `project_id`
+- Tested multiple executions - final test (5657) confirmed working
+
+**Technical Note:** For HTTP Request nodes calling Supabase API, use `predefinedCredentialType` (not `genericCredentialType`) to properly inject `apikey` and `Authorization` headers. Workflow field names must exactly match Supabase column names.
 
 ---
 
