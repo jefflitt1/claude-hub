@@ -209,5 +209,69 @@
     ],
     "usedBy": ["claude-hub"],
     "gateway": "MCP_DOCKER"
+  },
+  {
+    "id": "unified-browser",
+    "name": "Unified Browser",
+    "purpose": "Smart-routing browser automation consolidating playwright and puppeteer",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "not-tested"
+    },
+    "capabilities": [
+      "Navigate with smart provider routing",
+      "Click elements",
+      "Type text",
+      "Take screenshots",
+      "Get accessibility snapshots",
+      "Session management"
+    ],
+    "usedBy": ["claude-hub"],
+    "type": "meta-tool",
+    "consolidates": ["playwright", "puppeteer"],
+    "note": "Built based on Tunguz research for token reduction"
+  },
+  {
+    "id": "unified-comms",
+    "name": "Unified Communications",
+    "purpose": "Smart-routing email consolidating gmail accounts",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "not-tested"
+    },
+    "capabilities": [
+      "Send with auto-account routing",
+      "List messages from all accounts",
+      "Search across accounts",
+      "Contact resolution"
+    ],
+    "usedBy": ["claude-hub"],
+    "type": "meta-tool",
+    "consolidates": ["gmail", "gmail-l7"],
+    "note": "Routes based on domain and content keywords"
+  },
+  {
+    "id": "l7-business",
+    "name": "L7 Business",
+    "purpose": "Unified L7 Partners operations with caching",
+    "status": "active",
+    "platforms": {
+      "mac": "connected",
+      "pi": "not-tested"
+    },
+    "capabilities": [
+      "Query Supabase with caching",
+      "Insert/update/delete database rows",
+      "Execute SQL",
+      "Trigger n8n workflows",
+      "Search Google Drive",
+      "Cache management"
+    ],
+    "usedBy": ["l7-partners", "claude-hub"],
+    "type": "meta-tool",
+    "consolidates": ["supabase-l7", "gdrive-l7", "n8n-mcp"],
+    "note": "1-minute Supabase cache, 5-minute Drive cache, 10-minute n8n cache"
   }
 ]

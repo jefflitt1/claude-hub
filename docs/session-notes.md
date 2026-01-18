@@ -1,7 +1,43 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 26)
+**Last Updated:** 2026-01-18 (Session 5)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-18 (Session 5)
+
+### Meta-Tools v2.0.0 - Self-Contained Implementations
+Made all three unified meta-tools fully self-contained with direct API calls instead of routing instructions:
+
+**unified-browser v2.0.0:**
+- Created `src/providers/playwright.ts` with embedded Playwright
+- Auto-installs Chromium via postinstall script
+- Tools: navigate, click, type, screenshot, snapshot, wait, evaluate, content, close
+
+**l7-business v2.0.0:**
+- Direct n8n REST API calls (`/api/v1/workflows`, `/api/v1/executions`)
+- New tools: `l7_get_workflow`, `l7_list_executions`
+- Supabase already self-contained, GDrive still routes to gdrive-L7
+
+**unified-comms v2.0.0:**
+- Created `src/providers/gmail.ts` with full Gmail API integration
+- OAuth token management with auto-refresh
+- New tools: `comms_oauth_setup`, `message_get`
+- Set up OAuth credentials (reused from gdrive-mcp)
+
+**Files Changed:**
+- `unified-browser/src/providers/playwright.ts` (new)
+- `unified-comms/src/providers/gmail.ts` (new)
+- `l7-business/src/index.ts` (direct n8n API)
+- `meta-tools/README.md` (v2.0.0 docs)
+- `~/.claude.json` (Gmail credentials paths)
+- `~/.config/unified-comms/oauth-credentials.json` (new)
+
+**Pending:**
+- Enable Gmail API in Google Cloud Console for project gen-lang-client-0594383600
+- Complete OAuth flow for personal (jglittell@gmail.com) and L7 (jeff@jglcap.com) accounts
+- Restart Claude Code to load updated MCP servers
 
 ---
 
