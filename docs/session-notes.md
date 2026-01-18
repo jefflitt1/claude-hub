@@ -832,19 +832,20 @@ Trigger (6am) → Get Projects  ─┐
 
 ### High Priority
 
-1. **Update Supabase schema for parent-child hierarchy** - Add `parent_id` column, update records, delete duplicate Claude Hub
-2. **Activate Supabase MCP** - Restart Claude Code, authenticate via browser popup on first use
+1. **Fix Daily Digest scheduled trigger** - Workflow works manually but 6am scheduled runs failing (investigate error in execution #3590)
 2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
-3. **Fix claude.l7-partners.com DNS** - Restore access and add Cloudflare Access protection
-   - Fix Cloudflare DNS for l7-partners.com (CNAME to apex-loadbalancer.netlify.com)
-   - Verify Netlify DNS verification passes
-   - Add claude as domain alias in Netlify
-   - Add CNAME for claude pointing to Netlify subdomain
-   - Add Cloudflare Access policy
-2. **Test Daily Digest workflow** - Run test to confirm end-to-end execution and email delivery
-3. **Verify n8n workflow syncs new entity types** - Check if agents/skills sync to Supabase
-4. **Add `claude_skills` table to Supabase** - If not auto-created by workflow
-5. **Update Lovable dashboard** - Display agents and skills sections
+
+### Completed (Verified 2026-01-17)
+
+- ✅ **claude.l7-partners.com DNS** - Working with Cloudflare Access protection (302 redirect to login)
+- ✅ **l7-partners.com main site** - Working (Netlify, HTTP 200)
+- ✅ **n8n Workflows Section in Lovable** - N8nWorkflowsSection component deployed with:
+  - QuickStatsBar, ProjectGroup, WorkflowCard components
+  - Real-time Supabase subscription
+  - 10+ workflows synced with project groupings
+- ✅ **Daily Digest workflow** - Works when manually/webhook triggered (execution #4771 success)
+- ✅ **Parent-child hierarchy** - Completed in Session 18
+- ✅ **GitHub → Supabase sync** - Fixed auth in Session 24
 
 ### Deferred
 
