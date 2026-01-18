@@ -72,8 +72,9 @@
     "status": "active",
     "parentId": "l7-partners",
     "created": "2025-06-01",
-    "updated": "2026-01-17",
+    "updated": "2026-01-18",
     "repo": "https://github.com/jefflitt1/l7partners-rewrite",
+    "localPath": "projects/l7partners-rewrite/",
     "hosting": {
       "domain": "l7-partners.com",
       "server": "Lovable/Cloudflare"
@@ -129,6 +130,37 @@
         { "name": "Ted's Sterling Magic", "url": "https://www.tedssterlingmagic.com", "type": "source" },
         { "name": "Penguin Magic", "url": "https://penguinmagic.com", "type": "retailer" },
         { "name": "Vanishing Inc", "url": "https://vanishingincmagic.com", "type": "retailer" }
+      ]
+    }
+  },
+  {
+    "id": "jgl-capital",
+    "name": "JGL Capital",
+    "description": "Systematic trend-following trading system using TradeStation and EasyLanguage",
+    "type": "app",
+    "category": "trading",
+    "status": "active",
+    "parentId": null,
+    "created": "2026-01-17",
+    "updated": "2026-01-18",
+    "repo": "https://github.com/jefflitt1/jgl-capital",
+    "localPath": "projects/jgl-capital/",
+    "tags": ["trading", "tradestation", "easylanguage", "systematic", "trend-following"],
+    "sections": [
+      "ETF Trend Following (50%)",
+      "Major Market Stocks (30%)",
+      "IPO/New Issues (20%)",
+      "TrendQual Filter System",
+      "VWAP-Based Position Sizing"
+    ],
+    "connections": {
+      "prompts": [],
+      "workflows": [],
+      "mcpServers": ["tradestation-mcp"],
+      "agents": ["jgl-cio", "jgl-quant", "jgl-trading", "jgl-portfolio", "jgl-psychology", "jgl-data"],
+      "external": [
+        { "name": "TradeStation", "url": "https://www.tradestation.com", "type": "broker" },
+        { "name": "Markplex", "url": "https://www.markplex.com", "type": "education" }
       ]
     }
   },

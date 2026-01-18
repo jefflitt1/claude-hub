@@ -107,10 +107,15 @@ Lovable React dashboard
 
 ## Tracked Projects
 
+All projects under `projects/` subfolder:
+
 | Project | Type | Location |
 |---------|------|----------|
-| Magic Agent | Knowledge Base | ~/magic.md |
-| Claude Hub | App | This repo |
+| Claude Hub | App | This repo (root) |
+| JGL Capital | Trading System | `projects/jgl-capital/` |
+| L7 Partners | Property Management | `projects/l7partners-rewrite/` |
+| Supabase MCP | MCP Server | `projects/supabase-mcp-server/` |
+| Magic Agent | Knowledge Base | `~/magic.md` (standalone) |
 
 ## Development Notes
 
@@ -118,3 +123,15 @@ Lovable React dashboard
 - n8n handles all scheduled/automated tasks via Claude API
 - MCP connects Claude Code → n8n (not reverse)
 - Data syncs from JSON → Supabase → Lovable dashboard
+
+---
+
+## Master Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `docs/master-business-plan.md` | Operations overview, all projects, agents, skills, gaps |
+| `docs/documentation-best-practices.md` | Standards for all Claude documentation |
+| `docs/session-notes.md` | Running session accomplishments |
+
+For project-specific documentation, see each project's `docs/business-plan.md`.
