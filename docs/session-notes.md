@@ -1,7 +1,38 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 25)
+**Last Updated:** 2026-01-17 (Session 26)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 26)
+
+### Supabase Integration Stress Test & RLS Fixes
+Comprehensive verification and fixing of all Claude Hub dashboard integrations:
+
+**Data Integrity Fixes:**
+- Deleted 3 duplicate projects (jefflitt1-claude-hub, jefflitt1-l7partners-rewrite, test-test-repo)
+- Backfilled session token data for sessions 17-19
+- Updated token_usage table to 350,000 tokens for Jan 17
+- Linked 9 orphaned agents to appropriate projects
+
+**Real-Time Subscriptions:**
+- Added subscriptions for 4 additional tables in ClaudeCatalog.tsx:
+  - `claude_mcp_servers`, `claude_agents`, `claude_skills`, `claude_prompts`
+- All 7 core tables now have live update capability
+
+**RLS Policy Fixes:**
+- Fixed `n8n_workflows` policy (changed `public` role to `anon, authenticated`)
+- Fixed 6 more tables with same issue:
+  - `claude_skills`, `claude_tasks`, `claude_token_usage`
+  - `claude_skill_usage`, `claude_session_logs`, `claude_usage_stats`
+
+**Code Changes:**
+- Updated `src/integrations/supabase/client.ts` to use environment variables
+- Commits: e775d6e (real-time subscriptions), 148aa3e (env variables)
+
+**Pending:**
+- Configure Lovable environment with new publishable API key
 
 ---
 
