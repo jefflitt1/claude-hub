@@ -18,29 +18,24 @@ Claude Hub is a centralized dashboard that visualizes and tracks all Claude-rela
 ## Architecture
 
 ```
-Mac (Development)              Raspberry Pi (Production)
-├── Claude Code CLI            ├── n8n (self-hosted)
-├── Interactive editing        ├── Claude Hub web app
-├── Test & refine              ├── cloudflared tunnel
-└── Push to repo               └── Auto-deploys on push
+Mac (Development)              Cloud Services
+├── Claude Code CLI            ├── Lovable (React frontend)
+├── Interactive editing        ├── Supabase (PostgreSQL)
+├── Test & refine              ├── Cloudflare (hosting)
+└── Push to repo               └── GitHub (source)
+
+Raspberry Pi (Automation)
+├── n8n (self-hosted workflows)
+└── cloudflared tunnel
 ```
 
 ## Tech Stack
 
-- **Backend:** Node.js + Express.js
-- **Frontend:** Vanilla JavaScript (no build step)
-- **Data:** JSON files (easy editing, git-tracked)
+- **Frontend:** Lovable (React) at https://claude.l7-partners.com
+- **Database:** Supabase (PostgreSQL)
+- **Data Sync:** JSON files → Supabase via n8n
 - **Automation:** n8n at https://n8n.l7-partners.com
-- **Hosting:** Raspberry Pi + Cloudflare Tunnel
-
-## Quick Start
-
-```bash
-cd app
-npm install
-npm start
-# Visit http://localhost:3000
-```
+- **Hosting:** Cloudflare (Lovable) + Raspberry Pi (n8n)
 
 ## Project Structure
 
@@ -48,39 +43,58 @@ npm start
 claude-hub/
 ├── README.md              # This file
 ├── CLAUDE.md              # Claude Code project context
-├── app/
-│   ├── server.js          # Express API server
-│   └── public/
-│       └── index.html     # Dashboard frontend
 ├── data/
 │   ├── projects.json      # Projects and knowledge bases
 │   ├── agents.json        # AI agent definitions
 │   ├── skills.json        # Skill/command registry
-│   ├── workflows.json     # n8n workflow metadata
+│   ├── workflows.json     # n8n workflow metadata (legacy)
 │   ├── prompts.json       # System prompt registry
 │   └── mcp-servers.json   # MCP server configurations
 ├── prompts/               # System prompt files
 ├── docs/
 │   ├── session-notes.md   # Consolidated session history
+│   ├── dashboard-enhancement-plan.md  # UI/UX design specs
 │   └── session-logs/      # Per-terminal session logs
+├── skills/                # Skill definitions
+├── workflows/             # n8n workflow exports
 └── configs/               # Machine-specific configs
 ```
 
-## API Endpoints
+## Supabase Tables
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/projects` | List all projects |
-| `GET /api/projects/:id` | Get project by ID |
-| `GET /api/agents` | List all agents |
-| `GET /api/skills` | List all skills |
-| `GET /api/workflows` | List all workflows |
-| `GET /api/prompts` | List all prompts |
-| `GET /api/mcp-servers` | List MCP servers |
-| `GET /api/graph` | Full graph data (all entities) |
-| `GET /api/health/n8n` | n8n instance health check |
+### Core Dashboard Tables
+| Table | Description |
+|-------|-------------|
+| `claude_projects` | Projects and knowledge bases |
+| `claude_agents` | AI agent definitions |
+| `claude_skills` | Skill/command registry |
+| `claude_workflows` | Workflow metadata (legacy) |
+| `claude_prompts` | System prompt registry |
+| `claude_mcp_servers` | MCP server configurations |
 
-## Data Schema
+### n8n Workflow Tracking (NEW)
+| Table | Description |
+|-------|-------------|
+| `n8n_workflows` | Full workflow inventory with analysis |
+| `workflow_categories` | Workflow categorization (Production, Development, etc.) |
+
+### n8n_workflows Schema
+```sql
+n8n_id          TEXT        -- n8n workflow ID
+name            TEXT        -- Workflow name
+active          BOOLEAN     -- Active in n8n
+project         TEXT        -- Assigned project (L7 Partners, Claude Hub, etc.)
+status          TEXT        -- production, WIP, template, deprecated, etc.
+services        TEXT[]      -- Integrated services (Gmail, Supabase, Telegram, etc.)
+trigger_type    TEXT        -- webhook, schedule, manual
+node_count      INTEGER     -- Number of nodes
+purpose         TEXT        -- Description of what the workflow does
+recommendation  TEXT        -- Action recommendation (keep, delete, review)
+last_success_at TIMESTAMPTZ -- Last successful run
+last_error_at   TIMESTAMPTZ -- Last error
+```
+
+## Data Schemas
 
 ### Projects
 ```json
@@ -140,14 +154,25 @@ claude-hub/
 | playwright | Browser automation | Mac |
 | memory | Knowledge graph | Mac, Pi |
 
-## Workflows
+## n8n Workflows
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| GitHub → Supabase Sync | Push to repo | Sync project data to Supabase |
-| Daily Agent Digest | Schedule (daily) | Email summary of agent activity |
-| L7 Chatbot | Webhook | AI assistant for L7 Partners TMS |
-| n8n Health Check | Manual/MCP | Verify n8n instance status |
+### By Project
+| Project | Count | Description |
+|---------|-------|-------------|
+| L7 Partners | 12 | Tenant management, chatbot, document processing |
+| Claude Hub | 8 | Dashboard sync, agent monitoring, GitHub integration |
+| Personal | 13 | Sports briefings, email management |
+| PROBIS | 7 | ROI calculator, Weaviate integration |
+| Duncan | 14 | Lead gen, social media automation |
+| Tutorials | 6 | YouTube tutorial implementations |
+
+### Production Workflows
+| Workflow | Project | Services |
+|----------|---------|----------|
+| Master Tenant Management | L7 Partners | Telegram, Supabase, Gmail, MongoDB, Weaviate |
+| Daily Sports Briefing | Personal | Perplexity, ESPN, Claude, Gmail |
+| GitHub → Supabase Sync | Claude Hub | GitHub, Supabase |
+| Claude Code Mobile Approvals | Claude Hub | Telegram, Redis |
 
 ## Development
 
@@ -155,37 +180,39 @@ claude-hub/
 1. Add entry to `data/projects.json`
 2. Define any related agents in `data/agents.json`
 3. Register skills in `data/skills.json`
-4. Create skill files in `~/.claude/skills/`
+4. Push to GitHub → n8n syncs to Supabase
 
 ### Adding a New Skill
 1. Create skill file at `~/.claude/skills/<skill-name>/SKILL.md`
 2. Register in `data/skills.json` with trigger and commands
 3. Reference from relevant agents in `data/agents.json`
 
-### Testing
-```bash
-# Start server
-cd app && npm start
-
-# Test API endpoints
-curl http://localhost:3000/api/projects
-curl http://localhost:3000/api/health/n8n
+### Data Sync Flow
+```
+JSON files (this repo)
+    ↓ GitHub push
+n8n workflow (GitHub → Supabase Sync)
+    ↓
+Supabase tables
+    ↓
+Lovable React dashboard
 ```
 
 ## Deployment
 
-The app auto-deploys to the Raspberry Pi when changes are pushed to the main branch.
-
-1. Cloudflared tunnel points `claude.l7-partners.com` → localhost:3000
+Changes to this repo are synced to Supabase via n8n:
+1. Push to `main` branch
 2. GitHub webhook triggers n8n workflow
-3. n8n syncs data to Supabase for backup
+3. n8n fetches JSON from raw.githubusercontent.com
+4. n8n upserts to Supabase tables
+5. Lovable dashboard reflects changes
 
 ## Security Notes
 
-- Webhook URLs in `data/workflows.json` are considered semi-sensitive
-- No authentication currently implemented (internal tool)
-- XSS protection via HTML escaping in frontend
+- Webhook URLs in workflow configs are considered semi-sensitive
+- Supabase uses Row Level Security (RLS)
 - All user input is sanitized before rendering
+- No sensitive credentials stored in repo
 
 ## License
 

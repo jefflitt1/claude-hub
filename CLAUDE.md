@@ -10,11 +10,15 @@ A knowledge graph & dashboard to track and visualize Claude agents, knowledge ba
 ## Architecture
 
 ```
-Mac (Development)          Raspberry Pi (Production)
-├── Claude Code CLI        ├── n8n (self-hosted)
-├── Interactive editing    ├── Claude Hub web app
-├── Test & refine          ├── cloudflared tunnel
-└── Push to this repo      └── Pulls shared configs
+Mac (Development)          Cloud Services
+├── Claude Code CLI        ├── Lovable (React frontend)
+├── Interactive editing    ├── Supabase (PostgreSQL)
+├── Test & refine          ├── Cloudflare (hosting)
+└── Push to this repo      └── GitHub (source)
+
+Raspberry Pi (Automation)
+├── n8n (self-hosted)
+└── cloudflared tunnel
 ```
 
 ## Tech Stack
@@ -53,25 +57,34 @@ Do NOT ask "should I run recap?" - just do it when thresholds are met.
 ```
 claude-hub/
 ├── CLAUDE.md              # This file - project context
-├── skills/                # Custom Claude skills
-│   └── recap.md           # Session recap skill
+├── README.md              # Full documentation
+├── data/                  # JSON data (synced to Supabase)
+│   ├── projects.json
+│   ├── agents.json
+│   ├── skills.json
+│   ├── prompts.json
+│   └── mcp-servers.json
 ├── docs/
 │   ├── session-notes.md   # Running session notes
+│   ├── dashboard-enhancement-plan.md  # UI/UX specs
 │   └── session-logs/      # Per-terminal recap logs
-├── app/                   # Legacy Express app (replaced by Lovable)
-├── data/                  # Legacy JSON data (replaced by Supabase)
+├── skills/                # Custom Claude skills
 ├── prompts/               # System instruction files
+├── workflows/             # n8n workflow exports
 ├── projects/              # Project-specific configs
 └── configs/               # Machine-specific configs
 ```
 
-## Quick Start
+## Data Flow
 
-```bash
-cd app
-npm install
-npm run dev
-# Visit http://localhost:3000
+```
+JSON files (this repo)
+    ↓ GitHub push
+n8n workflow (GitHub → Supabase Sync)
+    ↓
+Supabase tables
+    ↓
+Lovable React dashboard
 ```
 
 ## MCP Servers
@@ -81,6 +94,16 @@ npm run dev
 | n8n-mcp | Connect to n8n at https://n8n.l7-partners.com |
 | gdrive-JGL | Google Drive access (JGL account) |
 | gdrive-L7 | Google Drive access (L7 account) |
+
+## Supabase Tables
+
+| Table | Purpose |
+|-------|---------|
+| `n8n_workflows` | Full n8n workflow inventory with analysis |
+| `workflow_categories` | Workflow categorization |
+| `claude_projects` | Projects and knowledge bases |
+| `claude_agents` | AI agent definitions |
+| `claude_skills` | Skill registry |
 
 ## Tracked Projects
 
@@ -94,11 +117,4 @@ npm run dev
 - Claude Code is interactive-only, can't run headlessly
 - n8n handles all scheduled/automated tasks via Claude API
 - MCP connects Claude Code → n8n (not reverse)
-- Data stored in JSON for simplicity; can migrate to SQLite later
-
-## Deployment
-
-1. Clone repo on Pi
-2. `cd app && npm install && npm start`
-3. Configure cloudflared tunnel to point to localhost:3000
-4. DNS: claude.l7-partners.com → cloudflared tunnel
+- Data syncs from JSON → Supabase → Lovable dashboard
