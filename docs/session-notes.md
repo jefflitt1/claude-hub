@@ -1,7 +1,37 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 24)
+**Last Updated:** 2026-01-17 (Session 25)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 25)
+
+### n8n Claude Hub Workflows Activated & Configured
+All 3 Claude Hub monitoring workflows now active and working:
+
+**System Health Check (btzTPdQPMQNBwujF):**
+- Fixed 4 separate errors during debugging:
+  - Added `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` to n8n docker compose
+  - Updated Supabase keys from new format (`sb_secret_*`) to legacy JWT format (`eyJ...`)
+  - Replaced Telegram node with HTTP Request (credential didn't exist)
+  - Fixed IF condition to properly route healthy vs unhealthy status
+- Runs every 6 hours, logs to `system_health_checks` table
+
+**Weekly Backup - Supabase & n8n (w1st7CarxGp6LYM7):**
+- Added Supabase credentials to all 3 HTTP Request nodes
+- Backs up: n8n workflows, claude_agents, claude_skills tables
+- Runs every Sunday
+
+**Daily Memory Graph Backup (cSXBlzLBmD5KuFSJ):**
+- Added Supabase credentials to Log Backup Attempt node
+- Logs backup attempts to system_health_checks
+- Runs daily
+
+**Key Technical Notes:**
+- Use legacy JWT Supabase keys (eyJ...) - new format (sb_secret_*) causes "Expected 3 parts in JWT" error
+- For HTTP Request nodes calling Supabase: use `authentication: "predefinedCredentialType"` + `nodeCredentialType: "supabaseApi"` + credential reference
+- Use HTTP Request for Telegram API instead of n8n Telegram node to avoid credential issues
 
 ---
 
