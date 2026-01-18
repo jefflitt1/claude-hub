@@ -1,7 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-17 (Session 22)
+**Last Updated:** 2026-01-17 (Session 23)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-17 (Session 23)
+
+### n8n Dashboard Integration Completed
+- Merged PR #1: Removed deprecated Express app, updated architecture docs
+- Created comprehensive Lovable prompt for n8n workflows section (`prompts/lovable-n8n-workflows-section.md`)
+- Component specs: N8nWorkflowsSection, QuickStatsBar, ProjectGroup, WorkflowCard, StatusBadge, StatusDot, ServiceBadges, LastRunIndicator
+- Synced both local claude-hub directories with main
+
+**Pending for User:**
+- Implement n8n workflows section in Lovable using the prompt
 
 ---
 
