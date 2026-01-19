@@ -1,7 +1,59 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 13)
+**Last Updated:** 2026-01-19 (Session 15)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 15)
+
+### Feedly MCP Restart Verification
+Short follow-up after context compaction. Verified Feedly MCP server is properly built and configured but needs full Claude Code restart (not session continuation) to load. Server starts successfully when tested manually.
+
+**Next:** Exit Claude Code completely, restart fresh, then test `feedly_info`.
+
+---
+
+## Session Summary: 2026-01-19 (Session 14)
+
+### Feedly MCP Server Built
+Created new MCP server to integrate Feedly RSS feeds with Claude Code:
+
+**Location:** `~/Documents/Claude Code/claude-agents/projects/meta-tools/feedly/`
+
+**Tools Implemented (10 total):**
+| Tool | Purpose |
+|------|---------|
+| `feedly_profile` | Get user profile info |
+| `feedly_collections` | List all categories with feeds |
+| `feedly_subscriptions` | List all feed subscriptions |
+| `feedly_unread_counts` | Get unread counts per feed/category |
+| `feedly_all_articles` | Get recent unread articles across all feeds |
+| `feedly_stream` | Get articles from specific feed/category |
+| `feedly_saved_articles` | Get saved-for-later articles |
+| `feedly_mark_read` | Mark articles/feeds/categories as read |
+| `feedly_save_for_later` | Save an article |
+| `feedly_search_feeds` | Search for new feeds to subscribe |
+| `feedly_info` | MCP status and help |
+
+**Configuration:**
+- Added to `~/.claude.json` mcpServers
+- Token expires: Feb 19, 2026
+- Rate limits: 500 requests/day (Pro Plus account)
+- Credentials documented in jeff-agent task (ID: 67ba8f15-4802-4ac8-bf12-742b918f632d)
+
+**Files Created:**
+- `feedly/package.json`
+- `feedly/tsconfig.json`
+- `feedly/src/index.ts`
+
+**Files Modified:**
+- `meta-tools/package.json` (added feedly to workspaces)
+- `~/.claude.json` (added feedly MCP config)
+
+**After Restart:**
+- Test with `feedly_info` to verify working
+- Try "What's new in my feeds?" to see articles
 
 ---
 

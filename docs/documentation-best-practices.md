@@ -322,6 +322,7 @@ Templates are stored in `claude-agents/templates/` for reuse:
 
 ## Adoption Checklist for New Projects
 
+### Documentation Setup
 - [ ] Create `CLAUDE.md` at project root
 - [ ] Create `docs/` folder with business-plan.md
 - [ ] Create `docs/strategic-decisions.md`
@@ -330,6 +331,25 @@ Templates are stored in `claude-agents/templates/` for reuse:
 - [ ] Initialize git repository
 - [ ] Push to GitHub
 - [ ] Add project to claude-agents tracking
+
+### Communication Infrastructure
+- [ ] Create dedicated Telegram bot via @BotFather
+- [ ] Create n8n credential for the bot
+- [ ] Set up Telegram-to-Claude Q&A workflow (see [telegram-claude-qa-pattern.md](./telegram-claude-qa-pattern.md))
+- [ ] Add bot to relevant Telegram groups/channels
+
+**Why dedicated bots per project:**
+- Clear separation of concerns (L7 queries don't mix with JGL queries)
+- Project-specific context and knowledge base
+- Independent rate limits and logging
+- Easier credential management and rotation
+
+**Current Project Bots:**
+| Project | Bot | Username | n8n Credential |
+|---------|-----|----------|----------------|
+| L7 Partners | L7 Action Items Bot | @n8nmasteractionjeffbot | L7 Action Items Bot |
+| JGL Capital | JGL Personal Assistant | @jgl_personal_bot | JGL Personal Assistant |
+| System | JeffN8NCommunicationbot | @JeffN8Ncommunicationbot | JeffN8NCommunicationbot |
 
 ---
 

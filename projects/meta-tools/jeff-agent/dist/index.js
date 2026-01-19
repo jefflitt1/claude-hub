@@ -20,7 +20,24 @@ const PROJECT_KEYWORDS = {
     'l7-partners': ['property', 'tenant', 'lease', 'rent', 'maintenance', 'l7'],
     'jgl-capital': ['trade', 'trading', 'position', 'portfolio', 'market'],
     'claude-hub': ['claude', 'agent', 'mcp', 'workflow', 'dashboard'],
+    'personal': ['family', 'kids', 'hockey', 'school', 'doctor', 'appointment', 'birthday', 'home'],
 };
+// Family calendar configuration
+const FAMILY_CALENDARS = {
+    'primary': { id: 'jglittell@gmail.com', owner: 'Jeff', type: 'personal' },
+    'family': { id: 'family02804126033589774900@group.calendar.google.com', owner: 'Family', type: 'shared' },
+    'jgl-personal': { id: 'a4a6ea9f6da7d04f4dfd78cf1640959127b062ad3b8e010de045445c7bc7a9d8@group.calendar.google.com', owner: 'Jeff', type: 'personal' },
+    'hockey': { id: 'hpsfktlnfc0oe7s5ha0hjc75a9k24epd@import.calendar.google.com', owner: 'Kids', type: 'sports' },
+    'rinks': { id: 'gqcglqo63bc5tovangpb85kfs74cbk7l@import.calendar.google.com', owner: 'Jeff', type: 'sports' },
+    'school': { id: 'io3o3a1u93mmgapkjc1k0oeo2j7dte1d@import.calendar.google.com', owner: 'Kids', type: 'school' },
+    'mgl': { id: 'npv5par5k5t371514caqito57p276r1o@import.calendar.google.com', owner: 'MGL', type: 'personal' },
+    'mpl': { id: 'b9ll1nmud2cp4blg620trefjboorlca2@import.calendar.google.com', owner: 'MPL', type: 'personal' },
+};
+// Personal task categories
+const PERSONAL_CATEGORIES = [
+    'work', 'personal', 'family', 'health', 'finance',
+    'household', 'school', 'social', 'errands', 'other'
+];
 // Initialize Supabase client
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_KEY) {
@@ -749,6 +766,824 @@ server.tool("jeff_info", "Get information about Jeff Agent status and configurat
         ]
     });
 });
+// ============================================================================
+// PERSONAL/FAMILY TOOLS
+// ============================================================================
+server.tool("jeff_add_family_member", "Add or update a family member for calendar tracking", {
+    name: z.string().describe('Family member name'),
+    relationship: z.enum(['self', 'spouse', 'child', 'parent', 'sibling', 'other']),
+    calendar_ids: z.array(z.string()).optional().describe('Google Calendar IDs for this person'),
+    birth_date: z.string().optional().describe('Birth date (YYYY-MM-DD)'),
+    color: z.string().optional().describe('Display color hex code'),
+    preferences: z.record(z.any()).optional().describe('Additional preferences')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { name, relationship, calendar_ids, birth_date, color, preferences } = args;
+        const memberData = {
+            name,
+            relationship,
+            calendar_ids: calendar_ids || [],
+            birth_date: birth_date || null,
+            color: color || null,
+            preferences: preferences || {},
+            updated_at: new Date().toISOString()
+        };
+        const { data, error } = await supabase
+            .from('jeff_family_members')
+            .upsert(memberData, { onConflict: 'name' })
+            .select()
+            .single();
+        if (error) {
+            return formatResponse(`Add family member error: ${error.message}`, true);
+        }
+        // Auto-create birthday recurring item if birth_date provided
+        if (birth_date && data) {
+            const birthDate = new Date(birth_date);
+            await supabase.from('jeff_recurring_items').upsert({
+                title: `${name}'s Birthday`,
+                category: 'birthday',
+                recurrence_type: 'annual',
+                recurrence_month: birthDate.getMonth() + 1,
+                recurrence_day: birthDate.getDate(),
+                remind_days_before: [14, 7, 1],
+                family_member_id: data.id,
+                next_occurrence: birth_date
+            }, { onConflict: 'title' });
+        }
+        return formatResponse({
+            action: 'family_member_added',
+            member: data
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_list_family", "List all family members", {}, async () => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { data, error } = await supabase
+            .from('jeff_family_members')
+            .select('*')
+            .eq('active', true)
+            .order('relationship');
+        if (error) {
+            return formatResponse(`List family error: ${error.message}`, true);
+        }
+        return formatResponse({
+            action: 'family_listed',
+            count: data?.length || 0,
+            members: data || [],
+            calendarConfig: FAMILY_CALENDARS
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_today", "Get today's overview: calendar events, tasks, and priorities for the family", {
+    include_all_calendars: z.boolean().optional().default(true).describe('Include all family calendars')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        // Get today's tasks
+        const { data: tasks } = await supabase
+            .from('jeff_tasks')
+            .select('*')
+            .not('status', 'in', '("completed","cancelled")')
+            .or(`due_date.gte.${today.toISOString()},due_date.lt.${tomorrow.toISOString()},due_date.is.null`)
+            .order('priority')
+            .order('due_date', { nullsFirst: false });
+        // Get overdue tasks
+        const { data: overdueTasks } = await supabase
+            .from('jeff_tasks')
+            .select('*')
+            .not('status', 'in', '("completed","cancelled")')
+            .lt('due_date', today.toISOString());
+        // Get emails needing response
+        const { data: emails } = await supabase
+            .from('jeff_email_threads')
+            .select('*')
+            .eq('needs_response', true)
+            .eq('status', 'active')
+            .limit(5);
+        // Get upcoming recurring items (next 7 days)
+        const weekFromNow = new Date(today);
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+        const { data: upcoming } = await supabase
+            .from('jeff_recurring_items')
+            .select('*, jeff_family_members(name)')
+            .eq('active', true)
+            .gte('next_occurrence', today.toISOString().split('T')[0])
+            .lte('next_occurrence', weekFromNow.toISOString().split('T')[0])
+            .order('next_occurrence');
+        // Get today's wellbeing log if exists
+        const { data: wellbeing } = await supabase
+            .from('jeff_wellbeing_logs')
+            .select('*')
+            .eq('log_date', today.toISOString().split('T')[0])
+            .single();
+        // Get habit status for today
+        const { data: habits } = await supabase
+            .from('jeff_habits')
+            .select('*, jeff_habit_logs!inner(completed)')
+            .eq('active', true);
+        const todayStr = today.toISOString().split('T')[0];
+        const { data: todayHabitLogs } = await supabase
+            .from('jeff_habit_logs')
+            .select('habit_id, completed')
+            .eq('log_date', todayStr);
+        const habitStatus = habits?.map(h => ({
+            id: h.id,
+            name: h.name,
+            streak: h.current_streak,
+            completedToday: todayHabitLogs?.find(l => l.habit_id === h.id)?.completed || false
+        })) || [];
+        return formatResponse({
+            action: 'today_overview',
+            date: today.toISOString().split('T')[0],
+            dayOfWeek: today.toLocaleDateString('en-US', { weekday: 'long' }),
+            calendarInstructions: {
+                description: 'Use google-calendar MCP to fetch today\'s events',
+                tool: 'mcp__google-calendar__list-events',
+                suggestedParams: {
+                    calendarId: Object.values(FAMILY_CALENDARS).map(c => c.id),
+                    timeMin: today.toISOString(),
+                    timeMax: tomorrow.toISOString()
+                }
+            },
+            tasks: {
+                dueToday: tasks?.filter(t => t.due_date) || [],
+                overdue: overdueTasks || [],
+                highPriority: tasks?.filter(t => t.priority === 'urgent' || t.priority === 'high') || []
+            },
+            emails: {
+                needingResponse: emails || []
+            },
+            upcoming: {
+                recurringItems: upcoming || [],
+                description: 'Birthdays, anniversaries, renewals coming up'
+            },
+            wellbeing: wellbeing ? {
+                logged: true,
+                permaAverage: wellbeing.positive_emotion && wellbeing.engagement &&
+                    wellbeing.relationships && wellbeing.meaning && wellbeing.accomplishment
+                    ? Math.round((wellbeing.positive_emotion + wellbeing.engagement +
+                        wellbeing.relationships + wellbeing.meaning + wellbeing.accomplishment) / 5)
+                    : null
+            } : {
+                logged: false,
+                suggestion: 'Consider doing a quick PERMA check-in with /jeff checkin'
+            },
+            habits: {
+                total: habitStatus.length,
+                completedToday: habitStatus.filter(h => h.completedToday).length,
+                items: habitStatus
+            },
+            familyCalendars: FAMILY_CALENDARS
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_week", "Get week-ahead overview with conflict detection", {
+    weeks_ahead: z.number().optional().default(1).describe('Number of weeks to look ahead')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { weeks_ahead } = args;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + (weeks_ahead * 7));
+        // Get tasks due this week
+        const { data: tasks } = await supabase
+            .from('jeff_tasks')
+            .select('*')
+            .not('status', 'in', '("completed","cancelled")')
+            .gte('due_date', today.toISOString())
+            .lte('due_date', endDate.toISOString())
+            .order('due_date');
+        // Get recurring items this week
+        const { data: recurring } = await supabase
+            .from('jeff_recurring_items')
+            .select('*, jeff_family_members(name)')
+            .eq('active', true)
+            .gte('next_occurrence', today.toISOString().split('T')[0])
+            .lte('next_occurrence', endDate.toISOString().split('T')[0])
+            .order('next_occurrence');
+        // Group tasks by day
+        const tasksByDay = {};
+        tasks?.forEach(t => {
+            if (t.due_date) {
+                const day = new Date(t.due_date).toISOString().split('T')[0];
+                if (!tasksByDay[day])
+                    tasksByDay[day] = [];
+                tasksByDay[day].push(t);
+            }
+        });
+        return formatResponse({
+            action: 'week_overview',
+            startDate: today.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+            calendarInstructions: {
+                description: 'Use google-calendar MCP to fetch week events and detect conflicts',
+                tool: 'mcp__google-calendar__list-events',
+                suggestedParams: {
+                    calendarId: Object.values(FAMILY_CALENDARS).map(c => c.id),
+                    timeMin: today.toISOString(),
+                    timeMax: endDate.toISOString()
+                },
+                conflictDetection: 'Look for overlapping events across family members'
+            },
+            tasks: {
+                total: tasks?.length || 0,
+                byDay: tasksByDay
+            },
+            recurring: recurring || [],
+            summary: {
+                totalTasks: tasks?.length || 0,
+                upcomingBirthdays: recurring?.filter(r => r.category === 'birthday').length || 0,
+                renewals: recurring?.filter(r => r.category === 'renewal').length || 0
+            },
+            familyCalendars: FAMILY_CALENDARS
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+// ============================================================================
+// RECURRING ITEMS TOOLS
+// ============================================================================
+server.tool("jeff_add_recurring", "Add a recurring item (birthday, anniversary, renewal, seasonal task)", {
+    title: z.string().describe('Item title'),
+    category: z.enum(['birthday', 'anniversary', 'renewal', 'seasonal', 'health', 'financial', 'household', 'school', 'custom']),
+    recurrence_type: z.enum(['annual', 'monthly', 'weekly', 'quarterly', 'custom']),
+    month: z.number().optional().describe('Month (1-12) for annual items'),
+    day: z.number().optional().describe('Day of month (1-31)'),
+    remind_days_before: z.array(z.number()).optional().default([7, 1]).describe('Days before to remind'),
+    family_member_name: z.string().optional().describe('Associated family member name'),
+    description: z.string().optional(),
+    context: z.record(z.any()).optional().describe('Additional context (gift ideas, renewal details, etc.)')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { title, category, recurrence_type, month, day, remind_days_before, family_member_name, description, context } = args;
+        // Look up family member if provided
+        let family_member_id = null;
+        if (family_member_name) {
+            const { data: member } = await supabase
+                .from('jeff_family_members')
+                .select('id')
+                .eq('name', family_member_name)
+                .single();
+            family_member_id = member?.id;
+        }
+        // Calculate next occurrence
+        let next_occurrence = null;
+        if (recurrence_type === 'annual' && month && day) {
+            const today = new Date();
+            const thisYear = today.getFullYear();
+            let nextDate = new Date(thisYear, month - 1, day);
+            if (nextDate <= today) {
+                nextDate = new Date(thisYear + 1, month - 1, day);
+            }
+            next_occurrence = nextDate.toISOString().split('T')[0];
+        }
+        const recurringData = {
+            title,
+            category,
+            recurrence_type,
+            recurrence_month: month,
+            recurrence_day: day,
+            remind_days_before,
+            family_member_id,
+            description,
+            context: context || {},
+            next_occurrence
+        };
+        const { data, error } = await supabase
+            .from('jeff_recurring_items')
+            .insert(recurringData)
+            .select()
+            .single();
+        if (error) {
+            return formatResponse(`Add recurring error: ${error.message}`, true);
+        }
+        return formatResponse({
+            action: 'recurring_added',
+            item: data,
+            nextOccurrence: next_occurrence
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_list_upcoming", "List upcoming recurring items (birthdays, renewals, etc.)", {
+    days_ahead: z.number().optional().default(30).describe('Days to look ahead'),
+    category: z.string().optional().describe('Filter by category')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { days_ahead, category } = args;
+        const today = new Date();
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + days_ahead);
+        let query = supabase
+            .from('jeff_recurring_items')
+            .select('*, jeff_family_members(name)')
+            .eq('active', true)
+            .gte('next_occurrence', today.toISOString().split('T')[0])
+            .lte('next_occurrence', endDate.toISOString().split('T')[0])
+            .order('next_occurrence');
+        if (category) {
+            query = query.eq('category', category);
+        }
+        const { data, error } = await query;
+        if (error) {
+            return formatResponse(`List upcoming error: ${error.message}`, true);
+        }
+        // Group by category
+        const byCategory = {};
+        data?.forEach(item => {
+            if (!byCategory[item.category])
+                byCategory[item.category] = [];
+            byCategory[item.category].push(item);
+        });
+        return formatResponse({
+            action: 'upcoming_listed',
+            dateRange: {
+                start: today.toISOString().split('T')[0],
+                end: endDate.toISOString().split('T')[0]
+            },
+            total: data?.length || 0,
+            byCategory,
+            items: data || []
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+// ============================================================================
+// WELLBEING TOOLS (PERMA Framework)
+// ============================================================================
+server.tool("jeff_checkin", "Log a PERMA wellbeing check-in", {
+    log_type: z.enum(['daily', 'weekly', 'reflection']).optional().default('daily'),
+    positive_emotion: z.number().min(1).max(10).optional().describe('How positive/happy did you feel? (1-10)'),
+    engagement: z.number().min(1).max(10).optional().describe('How engaged/absorbed were you in activities? (1-10)'),
+    relationships: z.number().min(1).max(10).optional().describe('Quality of social connections? (1-10)'),
+    meaning: z.number().min(1).max(10).optional().describe('Sense of purpose/meaning? (1-10)'),
+    accomplishment: z.number().min(1).max(10).optional().describe('Sense of achievement? (1-10)'),
+    energy_level: z.number().min(1).max(10).optional().describe('Energy level? (1-10)'),
+    stress_level: z.number().min(1).max(10).optional().describe('Stress level? (1-10, 1=low stress)'),
+    sleep_quality: z.number().min(1).max(10).optional().describe('Sleep quality? (1-10)'),
+    gratitude: z.array(z.string()).optional().describe('3 things you\'re grateful for'),
+    wins: z.array(z.string()).optional().describe('Today\'s wins/accomplishments'),
+    challenges: z.array(z.string()).optional().describe('Current challenges'),
+    intentions: z.array(z.string()).optional().describe('Intentions for tomorrow'),
+    notes: z.string().optional()
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { log_type, ...metrics } = args;
+        const today = new Date().toISOString().split('T')[0];
+        const logData = {
+            log_date: today,
+            log_type,
+            ...metrics
+        };
+        const { data, error } = await supabase
+            .from('jeff_wellbeing_logs')
+            .upsert(logData, { onConflict: 'log_date,log_type' })
+            .select()
+            .single();
+        if (error) {
+            return formatResponse(`Check-in error: ${error.message}`, true);
+        }
+        // Calculate PERMA average
+        const permaScores = [
+            data.positive_emotion,
+            data.engagement,
+            data.relationships,
+            data.meaning,
+            data.accomplishment
+        ].filter(s => s !== null);
+        const permaAverage = permaScores.length > 0
+            ? Math.round(permaScores.reduce((a, b) => a + b, 0) / permaScores.length * 10) / 10
+            : null;
+        return formatResponse({
+            action: 'checkin_logged',
+            date: today,
+            log: data,
+            permaAverage,
+            insight: permaAverage ? (permaAverage >= 8 ? 'Excellent! You\'re thriving.' :
+                permaAverage >= 6 ? 'Good day. Keep nurturing what\'s working.' :
+                    permaAverage >= 4 ? 'Moderate. Consider what might boost your wellbeing.' :
+                        'Challenging day. Be kind to yourself and reach out if needed.') : 'Complete more PERMA dimensions for insights.'
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_wellbeing_summary", "Get wellbeing trends over time", {
+    days: z.number().optional().default(7).describe('Number of days to analyze')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { days } = args;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        const { data, error } = await supabase
+            .from('jeff_wellbeing_logs')
+            .select('*')
+            .gte('log_date', startDate.toISOString().split('T')[0])
+            .order('log_date', { ascending: true });
+        if (error) {
+            return formatResponse(`Summary error: ${error.message}`, true);
+        }
+        if (!data || data.length === 0) {
+            return formatResponse({
+                action: 'wellbeing_summary',
+                message: 'No wellbeing logs found for this period. Try /jeff checkin to start tracking.',
+                suggestion: 'Regular check-ins help identify patterns in your wellbeing.'
+            });
+        }
+        // Calculate averages
+        const dimensions = ['positive_emotion', 'engagement', 'relationships', 'meaning', 'accomplishment', 'energy_level', 'stress_level', 'sleep_quality'];
+        const averages = {};
+        dimensions.forEach(dim => {
+            const values = data.map(d => d[dim]).filter(v => v !== null);
+            if (values.length > 0) {
+                averages[dim] = Math.round(values.reduce((a, b) => a + b, 0) / values.length * 10) / 10;
+            }
+        });
+        // Identify trends
+        const trends = [];
+        if (averages.positive_emotion >= 7)
+            trends.push('Strong positive emotions');
+        if (averages.stress_level >= 7)
+            trends.push('Consider stress management techniques');
+        if (averages.sleep_quality <= 5)
+            trends.push('Sleep quality could use attention');
+        if (averages.relationships >= 7)
+            trends.push('Good social connections');
+        return formatResponse({
+            action: 'wellbeing_summary',
+            period: {
+                start: startDate.toISOString().split('T')[0],
+                end: new Date().toISOString().split('T')[0],
+                daysLogged: data.length
+            },
+            averages,
+            trends,
+            logs: data
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+// ============================================================================
+// HABIT TOOLS (Atomic Habits Inspired)
+// ============================================================================
+server.tool("jeff_add_habit", "Create a new habit to track", {
+    name: z.string().describe('Habit name'),
+    description: z.string().optional(),
+    category: z.enum(['health', 'fitness', 'mindfulness', 'learning', 'productivity', 'relationships', 'finance', 'custom']).optional().default('custom'),
+    frequency: z.enum(['daily', 'weekly', 'specific_days']).optional().default('daily'),
+    target_days: z.array(z.number()).optional().describe('For specific_days: 0=Sun, 1=Mon, etc.'),
+    identity_statement: z.string().optional().describe('I am the type of person who...'),
+    cue: z.string().optional().describe('What triggers this habit?'),
+    routine: z.string().optional().describe('The habit action itself'),
+    reward: z.string().optional().describe('How do you reward yourself?')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const habitData = {
+            ...args,
+            target_days: args.target_days || [],
+            current_streak: 0,
+            longest_streak: 0,
+            total_completions: 0
+        };
+        const { data, error } = await supabase
+            .from('jeff_habits')
+            .insert(habitData)
+            .select()
+            .single();
+        if (error) {
+            return formatResponse(`Add habit error: ${error.message}`, true);
+        }
+        return formatResponse({
+            action: 'habit_created',
+            habit: data,
+            tip: 'Start small. Make it obvious, attractive, easy, and satisfying.'
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_log_habit", "Log habit completion for today", {
+    habit_id: z.string().optional().describe('Habit UUID'),
+    habit_name: z.string().optional().describe('Habit name (alternative to ID)'),
+    completed: z.boolean().optional().default(true),
+    notes: z.string().optional()
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { habit_id, habit_name, completed, notes } = args;
+        const today = new Date().toISOString().split('T')[0];
+        // Find habit by ID or name
+        let habitId = habit_id;
+        if (!habitId && habit_name) {
+            const { data: habit } = await supabase
+                .from('jeff_habits')
+                .select('id')
+                .ilike('name', habit_name)
+                .single();
+            habitId = habit?.id;
+        }
+        if (!habitId) {
+            return formatResponse('Habit not found. Provide habit_id or habit_name.', true);
+        }
+        const { data, error } = await supabase
+            .from('jeff_habit_logs')
+            .upsert({
+            habit_id: habitId,
+            log_date: today,
+            completed,
+            notes
+        }, { onConflict: 'habit_id,log_date' })
+            .select()
+            .single();
+        if (error) {
+            return formatResponse(`Log habit error: ${error.message}`, true);
+        }
+        // Get updated habit with streak
+        const { data: habit } = await supabase
+            .from('jeff_habits')
+            .select('*')
+            .eq('id', habitId)
+            .single();
+        return formatResponse({
+            action: 'habit_logged',
+            date: today,
+            log: data,
+            habit: habit,
+            streak: habit?.current_streak || 0,
+            message: completed ? `Great job! Streak: ${habit?.current_streak || 1} days` : 'Logged. Tomorrow is a new day!'
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_habit_status", "View all habits with streaks and today's status", {}, async () => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: habits, error } = await supabase
+            .from('jeff_habits')
+            .select('*')
+            .eq('active', true)
+            .order('category')
+            .order('name');
+        if (error) {
+            return formatResponse(`Habit status error: ${error.message}`, true);
+        }
+        // Get today's logs
+        const { data: todayLogs } = await supabase
+            .from('jeff_habit_logs')
+            .select('habit_id, completed')
+            .eq('log_date', today);
+        const habitsWithStatus = habits?.map(h => ({
+            ...h,
+            completedToday: todayLogs?.find(l => l.habit_id === h.id)?.completed || false
+        })) || [];
+        const completed = habitsWithStatus.filter(h => h.completedToday).length;
+        const total = habitsWithStatus.length;
+        return formatResponse({
+            action: 'habit_status',
+            date: today,
+            summary: {
+                total,
+                completedToday: completed,
+                percentage: total > 0 ? Math.round(completed / total * 100) : 0
+            },
+            habits: habitsWithStatus,
+            encouragement: completed === total && total > 0
+                ? 'Perfect day! All habits completed.'
+                : completed > 0
+                    ? `${completed}/${total} done. Keep going!`
+                    : 'Start your first habit of the day!'
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+// ============================================================================
+// PERSONAL DAILY DIGEST (EXTENDED)
+// ============================================================================
+server.tool("jeff_personal_digest", "Generate a comprehensive personal/family daily digest with calendar, tasks, wellbeing, and habits", {}, async () => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const weekFromNow = new Date(today);
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+        // Get all data in parallel
+        const [tasksResult, overdueResult, emailsResult, recurringResult, wellbeingResult, habitsResult, habitLogsResult] = await Promise.all([
+            supabase.from('jeff_tasks').select('*')
+                .not('status', 'in', '("completed","cancelled")')
+                .order('priority').order('due_date', { nullsFirst: false }),
+            supabase.from('jeff_tasks').select('*')
+                .not('status', 'in', '("completed","cancelled")')
+                .lt('due_date', today.toISOString()),
+            supabase.from('jeff_email_threads').select('*')
+                .eq('needs_response', true).eq('status', 'active'),
+            supabase.from('jeff_recurring_items').select('*, jeff_family_members(name)')
+                .eq('active', true)
+                .gte('next_occurrence', todayStr)
+                .lte('next_occurrence', weekFromNow.toISOString().split('T')[0]),
+            supabase.from('jeff_wellbeing_logs').select('*')
+                .eq('log_date', todayStr).single(),
+            supabase.from('jeff_habits').select('*').eq('active', true),
+            supabase.from('jeff_habit_logs').select('habit_id, completed').eq('log_date', todayStr)
+        ]);
+        const tasks = tasksResult.data || [];
+        const overdue = overdueResult.data || [];
+        const emails = emailsResult.data || [];
+        const recurring = recurringResult.data || [];
+        const wellbeing = wellbeingResult.data;
+        const habits = habitsResult.data || [];
+        const habitLogs = habitLogsResult.data || [];
+        // Due today tasks
+        const dueToday = tasks.filter(t => {
+            if (!t.due_date)
+                return false;
+            const due = new Date(t.due_date);
+            return due >= today && due < tomorrow;
+        });
+        // Habit status
+        const habitsCompleted = habits.filter(h => habitLogs.find(l => l.habit_id === h.id && l.completed)).length;
+        // Group tasks by project
+        const tasksByProject = {};
+        tasks.forEach(t => {
+            const proj = t.project_id || 'unassigned';
+            tasksByProject[proj] = (tasksByProject[proj] || 0) + 1;
+        });
+        return formatResponse({
+            action: 'personal_digest',
+            date: todayStr,
+            dayOfWeek: today.toLocaleDateString('en-US', { weekday: 'long' }),
+            greeting: getTimeBasedGreeting(),
+            // Priority section
+            attention: {
+                overdueTasks: overdue.length,
+                urgentTasks: tasks.filter(t => t.priority === 'urgent').length,
+                emailsNeedingResponse: emails.length,
+                habitsPending: habits.length - habitsCompleted
+            },
+            // Calendar section
+            calendar: {
+                instructions: 'Use google-calendar MCP for today\'s events',
+                tool: 'mcp__google-calendar__list-events',
+                params: {
+                    calendarId: Object.values(FAMILY_CALENDARS).map(c => c.id),
+                    timeMin: today.toISOString(),
+                    timeMax: tomorrow.toISOString()
+                }
+            },
+            // Tasks section
+            tasks: {
+                overdue,
+                dueToday,
+                highPriority: tasks.filter(t => t.priority === 'urgent' || t.priority === 'high'),
+                byProject: tasksByProject,
+                total: tasks.length
+            },
+            // Emails section
+            emails: {
+                needingResponse: emails,
+                count: emails.length
+            },
+            // Upcoming section
+            upcoming: {
+                thisWeek: recurring,
+                birthdays: recurring.filter(r => r.category === 'birthday'),
+                renewals: recurring.filter(r => r.category === 'renewal')
+            },
+            // Wellbeing section
+            wellbeing: wellbeing ? {
+                logged: true,
+                permaScores: {
+                    positive_emotion: wellbeing.positive_emotion,
+                    engagement: wellbeing.engagement,
+                    relationships: wellbeing.relationships,
+                    meaning: wellbeing.meaning,
+                    accomplishment: wellbeing.accomplishment
+                },
+                energy: wellbeing.energy_level,
+                stress: wellbeing.stress_level
+            } : {
+                logged: false,
+                suggestion: 'Start your day with a quick PERMA check-in'
+            },
+            // Habits section
+            habits: {
+                total: habits.length,
+                completed: habitsCompleted,
+                pending: habits.filter(h => !habitLogs.find(l => l.habit_id === h.id && l.completed)),
+                streaks: habits.filter(h => h.current_streak >= 7).map(h => ({
+                    name: h.name,
+                    streak: h.current_streak
+                }))
+            },
+            // Recommendations
+            recommendations: generateRecommendations(overdue, dueToday, emails, habits, habitsCompleted, wellbeing),
+            // Quick actions
+            quickActions: [
+                overdue.length > 0 ? 'Address overdue tasks first' : null,
+                emails.length > 0 ? 'Respond to pending emails' : null,
+                !wellbeing ? 'Do morning PERMA check-in' : null,
+                habitsCompleted < habits.length ? 'Complete remaining habits' : null
+            ].filter(Boolean)
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+// Helper functions for personal digest
+function getTimeBasedGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12)
+        return 'Good morning';
+    if (hour < 17)
+        return 'Good afternoon';
+    return 'Good evening';
+}
+function generateRecommendations(overdue, dueToday, emails, habits, habitsCompleted, wellbeing) {
+    const recs = [];
+    if (overdue.length > 0) {
+        recs.push(`Tackle ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''} first`);
+    }
+    if (emails.length > 3) {
+        recs.push('Block time for email responses');
+    }
+    if (!wellbeing) {
+        recs.push('5-minute PERMA check-in boosts self-awareness');
+    }
+    if (wellbeing?.stress_level >= 7) {
+        recs.push('Consider a stress-reduction activity today');
+    }
+    if (habitsCompleted === 0 && habits.length > 0) {
+        recs.push('Start with your easiest habit to build momentum');
+    }
+    if (dueToday.length > 5) {
+        recs.push('Prioritize ruthlessly - pick your top 3');
+    }
+    return recs.length > 0 ? recs : ['Looking good! Focus on deep work today.'];
+}
 // Start the server
 async function startServer() {
     const transport = new StdioServerTransport();

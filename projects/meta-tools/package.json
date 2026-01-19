@@ -7,12 +7,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --project l7-business --project unified-browser --project unified-comms",
-    "build:all": "npm run build --workspace=l7-business && npm run build --workspace=unified-browser && npm run build --workspace=unified-comms"
+    "build:all": "npm run build --workspace=l7-business && npm run build --workspace=unified-browser && npm run build --workspace=unified-comms && npm run build --workspace=feedly"
   },
   "workspaces": [
     "l7-business",
     "unified-browser",
-    "unified-comms"
+    "unified-comms",
+    "feedly"
   ],
   "devDependencies": {
     "vitest": "^3.0.0"
