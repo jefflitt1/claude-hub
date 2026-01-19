@@ -1,0 +1,28 @@
+{
+  "description": "N8N error emails to mark as read and trash after unified-comms MCP restart",
+  "account": "personal",
+  "created": "2026-01-19",
+  "messageIds": [
+    "19bd6d7449075de0",
+    "19bd6d635ee5bb86",
+    "19bd6d5d48d83ba4",
+    "19bd6d46e245df7f",
+    "19bd6d3f09f706e7",
+    "19bd6c776520003c",
+    "19bd6c4f8647d53c",
+    "19bd6c4178d60f28",
+    "19bd6c29292643ef",
+    "19bd6c228d3d44c3",
+    "19bd6c1f783a3545",
+    "19bd6b885be7a033",
+    "19bd6b749248e174",
+    "19bd6b65e43d61f7",
+    "19bd6b5a8c13e004",
+    "19bd6b59e56ed2ff",
+    "19bd6b073fa4dc5d",
+    "19bd6af3e9b7c687",
+    "19bd6a980b223ca1",
+    "19bd69bdc9ab5bde"
+  ],
+  "command": "After restart, run: message_mark_read then message_trash with these IDs and account='personal'"
+}

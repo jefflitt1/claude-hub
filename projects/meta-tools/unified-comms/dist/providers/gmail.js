@@ -478,4 +478,80 @@ export async function getThread(accountType, threadId) {
         };
     }
 }
+/**
+ * Trash messages (move to trash)
+ */
+export async function trashMessages(accountType, messageIds) {
+    const gmail = await getGmailClient(accountType);
+    if (!gmail) {
+        return { success: false, error: `${accountType} account not configured. Run OAuth setup first.` };
+    }
+    try {
+        const errors = [];
+        let trashedCount = 0;
+        await Promise.all(messageIds.map(async (messageId) => {
+            try {
+                await gmail.users.messages.trash({
+                    userId: 'me',
+                    id: messageId
+                });
+                trashedCount++;
+            }
+            catch (err) {
+                errors.push(`Failed to trash ${messageId}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            }
+        }));
+        return {
+            success: errors.length === 0,
+            trashedCount,
+            ...(errors.length > 0 && { errors })
+        };
+    }
+    catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+}
+/**
+ * Modify message labels (add/remove labels)
+ */
+export async function modifyLabels(accountType, messageIds, params) {
+    const gmail = await getGmailClient(accountType);
+    if (!gmail) {
+        return { success: false, error: `${accountType} account not configured. Run OAuth setup first.` };
+    }
+    try {
+        const errors = [];
+        let modifiedCount = 0;
+        await Promise.all(messageIds.map(async (messageId) => {
+            try {
+                await gmail.users.messages.modify({
+                    userId: 'me',
+                    id: messageId,
+                    requestBody: {
+                        addLabelIds: params.addLabelIds || [],
+                        removeLabelIds: params.removeLabelIds || []
+                    }
+                });
+                modifiedCount++;
+            }
+            catch (err) {
+                errors.push(`Failed to modify ${messageId}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            }
+        }));
+        return {
+            success: errors.length === 0,
+            modifiedCount,
+            ...(errors.length > 0 && { errors })
+        };
+    }
+    catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+}
 //# sourceMappingURL=gmail.js.map

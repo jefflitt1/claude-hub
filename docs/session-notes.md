@@ -1,7 +1,31 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 5)
+**Last Updated:** 2026-01-19 (Session 6)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 6)
+
+### Unified-Comms MCP Extended with Email Management Tools
+Extended the unified-comms MCP server with message management capabilities:
+
+**New Gmail Provider Functions (`src/providers/gmail.ts`):**
+- `trashMessages()` - Moves messages to trash using Gmail API
+- `modifyLabels()` - Adds/removes labels on messages (batch operations with Promise.all)
+
+**New MCP Tools (`src/index.ts`):**
+- `message_trash` - Move messages to trash (accepts array of message IDs)
+- `message_mark_read` - Mark messages as read (removes UNREAD label)
+
+**Technical Notes:**
+- Gmail API `gmail.modify` scope was already present - no OAuth re-auth needed
+- Both tools accept arrays for batch operations
+- Built and tested successfully
+- Requires Claude Code restart to load new tools
+
+**Pending After Restart:**
+- Clean up 20 n8n error emails (IDs saved in `n8n-error-emails-to-delete.json`)
 
 ---
 

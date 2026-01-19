@@ -548,6 +548,92 @@ server.tool(
   }
 );
 
+// Trash messages tool
+server.tool(
+  "message_trash",
+  "Move messages to trash",
+  {
+    messageIds: z.array(z.string()).describe('Array of message IDs to trash'),
+    account: z.enum(['personal', 'l7']).describe('Which account the messages are in')
+  },
+  async (args) => {
+    try {
+      const { messageIds, account } = args;
+
+      if (!gmail.isAccountConfigured(account)) {
+        return formatResponse({
+          error: `${account} account not configured`,
+          action: 'oauth_required'
+        }, true);
+      }
+
+      const result = await gmail.trashMessages(account, messageIds);
+
+      if (!result.success) {
+        return formatResponse({
+          action: 'trash_failed',
+          error: result.error,
+          ...(result.errors && { errors: result.errors }),
+          trashedCount: result.trashedCount || 0
+        }, true);
+      }
+
+      return formatResponse({
+        action: 'messages_trashed',
+        success: true,
+        trashedCount: result.trashedCount,
+        account
+      });
+    } catch (error) {
+      return formatResponse(`Trash error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+// Mark messages as read tool
+server.tool(
+  "message_mark_read",
+  "Mark messages as read (removes UNREAD label)",
+  {
+    messageIds: z.array(z.string()).describe('Array of message IDs to mark as read'),
+    account: z.enum(['personal', 'l7']).describe('Which account the messages are in')
+  },
+  async (args) => {
+    try {
+      const { messageIds, account } = args;
+
+      if (!gmail.isAccountConfigured(account)) {
+        return formatResponse({
+          error: `${account} account not configured`,
+          action: 'oauth_required'
+        }, true);
+      }
+
+      const result = await gmail.modifyLabels(account, messageIds, {
+        removeLabelIds: ['UNREAD']
+      });
+
+      if (!result.success) {
+        return formatResponse({
+          action: 'mark_read_failed',
+          error: result.error,
+          ...(result.errors && { errors: result.errors }),
+          modifiedCount: result.modifiedCount || 0
+        }, true);
+      }
+
+      return formatResponse({
+        action: 'messages_marked_read',
+        success: true,
+        modifiedCount: result.modifiedCount,
+        account
+      });
+    } catch (error) {
+      return formatResponse(`Mark read error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
 // Info tool
 server.tool(
   "comms_info",

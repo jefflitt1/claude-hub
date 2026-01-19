@@ -101,4 +101,25 @@ export declare function getThread(accountType: 'personal' | 'l7', threadId: stri
     messages?: any[];
     error?: string;
 }>;
+/**
+ * Trash messages (move to trash)
+ */
+export declare function trashMessages(accountType: 'personal' | 'l7', messageIds: string[]): Promise<{
+    success: boolean;
+    trashedCount?: number;
+    errors?: string[];
+    error?: string;
+}>;
+/**
+ * Modify message labels (add/remove labels)
+ */
+export declare function modifyLabels(accountType: 'personal' | 'l7', messageIds: string[], params: {
+    addLabelIds?: string[];
+    removeLabelIds?: string[];
+}): Promise<{
+    success: boolean;
+    modifiedCount?: number;
+    errors?: string[];
+    error?: string;
+}>;
 export {};
