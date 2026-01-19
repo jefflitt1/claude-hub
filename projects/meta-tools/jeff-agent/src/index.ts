@@ -868,53 +868,6 @@ server.tool(
 );
 
 // ============================================================================
-// INFO TOOL
-// ============================================================================
-
-server.tool(
-  "jeff_info",
-  "Get information about Jeff Agent status and configuration",
-  {},
-  async () => {
-    return formatResponse({
-      name: 'jeff-agent',
-      version: '1.0.0',
-      description: 'Personal assistant for email management, task tracking, and project oversight',
-      configured: !!supabase,
-      supabaseUrl: SUPABASE_URL,
-      projectDomains: PROJECT_DOMAINS,
-      projectKeywords: PROJECT_KEYWORDS,
-      tables: [
-        'jeff_tasks - Task tracking',
-        'jeff_email_threads - Email thread tracking',
-        'jeff_associations - Entity relationships',
-        'jeff_contacts - Contact directory'
-      ],
-      tools: [
-        // Tasks
-        'jeff_create_task - Create new task',
-        'jeff_list_tasks - List tasks with filters',
-        'jeff_update_task - Update task',
-        'jeff_complete_task - Mark task complete',
-        // Email
-        'jeff_triage_inbox - Inbox triage instructions',
-        'jeff_track_email_thread - Track email thread',
-        'jeff_get_thread - Get thread with associations',
-        'jeff_draft_response - Create draft reply',
-        // Associations
-        'jeff_associate - Link entities',
-        // Contacts
-        'jeff_upsert_contact - Create/update contact',
-        // Projects
-        'jeff_project_status - Project summary',
-        // Digest
-        'jeff_daily_digest - Daily summary'
-      ]
-    });
-  }
-);
-
-// ============================================================================
 // PERSONAL/FAMILY TOOLS
 // ============================================================================
 

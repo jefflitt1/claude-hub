@@ -1,7 +1,23 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 16)
+**Last Updated:** 2026-01-19 (Session 17)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 17)
+
+### Jeff-Agent MCP Server Fix
+Fixed startup failure preventing jeff-agent MCP server from loading:
+
+**Issue:** Duplicate tool registration error - `jeff_info` was registered twice (v1.0 at line 875, v2.0 at line 3302)
+
+**Fix:** Removed obsolete v1.0 `jeff_info` tool registration, kept expanded v2.0 version with family, habits, wellbeing, and email rules features.
+
+**Files Changed:**
+- `projects/meta-tools/jeff-agent/src/index.ts` - Removed duplicate registration (lines 870-915)
+
+**Next:** Restart Claude Code to test `/jeff quick` with fixed server.
 
 ---
 
