@@ -1,7 +1,36 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 15)
+**Last Updated:** 2026-01-19 (Session 16)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 16)
+
+### Feedly Integration - Context-Aware Article Surfacing
+Continued from previous session. Added coaching behaviors to CLAUDE.md for context-aware article suggestions:
+
+**New Coaching Triggers:**
+- Starting L7/CRE work → "X unread CRE articles. `/reading cre`?"
+- Starting JGL/trading work → "X unread Markets articles. `/reading markets`?"
+- Learning/optimization discussion → mention `/reading learn` if relevant
+
+**Implementation Complete:**
+| Component | Status |
+|-----------|--------|
+| Industry Reading habit | ✅ Created |
+| `/reading` skill | ✅ Working |
+| Category→Project mapping | ✅ Documented |
+| Context-aware coaching | ✅ Added |
+
+**Evaluated but Deferred:**
+- Embed articles in `/jeff today` - user didn't see themselves using without assist
+- Article-to-task `/reading task [n]` - deferred
+- Auto-prompt habit logging - deferred
+- Weekly saved articles review - deferred
+
+**Files Changed:**
+- `~/CLAUDE.md` - Added 3 coaching behaviors for article surfacing
 
 ---
 
