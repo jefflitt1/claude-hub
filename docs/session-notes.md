@@ -1,7 +1,36 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-18 (Session 7)
+**Last Updated:** 2026-01-19 (Session 1)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 1)
+
+### Mobile Approval System - Redis to Supabase Migration
+Complete overhaul of the mobile approval system to fix Redis connectivity issues and add new features:
+
+**Root Cause Fixed:**
+- n8n runs on VPS behind Cloudflare, could not reach Pi's private Redis at 192.168.4.147
+- Migrated to Supabase as shared storage accessible from both n8n (VPS) and Mac
+
+**New Features Added:**
+- "Always" approval option - stores pattern-based rules for auto-approval
+- Created `claude_always_approvals` table for persistent rules
+- Pattern matching: `bash:npm`, `bash:git`, `write:ts`, `edit:json`, etc.
+- Reduced timeout from 120s to 60s for faster terminal fallback
+- Configurable via `APPROVAL_TIMEOUT` environment variable
+
+**Technical Changes:**
+- `~/.claude/approval-handler.py` - Supabase polling, always-approval checking, proper hookSpecificOutput format
+- `~/.zshrc` - Added SUPABASE_URL, SUPABASE_KEY environment variables
+- `~/.claude/settings.json` - Reduced timeout from 130000ms to 65000ms
+- n8n workflow updated with Supabase HTTP nodes replacing Redis nodes
+- Created comprehensive docs at `~/.claude/docs/approval-flow-architecture.md`
+
+**Pending Testing:**
+- End-to-end test of complete approval flow
+- Verify n8n callback sends "approveAlways" correctly
 
 ---
 

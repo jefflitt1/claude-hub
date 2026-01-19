@@ -417,6 +417,153 @@ server.tool(
   }
 );
 
+server.tool(
+  "l7_describe_table",
+  "Get schema information for a table (columns, types, constraints)",
+  {
+    table: z.string().describe('Table name to describe'),
+    schema: z.string().optional().default('public')
+  },
+  async (args) => {
+    if (!supabase) {
+      return formatResponse('Supabase client not configured.', true);
+    }
+
+    try {
+      const { table, schema } = args;
+
+      // Check cache
+      const key = cacheKey('describe', { table, schema });
+      const cached = supabaseCache.get(key);
+      if (cached) {
+        return formatResponse({ source: 'cache', ...cached });
+      }
+
+      // Get column information
+      const columnsQuery = `
+        SELECT
+          column_name,
+          data_type,
+          is_nullable,
+          column_default,
+          character_maximum_length
+        FROM information_schema.columns
+        WHERE table_schema = '${schema}' AND table_name = '${table}'
+        ORDER BY ordinal_position
+      `;
+
+      const { data: columns, error: colError } = await supabase.rpc('exec_sql', { sql_query: columnsQuery });
+
+      if (colError) {
+        return formatResponse(`Error describing table: ${colError.message}`, true);
+      }
+
+      // Get primary key info
+      const pkQuery = `
+        SELECT kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+          AND tc.table_schema = kcu.table_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_schema = '${schema}'
+          AND tc.table_name = '${table}'
+      `;
+
+      const { data: pkData } = await supabase.rpc('exec_sql', { sql_query: pkQuery });
+      const primaryKeys = pkData?.map((r: any) => r.column_name) || [];
+
+      // Get foreign key info
+      const fkQuery = `
+        SELECT
+          kcu.column_name,
+          ccu.table_name AS foreign_table,
+          ccu.column_name AS foreign_column
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+        JOIN information_schema.constraint_column_usage ccu
+          ON ccu.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = '${schema}'
+          AND tc.table_name = '${table}'
+      `;
+
+      const { data: fkData } = await supabase.rpc('exec_sql', { sql_query: fkQuery });
+
+      const result = {
+        schema,
+        table,
+        columns: columns?.map((col: any) => ({
+          name: col.column_name,
+          type: col.data_type,
+          nullable: col.is_nullable === 'YES',
+          default: col.column_default,
+          maxLength: col.character_maximum_length,
+          isPrimaryKey: primaryKeys.includes(col.column_name)
+        })) || [],
+        primaryKeys,
+        foreignKeys: fkData || []
+      };
+
+      supabaseCache.set(key, result);
+      return formatResponse({ source: 'database', ...result });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
+  "l7_get_execution",
+  "Get details of a specific n8n execution",
+  {
+    id: z.string().describe('Execution ID'),
+    includeData: z.boolean().optional().default(false).describe('Include full execution data')
+  },
+  async (args) => {
+    if (!N8N_API_KEY) {
+      return formatResponse('n8n API key not configured.', true);
+    }
+
+    try {
+      const { id, includeData } = args;
+
+      const url = new URL(`${N8N_URL}/api/v1/executions/${id}`);
+      if (includeData) url.searchParams.set('includeData', 'true');
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'X-N8N-API-KEY': N8N_API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        return formatResponse(`n8n API error: ${response.status} ${response.statusText}`, true);
+      }
+
+      const execution = await response.json();
+
+      return formatResponse({
+        source: 'n8n_api',
+        execution: {
+          id: execution.id,
+          workflowId: execution.workflowId,
+          status: execution.status,
+          mode: execution.mode,
+          startedAt: execution.startedAt,
+          stoppedAt: execution.stoppedAt,
+          ...(includeData && { data: execution.data })
+        }
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
 // n8n Tools
 
 server.tool(

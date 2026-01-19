@@ -468,3 +468,149 @@ export function getAccountStatus(): {
     credentialsDir: CREDENTIALS_DIR
   };
 }
+
+/**
+ * Reply to a message (in same thread)
+ */
+export async function replyToMessage(
+  accountType: 'personal' | 'l7',
+  params: {
+    messageId: string;
+    body: string;
+    replyAll?: boolean;
+  }
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const gmail = await getGmailClient(accountType);
+  if (!gmail) {
+    return { success: false, error: `${accountType} account not configured. Run OAuth setup first.` };
+  }
+
+  try {
+    // Get original message to extract thread info and headers
+    const original = await gmail.users.messages.get({
+      userId: 'me',
+      id: params.messageId,
+      format: 'metadata',
+      metadataHeaders: ['From', 'To', 'Cc', 'Subject', 'Message-ID', 'References', 'In-Reply-To']
+    });
+
+    const headers = original.data.payload?.headers || [];
+    const getHeader = (name: string) =>
+      headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value;
+
+    const threadId = original.data.threadId;
+    const originalFrom = getHeader('from');
+    const originalTo = getHeader('to');
+    const originalCc = getHeader('cc');
+    const originalSubject = getHeader('subject') || '';
+    const originalMessageId = getHeader('message-id');
+    const originalReferences = getHeader('references');
+
+    // Determine recipients
+    const config = getAccountConfig(accountType);
+    let replyTo = originalFrom || '';
+    let cc = '';
+
+    if (params.replyAll) {
+      // Include original To and Cc, excluding our own email
+      const allRecipients = [originalTo, originalCc]
+        .filter(Boolean)
+        .join(',')
+        .split(',')
+        .map(e => e.trim())
+        .filter(e => !e.toLowerCase().includes(config.email.toLowerCase()));
+      cc = allRecipients.join(', ');
+    }
+
+    // Build reply subject
+    const subject = originalSubject.toLowerCase().startsWith('re:')
+      ? originalSubject
+      : `Re: ${originalSubject}`;
+
+    // Build References header for threading
+    const references = originalReferences
+      ? `${originalReferences} ${originalMessageId}`
+      : originalMessageId;
+
+    // Build email in RFC 2822 format
+    const emailLines = [
+      `From: ${config.email}`,
+      `To: ${replyTo}`,
+      ...(cc ? [`Cc: ${cc}`] : []),
+      `Subject: ${subject}`,
+      ...(originalMessageId ? [`In-Reply-To: ${originalMessageId}`] : []),
+      ...(references ? [`References: ${references}`] : []),
+      'Content-Type: text/plain; charset=utf-8',
+      '',
+      params.body
+    ];
+
+    const email = emailLines.join('\r\n');
+    const encodedEmail = Buffer.from(email).toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    const response = await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedEmail,
+        threadId: threadId || undefined
+      }
+    });
+
+    return {
+      success: true,
+      messageId: response.data.id || undefined
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Get thread messages
+ */
+export async function getThread(
+  accountType: 'personal' | 'l7',
+  threadId: string
+): Promise<{ success: boolean; messages?: any[]; error?: string }> {
+  const gmail = await getGmailClient(accountType);
+  if (!gmail) {
+    return { success: false, error: `${accountType} account not configured. Run OAuth setup first.` };
+  }
+
+  try {
+    const response = await gmail.users.threads.get({
+      userId: 'me',
+      id: threadId,
+      format: 'metadata',
+      metadataHeaders: ['From', 'To', 'Subject', 'Date']
+    });
+
+    const messages = response.data.messages?.map(msg => {
+      const headers = msg.payload?.headers || [];
+      const getHeader = (name: string) =>
+        headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value;
+
+      return {
+        id: msg.id,
+        from: getHeader('from'),
+        to: getHeader('to'),
+        subject: getHeader('subject'),
+        date: getHeader('date'),
+        snippet: msg.snippet
+      };
+    }) || [];
+
+    return { success: true, messages };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}

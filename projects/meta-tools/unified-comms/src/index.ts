@@ -460,6 +460,94 @@ server.tool(
   }
 );
 
+// Reply to message tool
+server.tool(
+  "message_reply",
+  "Reply to an email message (stays in same thread)",
+  {
+    messageId: z.string().describe('Message ID to reply to'),
+    body: z.string().describe('Reply body content'),
+    account: z.enum(['personal', 'l7']).describe('Which account to reply from'),
+    replyAll: z.boolean().optional().default(false).describe('Reply to all recipients')
+  },
+  async (args) => {
+    try {
+      const { messageId, body, account, replyAll } = args;
+
+      if (!gmail.isAccountConfigured(account)) {
+        return formatResponse({
+          error: `${account} account not configured`,
+          action: 'oauth_required'
+        }, true);
+      }
+
+      const result = await gmail.replyToMessage(account, {
+        messageId,
+        body,
+        replyAll
+      });
+
+      if (!result.success) {
+        return formatResponse({
+          action: 'reply_failed',
+          error: result.error
+        }, true);
+      }
+
+      return formatResponse({
+        action: 'message_replied',
+        success: true,
+        messageId: result.messageId,
+        replyAll,
+        inReplyTo: messageId
+      });
+    } catch (error) {
+      return formatResponse(`Reply error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+// Get thread tool
+server.tool(
+  "message_thread",
+  "Get all messages in a thread",
+  {
+    threadId: z.string().describe('Thread ID to retrieve'),
+    account: z.enum(['personal', 'l7']).describe('Which account the thread is in')
+  },
+  async (args) => {
+    try {
+      const { threadId, account } = args;
+
+      if (!gmail.isAccountConfigured(account)) {
+        return formatResponse({
+          error: `${account} account not configured`,
+          action: 'oauth_required'
+        }, true);
+      }
+
+      const result = await gmail.getThread(account, threadId);
+
+      if (!result.success) {
+        return formatResponse({
+          action: 'get_thread_failed',
+          error: result.error
+        }, true);
+      }
+
+      return formatResponse({
+        action: 'thread_retrieved',
+        account,
+        threadId,
+        messageCount: result.messages?.length || 0,
+        messages: result.messages
+      });
+    } catch (error) {
+      return formatResponse(`Thread error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
 // Info tool
 server.tool(
   "comms_info",
