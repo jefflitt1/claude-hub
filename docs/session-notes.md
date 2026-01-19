@@ -1,7 +1,32 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-18 (Session 5)
+**Last Updated:** 2026-01-18 (Session 7)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-18 (Session 7)
+
+### Mobile Approvals JSON Fix & Supabase Key Migration
+Fixed n8n workflow errors and investigated Supabase's new key format:
+
+**Mobile Approvals Workflow Fixed:**
+- Added "Prepare Message" Code node to sanitize tool_input with escaped quotes/newlines
+- Workflow now uses `safe_tool_display` and `safe_tool_input` fields
+- Truncates long tool inputs to 500 chars for Telegram readability
+- Extracts command/description from JSON tool_input for cleaner display
+
+**Supabase Key Format Discovery:**
+- Supabase migrated to new `sb_` prefixed keys (sb_publishable_, sb_secret_)
+- Old JWT format (eyJ...) no longer works - "Legacy API keys are disabled"
+- Updated ~/.claude.json with new sb_secret format key
+- Updated supabase-js to v2.90.1 and rebuilt l7-business
+- l7-business still failing - may need additional configuration for new format
+- Workaround: MCP_DOCKER supabase tools work fine
+
+**Pending:**
+- Resolve l7-business Supabase connection with new key format
+- May need to try "default" secret key vs "mcp_docker" key
 
 ---
 
