@@ -1,7 +1,40 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 3)
+**Last Updated:** 2026-01-19 (Session 4)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 4)
+
+### Daily Digest Workflow Fixed
+- **Root cause:** `$env.ANTHROPIC_API_KEY` was empty during scheduled runs (6am trigger)
+- **Fix:** Switched from manual header with env var to n8n's predefined Anthropic API credentials
+- **Verified:** Execution #9245 completed successfully, email sent
+
+### Dashboard Schema Migration Completed
+Created 4 new Supabase tables via SQL migration (`docs/dashboard-schema-migration.sql`):
+
+| Table | Purpose | Status |
+|-------|---------|--------|
+| `workflow_categories` | Organize workflows (Production, Development, Integration, Automation, Templates) | ✅ Seeded with 5 categories |
+| `workflow_executions_summary` | Daily success/error counts per workflow | ✅ Created |
+| `workflow_dependencies` | Track workflow interconnections | ✅ Created |
+| `dashboard_sections` | Configurable UI sections with icons/colors | ✅ Seeded with 6 sections |
+
+Also added RLS policies for anon read access on all 4 tables.
+
+### Pi MCP Gateway Credentials Configured
+Connected to Pi via cloudflared tunnel (`ssh pi`) and configured MCP Gateway:
+
+| Service | Status | Notes |
+|---------|--------|-------|
+| mcp-brave | ✅ Working | Added Brave API key |
+| mcp-postgres | ✅ Working | Connected to local Supabase (host.docker.internal:5432) |
+| mcp-slack | ⏳ Skipped | Needs Slack app setup |
+
+**Files created:**
+- `~/mcp-gateway/.env` on Pi with credentials
 
 ---
 
@@ -991,18 +1024,19 @@ Trigger (6am) → Get Projects  ─┐
 
 ### High Priority
 
-1. **Fix Daily Digest scheduled trigger** - Workflow works manually but 6am scheduled runs failing (investigate error in execution #3590)
-2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
+1. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
 
-### Completed (Verified 2026-01-17)
+### Completed (Verified 2026-01-19)
 
+- ✅ **Daily Digest scheduled trigger** - Fixed with predefined Anthropic credentials (Session 4)
+- ✅ **Dashboard schema Phase 1** - 4 new tables created: workflow_categories, workflow_executions_summary, workflow_dependencies, dashboard_sections (Session 4)
+- ✅ **Pi MCP Gateway** - Brave and Postgres configured and working (Session 4)
 - ✅ **claude.l7-partners.com DNS** - Working with Cloudflare Access protection (302 redirect to login)
 - ✅ **l7-partners.com main site** - Working (Netlify, HTTP 200)
 - ✅ **n8n Workflows Section in Lovable** - N8nWorkflowsSection component deployed with:
   - QuickStatsBar, ProjectGroup, WorkflowCard components
   - Real-time Supabase subscription
   - 10+ workflows synced with project groupings
-- ✅ **Daily Digest workflow** - Works when manually/webhook triggered (execution #4771 success)
 - ✅ **Parent-child hierarchy** - Completed in Session 18
 - ✅ **GitHub → Supabase sync** - Fixed auth in Session 24
 
@@ -1081,10 +1115,10 @@ Mac (Development)              Raspberry Pi (Production)
 | Filesystem | 8808 | http://localhost:8808/sse | ✅ |
 | Memory | 8810 | http://localhost:8810/sse | ✅ |
 | GitHub | 8812 | http://localhost:8812/sse | ✅ |
-| Brave | 8813 | http://localhost:8813/sse | Needs key |
+| Brave | 8813 | http://localhost:8813/sse | ✅ (configured 2026-01-19) |
 | Puppeteer | 8814 | http://localhost:8814/sse | ✅ |
-| Slack | 8815 | http://localhost:8815/sse | Needs token |
-| PostgreSQL | 8816 | http://localhost:8816/sse | Needs URL |
+| Slack | 8815 | http://localhost:8815/sse | Needs Slack app |
+| PostgreSQL | 8816 | http://localhost:8816/sse | ✅ (local Supabase, 2026-01-19) |
 
 ---
 

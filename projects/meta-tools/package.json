@@ -1,0 +1,20 @@
+{
+  "name": "meta-tools",
+  "version": "1.0.0",
+  "description": "Unified MCP servers for Claude Code",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --project l7-business --project unified-browser --project unified-comms",
+    "build:all": "npm run build --workspace=l7-business && npm run build --workspace=unified-browser && npm run build --workspace=unified-comms"
+  },
+  "workspaces": [
+    "l7-business",
+    "unified-browser",
+    "unified-comms"
+  ],
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  }
+}

@@ -50,12 +50,21 @@ JSON files → GitHub push → n8n sync → Supabase → Lovable dashboard
 
 ## Supabase Tables
 
+### Core Tables
 | Table | Purpose |
 |-------|---------|
-| `n8n_workflows` | Full workflow inventory |
+| `n8n_workflows` | Full workflow inventory with category, priority, execution stats |
 | `claude_projects` | Projects and knowledge bases |
 | `claude_agents` | AI agent definitions |
 | `claude_skills` | Skill registry |
+
+### Dashboard Enhancement Tables (Added 2026-01-19)
+| Table | Purpose |
+|-------|---------|
+| `workflow_categories` | Workflow categorization (Production, Development, Integration, etc.) |
+| `workflow_executions_summary` | Daily success/error counts per workflow |
+| `workflow_dependencies` | Track workflow interconnections |
+| `dashboard_sections` | Configurable UI sections with icons/colors |
 
 ## Development Notes
 
