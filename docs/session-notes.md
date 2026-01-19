@@ -1,7 +1,46 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 12)
+**Last Updated:** 2026-01-19 (Session 13)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 13)
+
+### 3 New Operational Dashboard Panels for Claude Hub
+Added 3 major enhancement panels to the Claude Hub dashboard (1,140 lines):
+
+**1. WorkflowHealthMonitor** (`src/components/WorkflowHealthMonitor.tsx`)
+- Real-time success rate display (color-coded: green >95%, yellow >80%, red <80%)
+- Active workflow count and 24h execution stats
+- Highlights workflows with 2+ errors in 24h
+- Shows recently failed workflows (last hour)
+- Auto-refreshes every 5 minutes + manual refresh button
+- Prevents cascading errors like Session 10's inbox flood
+
+**2. JeffAgentPanel** (`src/components/JeffAgentPanel.tsx`)
+- Shows tasks from `jeff_tasks` table sorted by priority + due date
+- Tracks email threads from `jeff_email_threads` needing response
+- Tabbed interface: Tasks | Emails
+- Summary stats: Urgent, Overdue, Need Reply, Open Tasks
+- Real-time Supabase subscriptions for live updates
+- Makes personal assistant visible (previously CLI-only via `/jeff`)
+
+**3. SessionAnalyticsPanel** (`src/components/SessionAnalyticsPanel.tsx`)
+- Token usage trends (7-day mini bar chart visualization)
+- Key metrics: Total tokens, avg/session, files changed, skills used
+- Top skills breakdown with usage counts
+- Expandable recent sessions list
+- Time range selector: 7d / 30d / All
+- Enables data-driven session optimization
+
+**Integration:**
+- All 3 panels in responsive 3-column grid below AgentPerformanceDashboard
+- Commit: d4eb683 (pushed to GitHub, synced with Lovable)
+
+**Previous Session Work Also Pushed:**
+- 9 dashboard enhancements from Session 12 (commit 8854d71)
+- Total 12 enhancements now live at claude.l7-partners.com
 
 ---
 
@@ -1286,6 +1325,7 @@ Trigger (6am) → Get Projects  ─┐
 4. **Portal/TMS backend work** - Payment history views, lease views, communication logs, clear heights field
 5. **Dashboard enhancements** - Filtering, search, detailed views
 6. **Consider Pi redundancy** - For n8n workflows
+7. **Separate Claude Hub from L7 Partners app** - Extract ClaudeCatalog dashboard to standalone project (similar to JGL Capital dashboard separation). Currently embedded in l7partners-rewrite at /claude-catalog route. Would give cleaner architecture but works fine as-is. Low priority.
 
 ---
 
