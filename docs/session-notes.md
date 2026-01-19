@@ -1,7 +1,28 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 2)
+**Last Updated:** 2026-01-19 (Session 3)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 3)
+
+### Mobile Approval Hook Environment Fix
+Fixed issue where approval-handler.py couldn't poll Supabase:
+
+**Root Cause:** Python hooks run without sourcing shell profiles, so `SUPABASE_KEY` from `.zshrc` wasn't available.
+
+**Fix:** Added `SUPABASE_KEY` inline to the PermissionRequest hook command in `~/.claude/settings.json`:
+```json
+"command": "SUPABASE_KEY='...' python3 ~/.claude/approval-handler.py"
+```
+
+**Verified:**
+- Supabase tables exist (`claude_approvals`, `claude_always_approvals`)
+- Telegram credentials are set
+- Hook timeout is 65s (60s poll + buffer)
+
+**Next:** Test full approval flow after restart.
 
 ---
 
