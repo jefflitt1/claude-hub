@@ -394,23 +394,18 @@ server.tool(
         return formatResponse({ source: 'cache', ...cached });
       }
 
-      // Use Supabase's built-in method or RPC
-      const { data, error } = await supabase.rpc('get_tables', { schema_name: schema });
+      // Use exec_sql RPC to query information_schema
+      const sqlQuery = `
+        SELECT table_name, table_type
+        FROM information_schema.tables
+        WHERE table_schema = '${schema}'
+        ORDER BY table_name
+      `;
+
+      const { data, error } = await supabase.rpc('exec_sql', { sql_query: sqlQuery });
 
       if (error) {
-        // Fallback: try direct query
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('information_schema.tables' as any)
-          .select('table_name, table_type')
-          .eq('table_schema', schema);
-
-        if (fallbackError) {
-          return formatResponse(`Error listing tables: ${error.message}`, true);
-        }
-
-        const result = { schema, tables: fallbackData };
-        supabaseCache.set(key, result);
-        return formatResponse(result);
+        return formatResponse(`Error listing tables: ${error.message}`, true);
       }
 
       const result = { schema, tables: data };
