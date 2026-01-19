@@ -1,7 +1,57 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 10)
+**Last Updated:** 2026-01-19 (Session 11)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 11)
+
+### Google API Integration for MCP - Full Suite Configured
+Set up comprehensive Google API access via MCP servers:
+
+**New MCP Servers Added:**
+| Server | Package | Auth Type | Status |
+|--------|---------|-----------|--------|
+| google-calendar | `@cocal/google-calendar-mcp` | OAuth | ✅ Working |
+| google-sheets | `@mcp-z/mcp-sheets` | OAuth | ✅ Working |
+| google-maps | Docker MCP `google-maps-comprehensive` | API Key | ✅ Working |
+
+**Infrastructure Changes:**
+- Installed Node.js 24 via Homebrew (required for @mcp-z/mcp-sheets)
+- Configured Sheets MCP to use `/opt/homebrew/opt/node@24/bin/npx`
+- Set Maps API key in Docker MCP secrets
+- Removed HTTP referrer restrictions from Maps API key for server-side access
+- Enabled Google APIs in GCP project n8nl7-466320: Geocoding, Places, Routes, Elevation
+
+**OAuth Credentials:**
+- GCP Project: n8nl7-466320
+- OAuth Client: Claude Code MCP (817102354314-g77t...)
+- Calendar tokens: `~/.config/google-calendar-mcp/tokens.json`
+- Sheets uses same OAuth client ID/secret via env vars
+
+**Google Maps Tools Available (8 total):**
+- `maps_geocode` - Address to coordinates
+- `maps_reverse_geocode` - Coordinates to address
+- `maps_directions` - Driving/walking/transit directions
+- `maps_distance_matrix` - Travel times between multiple points
+- `maps_search_places` - Find businesses/POIs
+- `maps_place_details` - Detailed place info
+- `maps_elevation` - Elevation data
+- `maps_ping` - Health check
+
+**Blocked Items:**
+- Google Drive full CRUD not available (org policy `iam.disableServiceAccountKeyCreation` blocks service account keys)
+- Existing gdrive-L7/JGL MCPs remain read-only via OAuth
+
+**Full Google Suite Now Available:**
+| API | MCP Server | Capabilities |
+|-----|------------|--------------|
+| Calendar | google-calendar | Events, scheduling |
+| Sheets | google-sheets | Read/write spreadsheets, formatting |
+| Maps | google-maps (Docker) | Geocoding, directions, places |
+| Drive | gdrive-L7, gdrive-JGL | Search, read files |
+| Gmail | unified-comms | Send, receive, search |
 
 ---
 
