@@ -1,7 +1,30 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 4)
+**Last Updated:** 2026-01-19 (Session 5)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 5)
+
+### Telegram Approval Integration - Mark as Read Feature
+Added automatic mark-as-read functionality when approvals are handled in terminal:
+
+**Changes Made:**
+- `~/.claude/approval-handler.py` - Added Telethon-based mark_as_read (reuses Telegram MCP session)
+- `~/.claude/scripts/telegram-mark-read-server.py` - HTTP server on port 8765 for mark-read endpoint
+- `~/Library/LaunchAgents/com.claude.telegram-mark-read.plist` - Launchd auto-start config
+- Installed Telethon package in system Python3
+
+**Behavior:**
+- When you approve in **terminal** (not Telegram), the chat is now marked as read
+- Inline buttons are removed when message is edited to "EXPIRED"
+- Signal handlers (Ctrl+C) also trigger mark-as-read
+
+**Architecture:**
+- approval-handler.py handles mark_as_read locally via Telethon (using same session as Telegram MCP)
+- n8n workflow handles message editing and Supabase cleanup
+- Mark-read HTTP server available at `http://127.0.0.1:8765` for future extensibility
 
 ---
 
