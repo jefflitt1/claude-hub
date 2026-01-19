@@ -1,7 +1,35 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 8)
+**Last Updated:** 2026-01-19 (Session 9)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 9)
+
+### Telegram Approval System - Dynamic Buttons & AskUserQuestion Support
+Extended the mobile approval system to support dynamic buttons and interactive questions:
+
+**Dynamic Button Support:**
+- Plan Mode approvals show "Approve Plan" / "Deny" buttons (no "Always" - plans are unique)
+- Regular tool permissions keep "Yes" / "Always" / "No" buttons
+- approval_type field added to payloads for button differentiation
+
+**AskUserQuestion Hook Integration:**
+- Added PreToolUse hook for AskUserQuestion tool in `~/.claude/settings.json`
+- Questions sent to Telegram with option buttons built from the questions array
+- User can select an option via button tap, answer returned via `updatedInput`
+- "Skip" option always available to fall back to terminal input
+
+**Files Modified:**
+- `~/.claude/settings.json` - Added PreToolUse hook for AskUserQuestion
+- `~/.claude/approval-handler.py` - New functions: `format_ask_user_question()`, `format_pretooluse_response()`, `handle_ask_user_question()`, `send_telegram_with_keyboard()`
+- n8n workflow VLodg6UPtMa6DV30 - Updated "Prepare Message" and "Parse Callback" nodes for question handling
+
+**Message Types Now Supported:**
+1. Tool approvals: Yes / Always / No
+2. Plan Mode: Approve Plan / Deny
+3. Questions (AskUserQuestion): Dynamic option buttons + Skip
 
 ---
 
