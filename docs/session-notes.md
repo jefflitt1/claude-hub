@@ -1,7 +1,37 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 6)
+**Last Updated:** 2026-01-19 (Session 7)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 7)
+
+### Category Grouping for n8n Workflows Dashboard
+Added the ability to view workflows by Category in addition to Project:
+
+**New UI Components:**
+- `GroupingModeToggle` - Toggle between Project/Category views (Folder/Tag icons)
+- `CategoryGroup` - Displays category name with color indicator and emoji icon
+- Grouping preference persisted to localStorage
+
+**Data Integration:**
+- Parallel fetching of `workflow_categories` alongside workflows
+- `workflowsByCategory` memoized grouping with proper sort order
+- Handles uncategorized workflows gracefully (shown at bottom)
+
+**Category Assignments (85 workflows total):**
+| Category | Count | Logic |
+|----------|-------|-------|
+| Production | 15 | status = "production" |
+| Development | 56 | status IN (WIP, testing, deprecated, inactive, broken) |
+| Templates | 12 | status = "template" OR project = "Templates" |
+| Automation | 1 | project = "System" (error trigger) |
+| Integration | 1 | status = "approved" (lead scraper) |
+
+**Files Changed:**
+- `src/components/n8n/N8nWorkflowsSection.tsx` - Added GroupingModeToggle, CategoryGroup, parallel fetch
+- Committed: `fe99b58`
 
 ---
 

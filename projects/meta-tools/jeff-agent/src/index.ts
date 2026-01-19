@@ -55,7 +55,7 @@ function formatResponse(data: any, isError = false) {
 }
 
 // Association inference helpers
-function inferProjectFromEmail(email: string): string | null {
+function inferProjectFromEmail(email: string): string | undefined {
   const domain = email.split('@')[1]?.toLowerCase();
   if (domain) {
     for (const [domainPattern, projectId] of Object.entries(PROJECT_DOMAINS)) {
@@ -64,10 +64,10 @@ function inferProjectFromEmail(email: string): string | null {
       }
     }
   }
-  return null;
+  return undefined;
 }
 
-function inferProjectFromContent(content: string): string | null {
+function inferProjectFromContent(content: string): string | undefined {
   const lowerContent = content.toLowerCase();
   for (const [projectId, keywords] of Object.entries(PROJECT_KEYWORDS)) {
     const matchedKeyword = keywords.find(k => lowerContent.includes(k));
@@ -75,7 +75,7 @@ function inferProjectFromContent(content: string): string | null {
       return projectId;
     }
   }
-  return null;
+  return undefined;
 }
 
 // ============================================================================
@@ -117,7 +117,7 @@ server.tool(
         project_id: inferredProject,
         source_type,
         source_id,
-        due_date: due_date ? new Date(due_date).toISOString() : null,
+        due_date: due_date ? new Date(due_date).toISOString() : undefined,
         tags,
         context,
         status: 'pending'
@@ -149,7 +149,7 @@ server.tool(
         action: 'task_created',
         task: data,
         inferred: {
-          project: inferredProject && !project_id ? inferredProject : null
+          project: inferredProject && !project_id ? inferredProject : undefined
         }
       });
     } catch (error) {
@@ -440,7 +440,7 @@ server.tool(
         action: 'thread_tracked',
         thread: data,
         inferred: {
-          project: inferredProject && !project_id ? inferredProject : null
+          project: inferredProject && !project_id ? inferredProject : undefined
         }
       });
     } catch (error) {
@@ -685,7 +685,7 @@ server.tool(
         action: 'contact_upserted',
         contact: data,
         inferred: {
-          account: inferredAccount && !default_account ? inferredAccount : null
+          account: inferredAccount && !default_account ? inferredAccount : undefined
         }
       });
     } catch (error) {
