@@ -1,7 +1,24 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 1)
+**Last Updated:** 2026-01-19 (Session 2)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 2)
+
+### Approval Flow Verification
+Short session to verify the mobile approval system is ready for testing:
+- Confirmed `claude_approvals` and `claude_always_approvals` tables are empty (clean slate)
+- Verified PermissionRequest hook configured in settings.json with 65s timeout
+- Reviewed approval-flow-architecture.md documentation
+
+**Key Finding:** Current session has Bash/Write/etc. in `allowedTools`, which bypasses the permission hook. To test the approval flow end-to-end, need to restart Claude Code for a fresh permission state.
+
+**Still Pending:**
+- End-to-end test with fresh session
+- Verify Telegram notifications arrive within 1-2 seconds
+- Verify "Always" button correctly stores pattern in claude_always_approvals
 
 ---
 

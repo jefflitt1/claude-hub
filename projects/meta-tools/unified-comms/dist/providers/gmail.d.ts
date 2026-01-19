@@ -81,4 +81,24 @@ export declare function getAccountStatus(): {
     };
     credentialsDir: string;
 };
+/**
+ * Reply to a message (in same thread)
+ */
+export declare function replyToMessage(accountType: 'personal' | 'l7', params: {
+    messageId: string;
+    body: string;
+    replyAll?: boolean;
+}): Promise<{
+    success: boolean;
+    messageId?: string;
+    error?: string;
+}>;
+/**
+ * Get thread messages
+ */
+export declare function getThread(accountType: 'personal' | 'l7', threadId: string): Promise<{
+    success: boolean;
+    messages?: any[];
+    error?: string;
+}>;
 export {};

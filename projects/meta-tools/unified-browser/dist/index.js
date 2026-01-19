@@ -192,16 +192,112 @@ server.tool("browser_close", "Close the browser session", {}, async () => {
         return formatResponse(`Close error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
     }
 });
+server.tool("browser_hover", "Hover over an element on the page", { selector: z.string().describe('CSS selector for element to hover') }, async (args) => {
+    try {
+        await playwright.hover(args.selector);
+        return formatResponse({
+            action: 'hover',
+            success: true,
+            selector: args.selector
+        });
+    }
+    catch (error) {
+        return formatResponse(`Hover error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("browser_select_option", "Select an option from a dropdown/select element", {
+    selector: z.string().describe('CSS selector for select element'),
+    values: z.union([z.string(), z.array(z.string())]).describe('Value(s) to select')
+}, async (args) => {
+    try {
+        const selected = await playwright.selectOption(args.selector, args.values);
+        return formatResponse({
+            action: 'select_option',
+            success: true,
+            selector: args.selector,
+            selected
+        });
+    }
+    catch (error) {
+        return formatResponse(`Select error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("browser_press_key", "Press a keyboard key", { key: z.string().describe('Key to press (e.g., Enter, Escape, ArrowDown)') }, async (args) => {
+    try {
+        await playwright.pressKey(args.key);
+        return formatResponse({
+            action: 'press_key',
+            success: true,
+            key: args.key
+        });
+    }
+    catch (error) {
+        return formatResponse(`Key press error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("browser_back", "Navigate back in browser history", {}, async () => {
+    try {
+        const result = await playwright.goBack();
+        if (!result) {
+            return formatResponse({ action: 'back', success: false, reason: 'No history to go back to' });
+        }
+        return formatResponse({
+            action: 'back',
+            success: true,
+            url: result.url,
+            title: result.title
+        });
+    }
+    catch (error) {
+        return formatResponse(`Back error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("browser_tabs", "Manage browser tabs: list, new, close, or select", {
+    action: z.enum(['list', 'new', 'close', 'select']).describe('Tab action to perform'),
+    index: z.number().optional().describe('Tab index for close/select'),
+    url: z.string().optional().describe('URL for new tab')
+}, async (args) => {
+    try {
+        switch (args.action) {
+            case 'list': {
+                const tabs = await playwright.listTabs();
+                return formatResponse({ action: 'list_tabs', tabs });
+            }
+            case 'new': {
+                const tab = await playwright.newTab(args.url);
+                return formatResponse({ action: 'new_tab', success: true, ...tab });
+            }
+            case 'close': {
+                const success = await playwright.closeTab(args.index);
+                return formatResponse({ action: 'close_tab', success, index: args.index });
+            }
+            case 'select': {
+                if (args.index === undefined) {
+                    return formatResponse('Tab index required for select action', true);
+                }
+                const result = await playwright.selectTab(args.index);
+                if (!result) {
+                    return formatResponse({ action: 'select_tab', success: false, reason: 'Invalid tab index' });
+                }
+                return formatResponse({ action: 'select_tab', success: true, ...result });
+            }
+        }
+    }
+    catch (error) {
+        return formatResponse(`Tab error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
 server.tool("browser_info", "Get browser session status", {}, async () => {
     const state = playwright.getState();
     return formatResponse({
         name: 'unified-browser',
-        version: '2.0.0',
+        version: '2.1.0',
         description: 'Self-contained browser automation with embedded Playwright',
         state,
         capabilities: [
             'navigate', 'click', 'type', 'screenshot', 'snapshot',
-            'wait', 'evaluate', 'content', 'close'
+            'wait', 'evaluate', 'content', 'close', 'hover',
+            'select_option', 'press_key', 'back', 'tabs'
         ]
     });
 });

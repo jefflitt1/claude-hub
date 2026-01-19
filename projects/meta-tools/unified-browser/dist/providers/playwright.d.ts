@@ -76,3 +76,50 @@ export declare function getState(): {
     hasPage: boolean;
     currentUrl: string | null;
 };
+/**
+ * Hover over an element
+ */
+export declare function hover(selector: string): Promise<void>;
+/**
+ * Select option from a dropdown
+ */
+export declare function selectOption(selector: string, values: string | string[]): Promise<string[]>;
+/**
+ * Press a key
+ */
+export declare function pressKey(key: string): Promise<void>;
+/**
+ * Navigate back
+ */
+export declare function goBack(): Promise<{
+    url: string;
+    title: string;
+} | null>;
+/**
+ * List all tabs/pages
+ */
+export declare function listTabs(): Promise<{
+    index: number;
+    url: string;
+    title: string;
+    active: boolean;
+}[]>;
+/**
+ * Create a new tab
+ */
+export declare function newTab(url?: string): Promise<{
+    index: number;
+    url: string;
+    title: string;
+}>;
+/**
+ * Close a tab
+ */
+export declare function closeTab(index?: number): Promise<boolean>;
+/**
+ * Select/switch to a tab
+ */
+export declare function selectTab(index: number): Promise<{
+    url: string;
+    title: string;
+} | null>;

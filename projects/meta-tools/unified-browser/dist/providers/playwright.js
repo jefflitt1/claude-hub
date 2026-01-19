@@ -188,4 +188,105 @@ export function getState() {
         currentUrl: page && !page.isClosed() ? page.url() : null
     };
 }
+/**
+ * Hover over an element
+ */
+export async function hover(selector) {
+    const p = await getPage();
+    await p.hover(selector);
+}
+/**
+ * Select option from a dropdown
+ */
+export async function selectOption(selector, values) {
+    const p = await getPage();
+    return await p.selectOption(selector, values);
+}
+/**
+ * Press a key
+ */
+export async function pressKey(key) {
+    const p = await getPage();
+    await p.keyboard.press(key);
+}
+/**
+ * Navigate back
+ */
+export async function goBack() {
+    const p = await getPage();
+    const response = await p.goBack();
+    if (!response)
+        return null;
+    return {
+        url: p.url(),
+        title: await p.title()
+    };
+}
+/**
+ * List all tabs/pages
+ */
+export async function listTabs() {
+    const ctx = await getContext();
+    const pages = ctx.pages();
+    const currentPage = page;
+    return Promise.all(pages.map(async (p, index) => ({
+        index,
+        url: p.url(),
+        title: await p.title(),
+        active: p === currentPage
+    })));
+}
+/**
+ * Create a new tab
+ */
+export async function newTab(url) {
+    const ctx = await getContext();
+    const newPage = await ctx.newPage();
+    page = newPage; // Make new tab active
+    if (url) {
+        await newPage.goto(url, { waitUntil: 'domcontentloaded' });
+    }
+    const pages = ctx.pages();
+    return {
+        index: pages.indexOf(newPage),
+        url: newPage.url(),
+        title: await newPage.title()
+    };
+}
+/**
+ * Close a tab
+ */
+export async function closeTab(index) {
+    const ctx = await getContext();
+    const pages = ctx.pages();
+    const targetIndex = index ?? pages.indexOf(page);
+    if (targetIndex < 0 || targetIndex >= pages.length) {
+        return false;
+    }
+    const targetPage = pages[targetIndex];
+    const wasActive = targetPage === page;
+    await targetPage.close();
+    // If we closed the active tab, switch to another
+    if (wasActive && pages.length > 1) {
+        const remainingPages = ctx.pages();
+        page = remainingPages[Math.min(targetIndex, remainingPages.length - 1)] || null;
+    }
+    return true;
+}
+/**
+ * Select/switch to a tab
+ */
+export async function selectTab(index) {
+    const ctx = await getContext();
+    const pages = ctx.pages();
+    if (index < 0 || index >= pages.length) {
+        return null;
+    }
+    page = pages[index];
+    await page.bringToFront();
+    return {
+        url: page.url(),
+        title: await page.title()
+    };
+}
 //# sourceMappingURL=playwright.js.map
