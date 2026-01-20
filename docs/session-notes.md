@@ -1,7 +1,33 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 11)
+**Last Updated:** 2026-01-20 (Session 12)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 12)
+
+### n8n Daily Agent Digest - Duplicate Email Fix
+Fixed the "Daily Agent Status Digest" workflow that was sending 3 duplicate emails instead of 1:
+
+**Root Cause:**
+- Workflow fans out to 3 parallel queries: Get Active Projects, Get All Agents, Get Session Notes
+- All 3 connect to a Merge node called "Wait for All Data"
+- Merge node was using default "Append" mode (version 3 with empty parameters)
+- In Append mode, items pass through immediately as each input completes
+- This caused the downstream workflow (including email send) to execute 3 times
+
+**Fix Applied:**
+- Changed Merge node from default "Append" mode to "Combine" mode with `combineAll`
+- Fixed connection routing: each data source now connects to separate input indices (0, 1, 2)
+- Workflow ID: `2fwvrmN2I3PDcXRz`
+
+**Technical Notes:**
+- n8n Merge v3 with empty `{}` parameters defaults to Append (immediate pass-through)
+- Use `mode: "combine"` with `combineBy: "combineAll"` for proper fan-in wait behavior
+- Full workflow update API requires: name, nodes, connections, and settings (standard properties only)
+
+**Verification:** Fix will take effect at 6 AM tomorrow - should receive single digest email.
 
 ---
 
