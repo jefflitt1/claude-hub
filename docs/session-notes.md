@@ -1,7 +1,26 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 4)
+**Last Updated:** 2026-01-20 (Session 5)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 5)
+
+### Apple Notes Sync Verification & Fix
+Verified Apple Notes integration and fixed a hook bug:
+
+**Verified Working:**
+- Post-commit hook installed and executable
+- Pandoc installed at `/opt/homebrew/bin/pandoc`
+- "Claude Session Notes" note exists and syncs correctly
+
+**Bug Fixed:**
+- Apple Notes auto-renames notes based on H1 header content
+- Hook now searches for both "Claude Session Notes" AND "Claude Hub Session Notes"
+- After update, hook forces name back to "Claude Session Notes"
+
+**Cleanup Status:** No old session notes to delete - already clean
 
 ---
 
