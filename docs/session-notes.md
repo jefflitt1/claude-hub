@@ -1,7 +1,60 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 8)
+**Last Updated:** 2026-01-20 (Session 9)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 9)
+
+### Master Telegram Bot Conversations - Workflow Fixes
+Fixed multiple issues in the Master Telegram Bot Conversations workflow (ID: `stlQoP2huGVmGzRS`):
+
+**Issues Fixed:**
+1. **Missing supabase-api credential** - All 8 Supabase nodes (4 Load History + 4 Save History) were referencing a non-existent credential
+   - Fix: Replaced credential references with inline HTTP headers using SUPABASE_KEY environment variable
+
+2. **Process JGL wrong identity** - Node was using JGL Capital Trading system prompt instead of Personal Assistant
+   - Fix: Updated to correct Personal Assistant prompt with Google Calendar/Gmail/Tasks/Drive access
+
+3. **Load History JGL wrong filter** - Was filtering for `bot_username=JGLCapitalBot` instead of `JGLPersonalBot`
+   - Fix: Corrected URL filter to match JGLPersonalBot
+
+**Validation Results:**
+| Pipeline | Bot Filter | Identity | Headers | Connections |
+|----------|------------|----------|---------|-------------|
+| JGL Capital | JGLCapitalBot | Trading ✓ | Inline ✓ | Complete ✓ |
+| JGL Personal | JGLPersonalBot | Personal Assistant ✓ | Inline ✓ | Complete ✓ |
+| L7 Partners | L7PartnersBot | L7 Partners ✓ | Inline ✓ | Complete ✓ |
+| Magic | Magic_agent1_bot | Magic Agent ✓ | Inline ✓ | Complete ✓ |
+
+**Technical Notes:**
+- Used direct n8n API calls via Python when MCP partial update failed validation
+- Cloudflare tunnel for claude-api.l7-partners.com verified operational
+
+---
+
+## Session Summary: 2026-01-20 (Session 8.5)
+
+### Frigate NVR Setup - L7 Partners
+Deployed Frigate NVR v0.16.3 on home Pi (192.168.4.147) and designed subnet router solution:
+
+**Completed:**
+- Created docker-compose.yml and optimized config template on Pi
+- Identified 3 Dahua NVR camera systems across properties
+- Designed Tailscale subnet router solution using Pi Zeros
+- Created comprehensive OPTIMIZATION_GUIDE.md with staggered detection strategies
+- Researched Hailo AI HAT 2 setup for when it arrives
+
+**Architecture Decisions:**
+- Use Tailscale for secure remote access (not port forwarding)
+- Single Pi Zero at 200 E 2nd St covers both 200 + 191 NVRs (same subnet)
+- Staggered detection: 5 FPS (high priority), 3 FPS (medium), 1 FPS (low)
+
+**Pending Hardware:**
+- Deploy Pi Zero at 200 E 2nd St (192.168.1.x network)
+- Deploy Pi Zero at 261 Suburban
+- Install Hailo AI HAT 2 when it arrives
 
 ---
 

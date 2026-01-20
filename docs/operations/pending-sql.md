@@ -80,6 +80,39 @@ CREATE POLICY "Enable all for authenticated users" ON telegram_chat_history
 COMMENT ON TABLE telegram_chat_history IS 'Stores Telegram bot conversation history for short-term memory';
 ```
 
+## memory_graph table (for memory-session integration)
+
+```sql
+CREATE TABLE IF NOT EXISTS memory_graph (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_name TEXT UNIQUE NOT NULL,
+  entity_type TEXT NOT NULL,
+  observations TEXT[] DEFAULT '{}',
+  relations JSONB DEFAULT '[]',
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_memory_graph_type ON memory_graph(entity_type);
+CREATE INDEX idx_memory_graph_updated ON memory_graph(updated_at DESC);
+
+-- Full text search on observations
+CREATE INDEX idx_memory_graph_observations ON memory_graph USING GIN (observations);
+
+-- Enable RLS
+ALTER TABLE memory_graph ENABLE ROW LEVEL SECURITY;
+
+-- Policy for authenticated access
+CREATE POLICY "Enable all for authenticated users" ON memory_graph
+  FOR ALL USING (true);
+
+-- Comment
+COMMENT ON TABLE memory_graph IS 'Persistent storage for MCP memory graph entities, relations, and observations';
+```
+
 ---
 Created: 2026-01-20
+Updated: 2026-01-20
 Run these in Supabase Dashboard → SQL Editor

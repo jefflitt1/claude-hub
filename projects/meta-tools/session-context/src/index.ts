@@ -482,7 +482,7 @@ server.tool(
   async () => {
     return formatResponse({
       name: 'session-context',
-      version: '1.0.0',
+      version: '1.1.0',
       description: 'Session persistence and context continuity for Claude Code',
       tools: [
         'session_start - Initialize session, load previous context',
@@ -493,14 +493,176 @@ server.tool(
         'session_set_context - Store arbitrary context',
         'session_get_context - Retrieve context',
         'session_status - Current session status',
-        'session_end - Finalize session before exit'
+        'session_end - Finalize session before exit',
+        'session_export_to_memory - Export session to memory graph (Supabase)',
+        'session_import_from_memory - Load context from memory graph'
       ],
       persistence: {
         local: LOCAL_CONTEXT_PATH,
         supabase: !!supabase,
-        sessionNotes: SESSION_NOTES_PATH
+        sessionNotes: SESSION_NOTES_PATH,
+        memoryGraph: 'memory_graph table in Supabase'
       }
     });
+  }
+);
+
+// Memory Graph Integration Tools
+
+server.tool(
+  "session_export_to_memory",
+  "Export current session context to the memory graph in Supabase for long-term persistence",
+  {
+    includeFiles: z.boolean().default(true).describe('Include active files as observations'),
+    includeTasks: z.boolean().default(true).describe('Include recent tasks as observations')
+  },
+  async (args) => {
+    try {
+      if (!supabase) {
+        return formatResponse({ error: 'Supabase not connected' }, true);
+      }
+
+      const { includeFiles, includeTasks } = args;
+      const timestamp = new Date().toISOString();
+      const sessionEntityName = `Session-${sessionContext.startedAt.split('T')[0]}`;
+
+      // Build observations array
+      const observations: string[] = [
+        `Session started: ${sessionContext.startedAt}`,
+        `Active project: ${sessionContext.activeProject || 'none'}`,
+      ];
+
+      if (includeFiles && sessionContext.activeFiles.length > 0) {
+        observations.push(`Files worked on: ${sessionContext.activeFiles.slice(0, 10).join(', ')}`);
+      }
+
+      if (includeTasks) {
+        const completedTasks = sessionContext.recentTasks.filter(t => t.status === 'completed');
+        if (completedTasks.length > 0) {
+          observations.push(`Completed tasks: ${completedTasks.slice(0, 5).map(t => t.task).join('; ')}`);
+        }
+      }
+
+      // Add working context keys
+      const contextKeys = Object.keys(sessionContext.workingContext);
+      if (contextKeys.length > 0) {
+        observations.push(`Context keys: ${contextKeys.join(', ')}`);
+      }
+
+      // Insert or update in memory_graph table
+      const { error } = await supabase.from('memory_graph').upsert({
+        entity_name: sessionEntityName,
+        entity_type: 'Session',
+        observations: observations,
+        relations: sessionContext.activeProject ? [
+          { type: 'WORKED_ON', target: sessionContext.activeProject }
+        ] : [],
+        metadata: {
+          startedAt: sessionContext.startedAt,
+          project: sessionContext.activeProject,
+          filesCount: sessionContext.activeFiles.length,
+          tasksCount: sessionContext.recentTasks.length
+        },
+        updated_at: timestamp
+      }, { onConflict: 'entity_name' });
+
+      if (error) {
+        // If table doesn't exist, create it
+        if (error.code === '42P01') {
+          return formatResponse({
+            error: 'memory_graph table not found',
+            sql: `CREATE TABLE memory_graph (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_name TEXT UNIQUE NOT NULL,
+  entity_type TEXT NOT NULL,
+  observations TEXT[] DEFAULT '{}',
+  relations JSONB DEFAULT '[]',
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);`
+          }, true);
+        }
+        throw error;
+      }
+
+      return formatResponse({
+        action: 'exported_to_memory',
+        entityName: sessionEntityName,
+        observationsCount: observations.length,
+        project: sessionContext.activeProject,
+        timestamp
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
+  "session_import_from_memory",
+  "Import context from memory graph - useful for resuming work on a project",
+  {
+    projectName: z.string().optional().describe('Project name to load context for'),
+    recentDays: z.number().default(7).describe('Load sessions from last N days')
+  },
+  async (args) => {
+    try {
+      if (!supabase) {
+        return formatResponse({ error: 'Supabase not connected' }, true);
+      }
+
+      const { projectName, recentDays } = args;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - recentDays);
+
+      // Query memory graph for recent sessions
+      let query = supabase
+        .from('memory_graph')
+        .select('*')
+        .eq('entity_type', 'Session')
+        .gte('updated_at', cutoffDate.toISOString())
+        .order('updated_at', { ascending: false })
+        .limit(10);
+
+      const { data, error } = await query;
+
+      if (error) {
+        if (error.code === '42P01') {
+          return formatResponse({ error: 'memory_graph table not found - run session_export_to_memory first' }, true);
+        }
+        throw error;
+      }
+
+      // Filter by project if specified
+      let sessions = data || [];
+      if (projectName) {
+        sessions = sessions.filter(s =>
+          s.metadata?.project === projectName ||
+          s.observations?.some((o: string) => o.includes(projectName))
+        );
+      }
+
+      // Extract useful context
+      const context = {
+        recentSessions: sessions.map(s => ({
+          name: s.entity_name,
+          project: s.metadata?.project,
+          date: s.updated_at,
+          highlights: s.observations?.slice(0, 3)
+        })),
+        projects: [...new Set(sessions.map(s => s.metadata?.project).filter(Boolean))],
+        totalSessions: sessions.length
+      };
+
+      return formatResponse({
+        action: 'imported_from_memory',
+        filter: { projectName, recentDays },
+        context
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
   }
 );
 

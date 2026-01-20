@@ -14,6 +14,10 @@
 #   inbox-triage - Triage unread emails
 #   portfolio    - L7 portfolio status check
 #   market-scan  - Quick market scan
+#   weekly       - Weekly summary report
+#   cre-alerts   - CRE deal/article alerts
+#   habits       - Habit and wellbeing check
+#   backup       - Export memory graph to Supabase
 #
 # Options:
 #   --dry-run    - Preview without executing actions
@@ -35,7 +39,7 @@ PROMPT_FILE=""
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        digest|inbox-triage|portfolio|market-scan)
+        digest|inbox-triage|portfolio|market-scan|weekly|cre-alerts|habits|backup)
             PRESET="$1"
             shift
             ;;
@@ -71,6 +75,10 @@ while [[ $# -gt 0 ]]; do
             echo "  inbox-triage  - Triage unread emails"
             echo "  portfolio     - L7 portfolio status check"
             echo "  market-scan   - Quick market scan"
+            echo "  weekly        - Weekly summary report"
+            echo "  cre-alerts    - CRE deal/article alerts"
+            echo "  habits        - Habit and wellbeing check"
+            echo "  backup        - Export memory graph to Supabase"
             echo ""
             echo "Options:"
             echo "  --prompt TEXT - Custom prompt"
@@ -129,6 +137,50 @@ Quick market scan:
 3. Check Feedly Markets category for top 5 unread articles
 4. Summarize: market direction, key movers, any notable news
 Keep it brief - 500 characters max.
+EOF
+            ;;
+        weekly)
+            cat << 'EOF'
+Generate weekly summary report:
+1. Use jeff_list_tasks to get tasks completed this week
+2. Check session-notes.md for session summaries from past 7 days
+3. Query l7_sql for any L7 metrics changes this week
+4. Summarize: accomplishments by project, pending items, upcoming priorities
+5. Note any blockers or decisions needed
+Format as a brief weekly report suitable for review.
+EOF
+            ;;
+        cre-alerts)
+            cat << 'EOF'
+Check for CRE opportunities:
+1. Use feedly_stream for Real Estate category, get 20 unread articles
+2. Filter for: new listings, market reports, deal announcements
+3. For any promising deals, extract: property type, location, size, price
+4. Check l7_query for any tracked properties with status changes
+5. Output: prioritized list of items needing attention
+Mark reviewed articles as read.
+EOF
+            ;;
+        habits)
+            cat << 'EOF'
+Habit and wellbeing check:
+1. Use jeff_habit_status to get current habit tracking
+2. Use jeff_habits_at_risk to identify streaks in danger
+3. Use jeff_wellbeing_summary for recent PERMA scores
+4. Summarize: habits on track, habits needing attention, wellbeing trends
+5. Suggest one specific action to improve lowest-scoring area
+Keep encouraging but actionable.
+EOF
+            ;;
+        backup)
+            cat << 'EOF'
+Export memory and context to Supabase:
+1. Use session_export_to_memory to save current session state
+2. Use mcp__MCP_DOCKER__read_graph to get current memory graph state
+3. For each important entity, ensure it's persisted to memory_graph table
+4. Verify: count entities in Supabase vs in-memory graph
+5. Report: entities synced, any sync errors, last backup time
+This ensures memory persists across Docker restarts.
 EOF
             ;;
         *)
