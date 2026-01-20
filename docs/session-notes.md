@@ -1,7 +1,32 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 6)
+**Last Updated:** 2026-01-20 (Session 8)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 7)
+
+### n8n CVE-2026-21858 Security Audit
+Performed comprehensive security audit of all n8n workflows for CVE-2026-21858 vulnerability:
+
+**Vulnerability Details:**
+- CVE-2026-21858 (CVSS 10.0 Critical)
+- Affects n8n versions < 1.121.0
+- Attack vector: Unauthenticated RCE via Form Trigger nodes
+- Attack chain: malformed Content-Type -> bypass file upload parser -> arbitrary file read -> steal DB/keys -> forge admin cookie -> RCE
+
+**Scan Results (57 workflows checked):**
+- 4 workflows with formTrigger nodes identified:
+  - BdmQTuQ9YwkiFp2M ("PDF to weaviate") - ACTIVE
+  - G0iqjev1R4IsFxrA ("PDF to weaviate - L7") - ACTIVE
+  - IhYMQ3OQiRbG4mR4 ("CRE Lead Scraper") - inactive
+  - jym5dTCJyGUa1782 ("Proposal Generator") - inactive
+- 0 workflows with executeCommand nodes (RCE escalation vector)
+
+**Status: PROTECTED**
+- User running n8n 2.1.2 (well above patched version 1.121.0)
+- No action required - all Form Trigger workflows safe to remain active
 
 ---
 
