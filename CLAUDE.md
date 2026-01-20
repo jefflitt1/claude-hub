@@ -30,12 +30,14 @@ Raspberry Pi (Automation)
 ## Project Structure
 
 ```
-claude-hub/
+claude-agents/
 ├── CLAUDE.md              # This file
 ├── data/                  # JSON data (synced to Supabase)
 ├── docs/
 │   ├── session-notes.md   # Running session notes
-│   └── session-logs/      # Per-terminal recap logs
+│   ├── session-logs/      # Per-terminal recap logs
+│   └── operations/        # Operational docs (MCP servers, coaching, etc.)
+├── scripts/               # Maintenance & utility scripts
 ├── skills/                # Custom Claude skills
 ├── prompts/               # System instruction files
 ├── workflows/             # n8n workflow exports
@@ -107,5 +109,8 @@ All project bots share one workflow with dynamic context injection from Supabase
 | `docs/session-notes.md` | Session accomplishments |
 | `docs/telegram-context-injection-system.md` | Telegram bot architecture |
 | `docs/telegram-bot-prompts.md` | Per-project prompt templates |
+| `docs/operations/mcp-servers.md` | MCP server details |
+| `docs/operations/pending-sql.md` | Pending SQL migrations |
+| `scripts/README.md` | Maintenance script documentation |
 
 For coaching behaviors, MCP servers, and skills: see `~/CLAUDE.md`

@@ -1,7 +1,28 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 20)
+**Last Updated:** 2026-01-19 (Session 21)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 21)
+
+### Hook Script Maintenance
+Quick maintenance session fixing script symlinks for Claude Code hooks:
+
+**Diagnosed & Verified:**
+- session-checkpoint.py hook issue from earlier session was already fixed (symlinked properly)
+- All MCP server entry points exist
+- No broken symlinks
+- claude_session_context table exists in Supabase
+- Log files healthy (70K, 18K, 1.7K)
+
+**Fixed:**
+- Created missing symlink for `sync-analytics.py` at `~/.claude/scripts/`
+- Analytics sync on session end now works properly
+
+**Pending:**
+- Configure TradeStation MCP credentials (tomorrow)
 
 ---
 
