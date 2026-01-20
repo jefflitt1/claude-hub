@@ -1,7 +1,37 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 21)
+**Last Updated:** 2026-01-19 (Session 22)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 22)
+
+### Telegram Bot Routing Fix & L7 Action Items Investigation
+Fixed critical Telegram bot routing issue and clarified the L7 Telegram channel architecture.
+
+**Telegram Bot Routing Fixed:**
+- Rebuilt Master Telegram Bot Conversations workflow (`stlQoP2huGVmGzRS`) with parallel paths
+- Previous issue: Routing/merging nodes caused responses to go to wrong bots
+- Solution: 3 independent parallel paths - no merging, no routing nodes
+- Each bot now correctly responds in its own channel: @JGLCapitalBot, @L7PartnersBot, @MagicAgentBot
+
+**L7 Action Items Investigation:**
+- Identified "L7 Action Items" as the Telegram chat used by Master Tenant Management workflow (`enXArZitFcJovFlF`)
+- This is separate from @L7PartnersBot - different AI, different purpose
+
+**Architecture Clarification:**
+| Telegram Channel | Workflow | AI | Purpose |
+|------------------|----------|-----|---------|
+| @L7PartnersBot | Master Telegram Bot Conversations | Claude | General L7 queries via Claude Code |
+| L7 Action Items | Master Tenant Management | OpenAI | Tenant/lease queries with Weaviate RAG |
+
+**Decisions:**
+- Parallel paths architecture chosen over separate workflows
+- L7 Action Items kept as separate system - serves different use case
+
+**Cleanup:**
+- Deleted unused debugging workflows (L7, Magic, JGL individual workflows created during troubleshooting)
 
 ---
 
