@@ -1,7 +1,30 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 2)
+**Last Updated:** 2026-01-20 (Session 3)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 3)
+
+### Telegram Approval Workflow Verification
+Investigated Telegram approval system (Claude Code Mobile Approvals workflow) after user reported not seeing approval messages:
+
+**Investigation Findings:**
+- Workflow ID: VLodg6UPtMa6DV30 - correctly configured
+- Telegram credential: JeffN8NCommunicationbot (ID: rnodyIjRrNxnmYkd)
+- Bot username: @JeffN8Ncommunicationbot, display name "Claude Code Approvals"
+- Execution logs (e.g., #10128) showed successful message delivery
+
+**Resolution:**
+- System was working correctly all along
+- User had renamed credentials in n8n for clarity, causing initial confusion
+- No code changes needed - verified correct bot routing to "Claude Code Approvals" channel
+
+**Technical Details:**
+- Two bots exist: @claudeterminal1463bot (ID: 8169830247) and @JeffN8Ncommunicationbot (ID: 8338596281)
+- Workflow uses the correct "Claude Code Approvals" bot
+- Chat ID: 7938188628 (user's Telegram)
 
 ---
 
