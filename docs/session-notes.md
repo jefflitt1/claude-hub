@@ -1,7 +1,41 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 5)
+**Last Updated:** 2026-01-20 (Session 6)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 6)
+
+### Weekly IT Security Scan Workflow Created
+Built automated n8n workflow for weekly infrastructure security scans:
+
+**Workflow Details:**
+- ID: `UBnTTrQrT8EnaC0f`
+- Schedule: Every Sunday at 9 PM
+- Manual trigger: `https://n8n.l7-partners.com/webhook/it-security-scan`
+
+**Features:**
+- Queries `credentials_inventory` table for credential status
+- Queries `security_audit_log` for recent security events
+- Queries `system_health_checks` for system health
+- Analyzes data and generates severity-based alerts (CRITICAL/HIGH/MEDIUM/LOW)
+- Stores scan results in `security_audit_log`
+- Sends Telegram notification to @JeffN8Ncommunicationbot
+
+**Technical Fixes During Implementation:**
+- Fixed Telegram chat ID (changed to 7938188628)
+- Fixed n8n Merge node configuration (combine mode with combineAll)
+- Fixed Code node data access pattern: `$('Node Name').all().map(i => i.json)`
+
+**Current Security Status (from test run):**
+- 6 active credentials
+- 1 compromised (Supabase - needs rotation)
+- 1 needs config (Gmail L7)
+- 6 credentials need rotation
+
+**Also Updated:**
+- `docs/it-agent/tech-stack-inventory.md` - Marked pi-vnc tunnel as Healthy
 
 ---
 
