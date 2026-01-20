@@ -1,7 +1,38 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 9)
+**Last Updated:** 2026-01-20 (Session 10)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 10)
+
+### Magic Knowledge Base Expansion
+Expanded magic.md with professional mentalism analysis and performance philosophy:
+
+**Completed:**
+- Added "Professional Mentalism Analysis: The Oz Pearlman Case Study" section
+  - Methods exposed: pre-show work, Lynx Blackboard, research/intel gathering, planted collaborators
+  - Source: Stevie Baskin's 5h+ "metadeception" video analysis
+- Added "Performance Philosophy: David Blaine & Dan White" section
+  - 10 key takeaways (4 Blaine, 5 Dan White, 1 shared)
+  - Application Matrix mapping each principle to trick combos from inventory
+- Created Apple Note "Magic Performance Philosophy: David Blaine & Dan White"
+- Logged research to jeff-agent (task + project activity for magic-agent)
+
+**Trick Combinations Added:**
+| Principle | Inventory Combo |
+|-----------|-----------------|
+| Invisible work | WikiTest + Inject |
+| Simplicity | Double Cross + IARVEL Pad |
+| Reality ambiguity | iRis + Hydra |
+| Reaction focus | Inject + Notarized |
+| Let magic breathe | DFB X + Kolossal Killer |
+| Entertainment > fooling | Earworm + ReaList |
+| Intimate scale | Henson Chien Bands + Venom Thread |
+| Cultivate mystery | Xeno + AI STOOGE |
+| Consistency | Invisible Deck + WikiTest |
+| Collaboration | Asi Wind AACAAN + Peter Turner techniques |
 
 ---
 

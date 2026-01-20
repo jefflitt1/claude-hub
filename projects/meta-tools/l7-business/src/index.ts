@@ -870,6 +870,204 @@ server.tool(
   }
 );
 
+// Vector Search Tools (pgvector)
+
+const vectorSearchSchema = {
+  query: z.string().describe('Natural language search query'),
+  project: z.string().optional().describe('Filter by project (l7-partners, jgl-capital, etc.)'),
+  limit: z.number().optional().default(5).describe('Max results to return'),
+  threshold: z.number().optional().default(0.7).describe('Minimum similarity threshold (0-1)')
+};
+
+const vectorInsertSchema = {
+  content: z.string().describe('Text content to store'),
+  embedding: z.array(z.number()).describe('1536-dimensional embedding vector'),
+  sourceName: z.string().describe('Document/file name'),
+  sourcePath: z.string().optional().describe('File path or URL'),
+  sourceType: z.enum(['pdf', 'gdrive', 'manual', 'web']).optional().default('manual'),
+  project: z.string().optional().describe('Project association'),
+  chunkIndex: z.number().optional().default(0).describe('Chunk index for multi-part docs')
+};
+
+server.tool(
+  "l7_vector_search",
+  "Search documents using semantic similarity (requires embedding from OpenAI/other provider)",
+  vectorSearchSchema,
+  async (args) => {
+    if (!supabase) {
+      return formatResponse('Supabase client not configured.', true);
+    }
+
+    try {
+      const { query, project, limit, threshold } = args;
+
+      // Note: This requires the caller to provide an embedding
+      // In practice, you'd call OpenAI embeddings API first
+      return formatResponse({
+        action: 'vector_search_info',
+        message: 'To search, first get an embedding for your query using OpenAI or another provider, then use l7_vector_search_with_embedding',
+        query,
+        project,
+        limit,
+        alternativeWorkflow: [
+          '1. Call OpenAI embeddings API with your query',
+          '2. Use l7_vector_search_with_embedding with the resulting vector',
+          'Or use the n8n workflow that handles this automatically'
+        ]
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
+  "l7_vector_search_with_embedding",
+  "Search documents using a pre-computed embedding vector",
+  {
+    embedding: z.array(z.number()).describe('1536-dimensional query embedding'),
+    project: z.string().optional().describe('Filter by project'),
+    limit: z.number().optional().default(5).describe('Max results'),
+    threshold: z.number().optional().default(0.5).describe('Min similarity (0-1)')
+  },
+  async (args) => {
+    if (!supabase) {
+      return formatResponse('Supabase client not configured.', true);
+    }
+
+    try {
+      const { embedding, project, limit, threshold } = args;
+
+      // Validate embedding dimension
+      if (embedding.length !== 1536) {
+        return formatResponse(`Embedding must be 1536 dimensions, got ${embedding.length}`, true);
+      }
+
+      // Call the search_documents function we created
+      const { data, error } = await supabase.rpc('search_documents', {
+        query_embedding: embedding,
+        match_count: limit,
+        filter_project: project || null
+      });
+
+      if (error) {
+        return formatResponse(`Vector search error: ${error.message}`, true);
+      }
+
+      // Filter by threshold
+      const results = (data || []).filter((r: any) => r.similarity >= threshold);
+
+      return formatResponse({
+        action: 'vector_search',
+        resultCount: results.length,
+        threshold,
+        project: project || 'all',
+        results: results.map((r: any) => ({
+          id: r.id,
+          content: r.content.substring(0, 500) + (r.content.length > 500 ? '...' : ''),
+          sourceName: r.source_name,
+          sourcePath: r.source_path,
+          project: r.project,
+          similarity: Math.round(r.similarity * 1000) / 1000
+        }))
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
+  "l7_vector_insert",
+  "Insert a document chunk with its embedding into the vector store",
+  vectorInsertSchema,
+  async (args) => {
+    if (!supabase) {
+      return formatResponse('Supabase client not configured.', true);
+    }
+
+    try {
+      const { content, embedding, sourceName, sourcePath, sourceType, project, chunkIndex } = args;
+
+      // Validate embedding dimension
+      if (embedding.length !== 1536) {
+        return formatResponse(`Embedding must be 1536 dimensions, got ${embedding.length}`, true);
+      }
+
+      const { data, error } = await supabase
+        .from('document_embeddings')
+        .insert({
+          content,
+          embedding,
+          source_name: sourceName,
+          source_path: sourcePath,
+          source_type: sourceType,
+          project,
+          chunk_index: chunkIndex
+        })
+        .select('id, source_name, project, chunk_index');
+
+      if (error) {
+        return formatResponse(`Insert error: ${error.message}`, true);
+      }
+
+      return formatResponse({
+        action: 'vector_insert',
+        inserted: data?.[0],
+        contentLength: content.length,
+        embeddingDimension: embedding.length
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
+  "l7_vector_stats",
+  "Get statistics about the document embeddings store",
+  {
+    project: z.string().optional().describe('Filter stats by project')
+  },
+  async (args) => {
+    if (!supabase) {
+      return formatResponse('Supabase client not configured.', true);
+    }
+
+    try {
+      const { project } = args;
+
+      // Get counts by project and source type
+      const statsQuery = project
+        ? `SELECT source_type, project, COUNT(*) as count FROM document_embeddings WHERE project = '${project}' GROUP BY source_type, project`
+        : `SELECT source_type, project, COUNT(*) as count FROM document_embeddings GROUP BY source_type, project ORDER BY count DESC`;
+
+      const { data: stats, error } = await supabase.rpc('exec_sql', { sql_query: statsQuery });
+
+      if (error) {
+        return formatResponse(`Stats error: ${error.message}`, true);
+      }
+
+      // Get total count
+      const totalQuery = project
+        ? `SELECT COUNT(*) as total FROM document_embeddings WHERE project = '${project}'`
+        : `SELECT COUNT(*) as total FROM document_embeddings`;
+
+      const { data: totalData } = await supabase.rpc('exec_sql', { sql_query: totalQuery });
+      const total = totalData?.[0]?.total || 0;
+
+      return formatResponse({
+        action: 'vector_stats',
+        totalDocuments: total,
+        filter: project || 'all',
+        breakdown: stats || []
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
 // Google Drive Tools (routes to gdrive-L7 - requires OAuth which isn't self-contained)
 
 server.tool(
