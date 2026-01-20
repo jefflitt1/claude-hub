@@ -1,7 +1,106 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 17)
+**Last Updated:** 2026-01-19 (Session 19)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 19)
+
+### System Optimization & Meta-Tools Enhancement
+Comprehensive system review analyzing 17 sessions over 5 days, resulting in 3 major enhancements:
+
+**1. n8n Workflow Activation API (l7-business MCP)**
+- Added `l7_activate_workflow` and `l7_deactivate_workflow` tools
+- Eliminates need to manually activate workflows in n8n UI
+- Direct REST API calls to `/api/v1/workflows/{id}/activate`
+
+**2. Session Context MCP Server (NEW)**
+- Location: `~/Documents/Claude Code/claude-agents/projects/meta-tools/session-context/`
+- 9 tools for cross-session persistence:
+  - `session_start` - Initialize session, load previous context
+  - `session_get_last_summary` - Get full last session summary
+  - `session_set_project` - Set active project
+  - `session_add_file` - Track file being worked on
+  - `session_add_task` - Log task progress
+  - `session_set_context` / `session_get_context` - Store/retrieve arbitrary context
+  - `session_status` - Current session status
+  - `session_end` - Finalize session before exit
+- Added to `~/.claude.json` configuration
+- Requires Supabase table `claude_session_context` (SQL in ~/CLAUDE.md)
+
+**3. MCP Consolidation Documentation**
+- Updated ~/CLAUDE.md with consolidation strategy table
+- Primary servers: unified-browser, unified-comms, l7-business
+- Fallback servers documented for redundancy
+
+**4. Email Rules Expansion (jeff-agent)**
+- Expanded from 3 to 10 rules for better inbox triage:
+  - GitHub Notifications
+  - L7 Tenant Communications
+  - Trading Platform Alerts
+  - Newsletters and Digests
+  - Anthropic/Claude Updates
+  - Supabase Notifications
+  - Lovable Updates
+
+**Pending After Restart:**
+- Restart Claude Code to load session-context MCP and l7_activate/deactivate tools
+- Create `claude_session_context` Supabase table via Dashboard
+
+---
+
+## Session Summary: 2026-01-19 (Session 18)
+
+### Telegram Bot Context Injection System
+Implemented unified Telegram bot architecture with per-project context injection.
+
+**System Architecture:**
+- Single "Master Telegram Bot Conversations" workflow (`stlQoP2huGVmGzRS`)
+- 3 project bots: JGLCapitalBot, L7PartnersBot, Magic_agent1_bot
+- Context templates stored in Supabase, loaded dynamically per bot
+- Response routing back to originating bot
+
+**Database Tables:**
+| Table | Purpose |
+|-------|---------|
+| `telegram_bot_configs` | Bot → project mapping, context templates, credentials |
+| `telegram_context_templates` | Detailed context with agent rosters |
+| `quick_responses` | Quick response cache (reduces API calls) |
+
+**Workflow Pattern:**
+```
+Telegram Trigger → Merge → Identify Bot → Load Config (Supabase)
+→ Prepare Context → Call Claude API → Format Response → Route to Bot → Send
+```
+
+**Key Design Decisions:**
+- All bots use ONE workflow (not N workflows per project)
+- New projects add to master workflow, not create new workflows
+- Context templates editable in database without workflow changes
+- Q&A cache for instant responses to greetings/simple queries
+
+**Files Created:**
+- `docs/telegram-context-injection-system.md` - Full system documentation
+- `docs/telegram-bot-prompts.md` - Per-project prompt templates
+- `migrations/telegram_bot_context_tables.sql` - Database schema (updated with Q&A cache)
+
+**Files Updated:**
+- `CLAUDE.md` - Added Telegram Bot System section
+- `projects/jgl-capital/CLAUDE.md` - Added Telegram Bot reference
+- `projects/l7partners-rewrite/CLAUDE.md` - Added Telegram Bot reference
+
+**Credentials Configured:**
+| Bot | Credential ID | Status |
+|-----|---------------|--------|
+| JGLCapitalBot | 5lDUBxwRJirGu7fF | Active |
+| L7PartnersBot | HNFfYO1hK5umrlrI | Active |
+| Magic_agent1_bot | zOn4nNqyfxf5uIkd | Active |
+
+**Next Steps:**
+1. Run `migrations/telegram_bot_context_tables.sql` in Supabase SQL Editor (adds Q&A cache table)
+2. Test all 3 bots with `/start` command
+3. Optional: Add Q&A cache check node to workflow for instant responses
 
 ---
 

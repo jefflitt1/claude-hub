@@ -1,0 +1,293 @@
+# Telegram Bot Context Injection System
+
+**Created:** 2026-01-19
+**Status:** Active
+**Workflow ID:** `stlQoP2huGVmGzRS`
+
+---
+
+## Overview
+
+A unified system where multiple Telegram bots share a single n8n workflow, with project-specific context injected dynamically from Supabase before each Claude API call.
+
+### Key Benefits
+- Single workflow to maintain (not N workflows per bot)
+- Context templates stored in database (easy updates)
+- Q&A cache reduces API calls for simple queries
+- Consistent response formatting across all bots
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     TELEGRAM BOTS                                   │
+├─────────────────┬─────────────────┬─────────────────────────────────┤
+│ @JGLCapitalBot  │ @L7PartnersBot  │ @Magic_agent1_bot               │
+│ (jgl-capital)   │ (l7-partners)   │ (magic-agent)                   │
+└────────┬────────┴────────┬────────┴────────┬────────────────────────┘
+         │                 │                 │
+         ▼                 ▼                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│           MASTER TELEGRAM BOT CONVERSATIONS WORKFLOW                │
+│                     (stlQoP2huGVmGzRS)                              │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │ JGL Trigger  │  │ L7 Trigger   │  │ Magic Trigger│              │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘              │
+│         │                 │                 │                       │
+│         └────────────┬────┴─────────────────┘                       │
+│                      ▼                                              │
+│              ┌──────────────┐                                       │
+│              │ Merge Inputs │                                       │
+│              └──────┬───────┘                                       │
+│                     ▼                                               │
+│              ┌──────────────┐                                       │
+│              │ Identify Bot │ ◄── Maps trigger → bot_username       │
+│              └──────┬───────┘                                       │
+│                     ▼                                               │
+│         ┌────────────────────┐                                      │
+│         │ Load Bot Config    │ ◄── Supabase: telegram_bot_configs   │
+│         │ (context_template) │                                      │
+│         └──────────┬─────────┘                                      │
+│                    ▼                                                │
+│         ┌────────────────────┐                                      │
+│         │ Prepare Context    │ ◄── Inject context into prompt       │
+│         │ & Session          │                                      │
+│         └──────────┬─────────┘                                      │
+│                    ▼                                                │
+│         ┌────────────────────┐                                      │
+│         │ Call Claude API    │ ◄── https://claude-api.l7-partners   │
+│         └──────────┬─────────┘                                      │
+│                    ▼                                                │
+│         ┌────────────────────┐                                      │
+│         │ Format Response    │ ◄── Truncate, clean markdown         │
+│         └──────────┬─────────┘                                      │
+│                    ▼                                                │
+│         ┌────────────────────┐                                      │
+│         │ Route to Bot       │ ◄── Switch on bot_username           │
+│         └──────────┬─────────┘                                      │
+│                    │                                                │
+│         ┌──────────┼──────────┐                                     │
+│         ▼          ▼          ▼                                     │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐                            │
+│  │Send JGL  │ │Send L7   │ │Send Magic│                            │
+│  │Response  │ │Response  │ │Response  │                            │
+│  └──────────┘ └──────────┘ └──────────┘                            │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Database Tables
+
+### telegram_bot_configs
+Maps Telegram bots to projects with context templates.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `bot_username` | TEXT | Telegram bot username (unique) |
+| `project_id` | TEXT | Links to claude_projects |
+| `context_template` | TEXT | System prompt injected before user message |
+| `working_dir` | TEXT | Claude Code working directory |
+| `primary_agent` | TEXT | Default agent for this bot |
+| `n8n_credential_id` | TEXT | n8n credential ID for the bot |
+| `is_active` | BOOLEAN | Enable/disable bot |
+
+**Current Data:**
+| bot_username | project_id | n8n_credential_id |
+|--------------|------------|-------------------|
+| JeffN8NCommunicationbot | general | rnodyIjRrNxnmYkd |
+| JGLCapitalBot | jgl-capital | 5lDUBxwRJirGu7fF |
+| L7PartnersBot | l7-partners | HNFfYO1hK5umrlrI |
+| Magic_agent1_bot | magic-agent | zOn4nNqyfxf5uIkd |
+
+### telegram_context_templates
+Detailed context templates with agent rosters.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `project_id` | TEXT | Project identifier (unique) |
+| `system_context` | TEXT | Core identity statement |
+| `agent_roster` | JSONB | Available agents array |
+| `response_guidelines` | TEXT | How to respond |
+| `token_budget` | INTEGER | Max tokens for context (~500) |
+
+### quick_responses
+Instant response cache - skip Claude API for simple queries.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `project_id` | TEXT | '*' for all, or specific project |
+| `pattern` | TEXT | Text pattern to match |
+| `match_type` | TEXT | 'exact', 'contains', 'starts_with' |
+| `response` | TEXT | Cached response |
+| `use_count` | INTEGER | Usage tracking |
+
+**Current Patterns (8):**
+- Universal: hi, hello, hey, thanks, thank you
+- JGL: "what agents" → team roster
+- L7: "what agents" → team roster
+- Magic: "what tricks" → repertoire prompt
+
+---
+
+## Prompt Structure
+
+### Current Format (Active)
+```
+[context_template from telegram_bot_configs]
+
+---
+
+User message: [user_prompt]
+```
+
+### Example: JGL Capital Bot
+
+**User sends:** "What's my risk per trade?"
+
+**Prompt sent to Claude:**
+```
+You are the JGL Capital trading assistant. You operate as the CIO coordinating a team of specialist agents.
+
+**Your Team:**
+- Trading Agent: Entry/exit analysis, signal evaluation
+- Portfolio Agent: Risk management, position sizing
+- Quant Agent: EasyLanguage code, backtesting
+- Data Agent: TradeStation API, market data
+- Psychology Agent: Behavioral discipline
+
+**Philosophy:** Defense first. Systematic rules. Trend alignment. Dynamic sizing.
+
+**Response Style:** Decisive, data-driven. Reference specific agents when delegating.
+
+---
+
+User message: What's my risk per trade?
+```
+
+---
+
+## Q&A Cache Implementation
+
+### Purpose
+Instant responses for simple queries without calling Claude API.
+
+### In-Memory Cache (Active in Prepare Context node)
+```javascript
+const INSTANT_CACHE = {
+  'hi': 'Hello! How can I help you today?',
+  'hello': 'Hello! How can I help you today?',
+  'thanks': "You're welcome! Let me know if you need anything else.",
+  'thank you': "You're welcome! Let me know if you need anything else."
+};
+```
+
+### Database Cache (Optional Enhancement)
+Run the migration in `migrations/telegram_bot_context_tables.sql` to create `quick_responses` table with project-specific patterns.
+
+### Workflow Enhancement (Manual)
+To add full cache checking with conditional routing:
+
+1. **Add "Check Q&A Cache" code node** after "Prepare Context & Session"
+2. **Add "Is Cached?" switch node** to branch on `is_cached` boolean
+3. **Route cached responses** directly to "Format Response", skipping Claude API
+
+---
+
+## Adding a New Project Bot
+
+### Step 1: Create Bot in BotFather
+```
+/newbot
+Name: [Project] Assistant
+Username: [Project]Bot
+```
+Save the token.
+
+### Step 2: Add n8n Credential
+1. Go to https://n8n.l7-partners.com
+2. Settings → Credentials → Add Credential
+3. Select "Telegram API"
+4. Name: `[Project] Bot`
+5. Paste token from BotFather
+6. Save and note the credential ID
+
+### Step 3: Add Database Records
+```sql
+-- telegram_bot_configs
+INSERT INTO telegram_bot_configs
+(bot_username, project_id, n8n_credential_id, working_dir, context_template)
+VALUES (
+  '[ProjectBot username]',
+  '[project-id]',
+  '[n8n credential ID]',
+  '/Users/jeff-probis/Documents/Claude Code/claude-agents/projects/[project]',
+  'You are the [Project] assistant. [Describe capabilities and style]'
+);
+
+-- telegram_context_templates
+INSERT INTO telegram_context_templates
+(project_id, system_context, agent_roster, response_guidelines)
+VALUES (
+  '[project-id]',
+  '[Core identity]',
+  '["agent-1", "agent-2"]'::jsonb,
+  '[How to respond]'
+);
+```
+
+### Step 4: Update Master Workflow
+1. Open workflow `stlQoP2huGVmGzRS`
+2. Add new Telegram Trigger node with the credential
+3. Connect to "Merge Bot Messages" (add input)
+4. Update "Identify Bot & Extract Message" TRIGGER_BOT_MAP:
+   ```javascript
+   const TRIGGER_BOT_MAP = {
+     // ... existing
+     '[New Trigger Name]': '[bot_username]'
+   };
+   ```
+5. Add route in "Route to Bot" switch node
+6. Add "Send [Project] Response" Telegram node with credential
+
+### Step 5: Test
+Send `/start` to the new bot.
+
+---
+
+## Related Files
+
+| File | Purpose |
+|------|---------|
+| `migrations/telegram_bot_context_tables.sql` | Database schema & initial data |
+| `docs/telegram-bot-prompts.md` | Detailed prompt templates |
+| `workflows/master-telegram-bot.json` | Workflow export (if needed) |
+
+---
+
+## Separate Workflow: Approvals
+
+The `@JeffN8NCommunicationbot` is **NOT** part of this system. It handles:
+- Claude Code approval notifications
+- System alerts
+
+Workflow: `Claude Code Mobile Approvals` (VLodg6UPtMa6DV30)
+
+---
+
+## Troubleshooting
+
+### Bot not responding
+1. Check workflow is active in n8n
+2. Verify credential ID matches in `telegram_bot_configs`
+3. Check n8n execution logs for errors
+
+### Wrong context injected
+1. Verify `bot_username` in database matches BotFather username exactly
+2. Check TRIGGER_BOT_MAP in "Identify Bot" node
+
+### Response truncated
+Telegram limit is 4096 chars. The workflow truncates at 4000.

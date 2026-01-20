@@ -153,8 +153,51 @@ ON CONFLICT (project_id) DO UPDATE SET
   updated_at = NOW();
 
 -- ============================================
+-- Table 3: quick_responses
+-- Quick response cache to avoid over-processing
+-- ============================================
+CREATE TABLE IF NOT EXISTS quick_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id TEXT NOT NULL,               -- '*' for all projects, or specific project_id
+  pattern TEXT NOT NULL,                  -- Text pattern to match
+  match_type TEXT DEFAULT 'contains',     -- 'exact', 'contains', 'starts_with', 'regex'
+  response TEXT NOT NULL,                 -- Cached response
+  use_count INTEGER DEFAULT 0,            -- Track usage for analytics
+  last_used TIMESTAMPTZ,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_qa_cache_project ON quick_responses(project_id);
+CREATE INDEX IF NOT EXISTS idx_qa_cache_active ON quick_responses(is_active) WHERE is_active = true;
+
+-- ============================================
+-- Initial Data: Q&A Cache Patterns
+-- ============================================
+INSERT INTO quick_responses (project_id, pattern, match_type, response) VALUES
+-- Universal greetings (all projects)
+('*', 'hi', 'exact', 'Hello! How can I help you today?'),
+('*', 'hello', 'exact', 'Hello! How can I help you today?'),
+('*', 'hey', 'exact', 'Hello! How can I help you today?'),
+('*', 'thanks', 'contains', 'You''re welcome! Let me know if you need anything else.'),
+('*', 'thank you', 'contains', 'You''re welcome! Let me know if you need anything else.'),
+
+-- JGL Capital quick responses
+('jgl-capital', 'what agents', 'contains', 'Your JGL Capital team:\n• *Trading Agent*: Entry/exit signals\n• *Portfolio Agent*: Risk & position sizing\n• *Quant Agent*: EasyLanguage & backtesting\n• *Data Agent*: TradeStation API\n• *Psychology Agent*: Behavioral discipline\n\nAsk me anything trading-related!'),
+
+-- L7 Partners quick responses
+('l7-partners', 'what agents', 'contains', 'Your L7 Partners team:\n• *l7-deals-agent*: CRE acquisitions analysis\n• *l7-docs-agent*: Lease summarization\n• *l7-realestate-agent*: Market insights\n\nI can also access property data, documents, and workflows.'),
+
+-- Magic Agent quick responses
+('magic-agent', 'what tricks', 'contains', 'Check ~/magic.md for your full repertoire. Would you like me to:\n• List what''s in active rotation?\n• Suggest practice priorities?\n• Find a specific trick?')
+
+ON CONFLICT DO NOTHING;
+
+-- ============================================
 -- Verify installation
 -- ============================================
 SELECT 'telegram_bot_configs' as table_name, COUNT(*) as row_count FROM telegram_bot_configs
 UNION ALL
-SELECT 'telegram_context_templates', COUNT(*) FROM telegram_context_templates;
+SELECT 'telegram_context_templates', COUNT(*) FROM telegram_context_templates
+UNION ALL
+SELECT 'quick_responses', COUNT(*) FROM quick_responses;

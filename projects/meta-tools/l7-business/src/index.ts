@@ -728,6 +728,96 @@ server.tool(
 );
 
 server.tool(
+  "l7_activate_workflow",
+  "Activate an n8n workflow",
+  {
+    id: z.string().describe('Workflow ID to activate')
+  },
+  async (args) => {
+    if (!N8N_API_KEY) {
+      return formatResponse('n8n API key not configured.', true);
+    }
+
+    try {
+      const { id } = args;
+
+      const response = await fetch(`${N8N_URL}/api/v1/workflows/${id}/activate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-N8N-API-KEY': N8N_API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return formatResponse(`n8n API error: ${response.status} - ${errorText}`, true);
+      }
+
+      const workflow = await response.json();
+
+      // Clear workflow cache
+      n8nCache.clear();
+
+      return formatResponse({
+        action: 'activate',
+        workflowId: id,
+        name: workflow.name,
+        active: workflow.active,
+        success: true
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
+  "l7_deactivate_workflow",
+  "Deactivate an n8n workflow",
+  {
+    id: z.string().describe('Workflow ID to deactivate')
+  },
+  async (args) => {
+    if (!N8N_API_KEY) {
+      return formatResponse('n8n API key not configured.', true);
+    }
+
+    try {
+      const { id } = args;
+
+      const response = await fetch(`${N8N_URL}/api/v1/workflows/${id}/deactivate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-N8N-API-KEY': N8N_API_KEY
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return formatResponse(`n8n API error: ${response.status} - ${errorText}`, true);
+      }
+
+      const workflow = await response.json();
+
+      // Clear workflow cache
+      n8nCache.clear();
+
+      return formatResponse({
+        action: 'deactivate',
+        workflowId: id,
+        name: workflow.name,
+        active: workflow.active,
+        success: true
+      });
+    } catch (error) {
+      return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+  }
+);
+
+server.tool(
   "l7_list_executions",
   "List recent n8n workflow executions",
   {

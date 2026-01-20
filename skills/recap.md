@@ -65,7 +65,23 @@ When merging:
 3. Update `session-notes.md` with consolidated info
 4. Move merged log files to `~/claude-agents/docs/session-logs/archive/`
 
-### Step 5: Commit and Push
+### Step 5: Extract Tasks to Jeff-Agent
+
+For each item in "New Open Items", create a task in Jeff-Agent:
+
+```
+Use jeff_create_task with:
+- title: The open item text
+- description: Context from the session
+- priority: normal (or high if marked urgent)
+- project_id: Detected from working directory (l7-partners, jgl-capital, etc.)
+- source_type: "session"
+- tags: ["from-recap", relevant-tags]
+```
+
+This ensures actionable items are tracked, not just documented.
+
+### Step 6: Commit and Push
 
 ```bash
 cd ~/claude-agents
