@@ -5,6 +5,31 @@
 
 ---
 
+## Session Summary: 2026-01-20 (Session 8)
+
+### Telegram Bot Separation - Duplicate Notifications Fix
+Fixed duplicate Telegram bot notifications by properly separating bot responsibilities:
+
+**Problem:** Both @claudeterminal1463bot and @JeffN8Ncommunicationbot were receiving approval messages, causing duplicates.
+
+**Solution:**
+- Removed webhook from @claudeterminal1463bot (now one-way only)
+- Backed up outdated local workflow file (`~/.claude/n8n-claude-approval-workflow.json.bak`)
+- Verified n8n workflow correctly uses JeffN8Ncommunicationbot
+
+**Bot Routing Now:**
+| Bot | Role |
+|-----|------|
+| @JeffN8Ncommunicationbot | Interactive approvals (two-way via n8n) |
+| @claudeterminal1463bot | System health notifications (one-way only) |
+
+**Technical Details:**
+- Primary path: approval-handler.py → n8n webhook → JeffN8N credential (rnodyIjRrNxnmYkd)
+- Fallback path: If n8n down, sends to claudeterminal1463bot (one-way, no callback)
+- Local workflow file deprecated in favor of server-side n8n workflow
+
+---
+
 ## Session Summary: 2026-01-20 (Session 7)
 
 ### n8n CVE-2026-21858 Security Audit
