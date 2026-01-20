@@ -1,6 +1,7 @@
 # Telegram Bot Context Injection System
 
 **Created:** 2026-01-19
+**Updated:** 2026-01-20 (Added session tracking for conversational memory)
 **Status:** Active
 **Workflow ID:** `stlQoP2huGVmGzRS`
 
@@ -8,13 +9,14 @@
 
 ## Overview
 
-A unified system where multiple Telegram bots share a single n8n workflow, with project-specific context injected dynamically from Supabase before each Claude API call.
+A unified system where multiple Telegram bots share a single n8n workflow, with project-specific context injected dynamically from Supabase before each Claude API call. Supports **multi-turn conversations** through session tracking.
 
 ### Key Benefits
 - Single workflow to maintain (not N workflows per bot)
 - Context templates stored in database (easy updates)
 - Q&A cache reduces API calls for simple queries
 - Consistent response formatting across all bots
+- **Conversational memory** - Claude remembers previous messages within the same chat
 
 ---
 
@@ -77,6 +79,58 @@ A unified system where multiple Telegram bots share a single n8n workflow, with 
 │  └──────────┘ └──────────┘ └──────────┘                            │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Session Tracking (Conversational Memory)
+
+### How It Works
+Each bot generates a **stable session_id** from the Telegram chat_id:
+```
+telegram-{bot_name}-{chat_id}
+```
+
+For example:
+- `telegram-jgl-123456789` - JGL bot conversation with user 123456789
+- `telegram-l7-987654321` - L7 bot conversation with user 987654321
+
+This session_id is passed to the Claude API with `resume: true`, enabling Claude to remember all previous messages in that conversation.
+
+### Implementation Details
+
+**Process Node (per bot):**
+```javascript
+// Generate stable session_id for conversation memory
+const session_id = `telegram-jgl-${chatId}`;  // or telegram-l7, telegram-magic
+
+return {
+  bot_username: botConfig.bot_username,
+  enhanced_prompt: enhancedPrompt,
+  working_dir: botConfig.working_dir,
+  session_id: session_id  // Added for conversational memory
+};
+```
+
+**Claude HTTP Node:**
+```javascript
+{
+  prompt: $json.enhanced_prompt,
+  working_dir: $json.working_dir,
+  session_id: $json.session_id,  // Pass session identifier
+  resume: true                    // Enable conversation continuation
+}
+```
+
+### User Experience
+- First message in a chat starts a new conversation context
+- Subsequent messages continue the same conversation
+- Claude remembers what was discussed previously
+- No special commands needed - just chat naturally
+
+### Session Lifecycle
+- **New session**: Created automatically on first message from a chat_id
+- **Resume**: All subsequent messages use the same session
+- **Persistence**: Sessions persist across workflow restarts (stored by Claude API)
 
 ---
 
@@ -250,8 +304,14 @@ VALUES (
      '[New Trigger Name]': '[bot_username]'
    };
    ```
-5. Add route in "Route to Bot" switch node
-6. Add "Send [Project] Response" Telegram node with credential
+5. **Add Process Node** for the new bot:
+   - Copy an existing process node (e.g., process-jgl)
+   - Update the session_id pattern: `telegram-[botname]-${chatId}`
+   - Connect to the appropriate bot config lookup
+6. **Add Claude HTTP Node** for the new bot:
+   - Ensure it passes `session_id: $json.session_id` and `resume: true`
+7. Add route in "Route to Bot" switch node
+8. Add "Send [Project] Response" Telegram node with credential
 
 ### Step 5: Test
 Send `/start` to the new bot.
@@ -291,3 +351,17 @@ Workflow: `Claude Code Mobile Approvals` (VLodg6UPtMa6DV30)
 
 ### Response truncated
 Telegram limit is 4096 chars. The workflow truncates at 4000.
+
+### Bot doesn't remember previous messages
+1. Verify the Process node generates `session_id` correctly
+2. Check Claude HTTP node has `resume: true` in jsonBody
+3. Ensure `session_id` is passed from Process node to Claude HTTP node
+4. Check n8n execution to confirm session_id value is being sent
+
+### Conversations mixing between users
+1. Verify session_id includes the chat_id (not a static value)
+2. Check that each bot uses unique bot-name prefix (telegram-jgl vs telegram-l7)
+
+### Session appears to reset
+1. Claude API sessions may have TTL - normal behavior after extended inactivity
+2. Verify the session_id format is consistent (no typos in bot name prefix)

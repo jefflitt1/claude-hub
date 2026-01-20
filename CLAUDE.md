@@ -79,6 +79,7 @@ JSON files → GitHub push → n8n sync → Supabase → Lovable dashboard
 **Master Workflow:** `stlQoP2huGVmGzRS` (Master Telegram Bot Conversations)
 
 All project bots share one workflow with dynamic context injection from Supabase.
+**Conversational memory enabled** - Claude remembers previous messages via session tracking (`telegram-{bot}-{chatId}`).
 
 | Bot | Project | Purpose |
 |-----|---------|---------|

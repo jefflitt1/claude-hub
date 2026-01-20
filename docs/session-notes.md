@@ -1,7 +1,41 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 22)
+**Last Updated:** 2026-01-20 (Session 1)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-20 (Session 1)
+
+### Apple Notes MCP Server Setup
+Set up Apple Notes MCP server for reading/writing Apple Notes from Claude:
+
+**Infrastructure Installed:**
+- Bun runtime (`~/.bun/bin/bun`)
+- mcp-apple-notes repo (`~/apple-notes-mcp/`)
+- 161 npm packages including Hugging Face transformers for on-device embeddings
+
+**Configuration:**
+- Added to Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+- Server command: `~/.bun/bin/bun ~/apple-notes-mcp/index.ts`
+- Uses RafalWilinski/mcp-apple-notes (semantic search + RAG)
+
+**Tools Available After Restart:**
+| Tool | Purpose |
+|------|---------|
+| `list_notes` | List all Apple Notes |
+| `search_notes` | Semantic search across notes |
+| `read_note` | Get full content of a note |
+| `create_note` | Create a new note |
+
+**Decisions:**
+- Chose RafalWilinski version for semantic search capabilities
+- Apple Passwords MCP not feasible (no Apple API)
+- Clarified: No existing Apple Notes push was set up (user thought there was)
+
+**Pending:**
+- Restart Claude Desktop to activate
+- First run builds embeddings (on-device ML, no API calls)
 
 ---
 
