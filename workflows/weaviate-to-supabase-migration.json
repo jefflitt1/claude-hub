@@ -1,0 +1,141 @@
+{
+  "name": "Weaviate to Supabase Migration",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.WEAVIATE_URL || 'http://localhost:8080' }}/v1/objects",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "class",
+              "value": "Document"
+            },
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "include",
+              "value": "vector"
+            }
+          ]
+        }
+      },
+      "id": "weaviate_export",
+      "name": "Export from Weaviate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform Weaviate objects to Supabase format\nconst objects = $input.first().json.objects || [];\n\nreturn objects.map(obj => {\n  const props = obj.properties || {};\n  return {\n    json: {\n      // For documents table\n      document: {\n        title: props.title || props.filename || 'Untitled',\n        file_name: props.filename || props.source || 'unknown',\n        file_url: props.url || props.source_path || '',\n        category: props.category || 'imported',\n        project: props.project || 'l7-partners',\n        extracted_text: props.text || props.content || '',\n        processing_status: 'migrated',\n        gdrive_file_id: props.gdrive_id || null\n      },\n      // For document_embeddings table\n      embedding: {\n        content: props.text || props.content || '',\n        embedding: obj.vector || [],\n        source_name: props.filename || props.source || 'unknown',\n        source_path: props.url || props.source_path || '',\n        source_type: 'pdf',\n        project: props.project || 'l7-partners',\n        chunk_index: props.chunk_index || 0\n      },\n      // Original Weaviate ID for tracking\n      weaviate_id: obj.id\n    }\n  };\n});"
+      },
+      "id": "transform",
+      "name": "Transform Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "documents",
+        "columns": "title,file_name,file_url,category,project,extracted_text,processing_status,gdrive_file_id",
+        "options": {
+          "returnFields": ["id", "title"]
+        }
+      },
+      "id": "insert_document",
+      "name": "Insert Document",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase L7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add document_id from previous insert to embedding data\nconst docResult = $('Insert Document').first().json;\nconst embedding = $input.first().json.embedding;\n\nreturn [{\n  json: {\n    ...embedding,\n    document_id: docResult.id\n  }\n}];"
+      },
+      "id": "add_doc_id",
+      "name": "Add Document ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "document_embeddings",
+        "columns": "content,embedding,source_name,source_path,source_type,project,chunk_index,document_id"
+      },
+      "id": "insert_embedding",
+      "name": "Insert Embedding",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1250, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase L7"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Summary of migration\nconst items = $input.all();\nreturn [{\n  json: {\n    message: 'Migration complete',\n    documents_migrated: items.length,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "summary",
+      "name": "Migration Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 200]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Export from Weaviate", "type": "main", "index": 0}]]
+    },
+    "Export from Weaviate": {
+      "main": [[{"node": "Transform Data", "type": "main", "index": 0}]]
+    },
+    "Transform Data": {
+      "main": [[{"node": "Insert Document", "type": "main", "index": 0}]]
+    },
+    "Insert Document": {
+      "main": [[{"node": "Add Document ID", "type": "main", "index": 0}]]
+    },
+    "Add Document ID": {
+      "main": [[{"node": "Insert Embedding", "type": "main", "index": 0}]]
+    },
+    "Insert Embedding": {
+      "main": [[{"node": "Migration Summary", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "name": "Weaviate to Supabase Migration",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Configuration for migration\nconst classes = [\n  { name: 'PROBIS', authKey: 'PROBIS-key-123', project: 'probis' },\n  { name: 'L7', authKey: 'L7P-key-456', project: 'l7-partners' }\n];\n\nreturn classes.map(c => ({ json: c }));"
+      },
+      "id": "config",
+      "name": "Migration Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://192.168.4.147:8080/v1/objects",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.authKey }}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "class",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "include",
+              "value": "vector"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fetch-weaviate",
+      "name": "Fetch from Weaviate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform Weaviate objects to Supabase format\nconst config = $('Migration Config').item.json;\nconst response = $input.first().json;\nconst objects = response.objects || [];\n\nif (objects.length === 0) {\n  return [{ json: { status: 'empty', class: config.name, count: 0 } }];\n}\n\nconst items = objects.map((obj, idx) => {\n  const props = obj.properties || {};\n  return {\n    json: {\n      content: props.content || props.text || '',\n      embedding: obj.vector || null,\n      source_name: props.source_file || props.filename || 'unknown',\n      source_type: props.document_type || 'pdf',\n      project: config.project,\n      chunk_index: props.chunk_index || idx,\n      doc_metadata: {\n        pdf_title: props.pdf_title || props.title,\n        pdf_author: props.pdf_author,\n        pdf_pages: props.pdf_pages,\n        category: props.category,\n        weaviate_class: config.name,\n        weaviate_id: obj.id,\n        migrated_at: new Date().toISOString()\n      }\n    }\n  };\n}).filter(item => item.json.content && item.json.content.length > 10);\n\nconsole.log(`Transformed ${items.length} objects from ${config.name}`);\nreturn items;"
+      },
+      "id": "transform",
+      "name": "Transform Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/document_embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  content: $json.content,\n  embedding: $json.embedding,\n  source_name: $json.source_name,\n  source_type: $json.source_type,\n  project: $json.project,\n  chunk_index: $json.chunk_index,\n  doc_metadata: $json.doc_metadata\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "insert-supabase",
+      "name": "Insert to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Migration summary\nconst items = $input.all();\nconst successful = items.filter(i => i.json.id || i.json[0]?.id).length;\nconst failed = items.length - successful;\n\nreturn [{\n  json: {\n    summary: 'Weaviate to Supabase Migration Complete',\n    total_processed: items.length,\n    successful: successful,\n    failed: failed,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "summary",
+      "name": "Migration Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Migration Config", "type": "main", "index": 0}]]
+    },
+    "Migration Config": {
+      "main": [[{"node": "Fetch from Weaviate", "type": "main", "index": 0}]]
+    },
+    "Fetch from Weaviate": {
+      "main": [[{"node": "Transform Data", "type": "main", "index": 0}]]
+    },
+    "Transform Data": {
+      "main": [[{"node": "Insert to Supabase", "type": "main", "index": 0}]]
+    },
+    "Insert to Supabase": {
+      "main": [[{"node": "Migration Summary", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

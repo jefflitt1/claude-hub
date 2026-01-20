@@ -1,6 +1,16 @@
 # Pending SQL - Run in Supabase Dashboard
 
-## saved_articles table (for Feedly integration)
+## ✅ COMPLETED (2026-01-20)
+
+The following tables have been created:
+- `saved_articles` - Feedly article persistence
+- `claude_session_context` - Session context MCP persistence
+- `telegram_chat_history` - Telegram bot conversation memory
+- `memory_graph` - Memory graph entity storage
+
+---
+
+## saved_articles table (for Feedly integration) ✅
 
 ```sql
 CREATE TABLE IF NOT EXISTS saved_articles (

@@ -1,7 +1,44 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 10)
+**Last Updated:** 2026-01-20 (Session 11)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 11)
+
+### Weaviate to Supabase pgvector Migration Setup
+Prepared complete migration infrastructure from Weaviate vector DB to Supabase pgvector:
+
+**Supabase pgvector Setup (Completed):**
+- Enabled pgvector extension
+- Created `document_embeddings` table with `vector(1536)` column
+- Created `search_documents` function for semantic similarity search
+- Enhanced `documents` table with foreign keys (document_id, property_id)
+
+**l7-business MCP Vector Tools (Added):**
+- `l7_vector_search` - Semantic search with text query (generates embedding)
+- `l7_vector_search_with_embedding` - Search with pre-computed embedding
+- `l7_vector_insert` - Insert document chunks with embeddings
+- `l7_vector_stats` - Get vector store statistics
+
+**Weaviate Connection Details Found:**
+- URL: `http://192.168.4.147:8080` (Raspberry Pi network)
+- Classes: `PROBIS` (auth: `PROBIS-key-123`), `L7Partners` (auth: `L7P-key-456`)
+- Network limitation: Only accessible from Pi/n8n, not Mac
+
+**Migration Workflow Files Created:**
+| File | Purpose |
+|------|---------|
+| `workflows/weaviate-migration-complete.json` | One-time data migration |
+| `workflows/pdf-to-supabase-complete.json` | New PDF ingestion (replaces Weaviate workflows) |
+| `docs/operations/weaviate-migration-guide.md` | Step-by-step instructions |
+
+**Pending User Actions:**
+1. Import workflows into n8n via UI (n8n MCP has JSON param limitations)
+2. Run migration workflow (queries Weaviate from n8n, inserts to Supabase)
+3. Activate new PDF to Supabase workflow
+4. Deactivate old Weaviate workflows after verification
 
 ---
 
