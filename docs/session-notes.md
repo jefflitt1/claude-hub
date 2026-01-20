@@ -1,7 +1,31 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 3)
+**Last Updated:** 2026-01-20 (Session 4)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 4)
+
+### Calendar Setup Review & Usage Rules
+Reviewed full calendar configuration via Google Calendar MCP and established clear usage rules:
+
+**Calendars Identified (13 total):**
+- **Owner access:** jglittell@gmail.com (primary), Family (shared), JGL - Personal (private)
+- **Read-only:** Jeff - L7 Partners (work), Darien Boys Hockey, Royle PTO, MGL, MPL ICloud, Rangers, Crossbar, holidays
+
+**Usage Rules Established:**
+| Calendar | Visibility | Use For |
+|----------|------------|---------|
+| **Family** | Shared with family | Anything that could cause scheduling conflict - appointments, activities, travel |
+| **JGL - Personal** | Private (only you) | Reminders, personal notes, tasks - no time blocking |
+
+**Decision Framework:**
+> "Could this conflict with family plans?"
+> - **Yes** → Family calendar (shared)
+> - **No** → JGL - Personal (private)
+
+**Skills Used:** /jeff, /recap
 
 ---
 

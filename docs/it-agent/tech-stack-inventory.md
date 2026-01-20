@@ -28,7 +28,7 @@
 |--------|-----|--------|----------|
 | n8n-tunnel | c5935af7-... | Healthy | n8n, admin, metabase, kibana, kuma, etc. |
 | mac-ssh | 5e5111af-... | Healthy | mac-ssh, claude-api |
-| pi-vnc | f451e610-... | Down | VNC (192.168.4.149) |
+| pi-vnc | f451e610-... | Healthy | VNC (192.168.4.149) |
 
 ### Cloudflare Zero Trust Access Apps
 - JGL Capital (jglcap.l7-partners.com) - Protected

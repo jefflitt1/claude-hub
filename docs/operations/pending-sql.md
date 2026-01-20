@@ -53,6 +53,33 @@ CREATE INDEX idx_session_context_session ON claude_session_context(session_id);
 CREATE INDEX idx_session_context_project ON claude_session_context(active_project);
 ```
 
+## telegram_chat_history table (for Telegram bot memory)
+
+```sql
+CREATE TABLE IF NOT EXISTS telegram_chat_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  bot_username TEXT NOT NULL,
+  chat_id BIGINT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for efficient queries by bot + chat_id (most recent first)
+CREATE INDEX idx_chat_history_lookup
+ON telegram_chat_history (bot_username, chat_id, created_at DESC);
+
+-- Enable RLS
+ALTER TABLE telegram_chat_history ENABLE ROW LEVEL SECURITY;
+
+-- Policy for authenticated access
+CREATE POLICY "Enable all for authenticated users" ON telegram_chat_history
+  FOR ALL USING (true);
+
+-- Comment
+COMMENT ON TABLE telegram_chat_history IS 'Stores Telegram bot conversation history for short-term memory';
+```
+
 ---
 Created: 2026-01-20
 Run these in Supabase Dashboard → SQL Editor
