@@ -1,7 +1,41 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 1)
+**Last Updated:** 2026-01-20 (Session 2)
 **Resume context for next session**
-**Apple Notes:** Auto-syncs on commit (cleaned for readability)
+**Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 2)
+
+### Apple Notes Single-Note Sync Fix
+Fixed the session notes sync to use exactly one Apple Note that gets updated (not duplicated):
+
+**Changes Made:**
+- Added `update-note` tool to Apple Notes MCP (`~/apple-notes-mcp/index.ts`)
+- Added Apple Notes MCP to Claude Code config (`~/.claude.json`)
+- Fixed git post-commit hook to use exact name match: "Claude Session Notes"
+
+**Tools Now Available:**
+| Tool | Purpose |
+|------|---------|
+| `list-notes` | List all Apple Notes |
+| `search-notes` | Semantic search across notes |
+| `get-note` | Get full content of a note |
+| `create-note` | Create a new note |
+| `update-note` | Update existing note or create if not exists (upsert) |
+
+**How It Works:**
+```
+/recap -> commits session-notes.md -> git post-commit hook
+       -> pandoc (MD->HTML) -> AppleScript -> "Claude Session Notes"
+```
+
+**User Cleanup:**
+- Delete any old "Claude Hub Session..." notes in Apple Notes
+- Only "Claude Session Notes" will be used going forward
+
+**Pending:**
+- Restart Claude Code to load apple-notes MCP
 
 ---
 
@@ -20,20 +54,12 @@ Set up Apple Notes MCP server for reading/writing Apple Notes from Claude:
 - Server command: `~/.bun/bin/bun ~/apple-notes-mcp/index.ts`
 - Uses RafalWilinski/mcp-apple-notes (semantic search + RAG)
 
-**Tools Available After Restart:**
-| Tool | Purpose |
-|------|---------|
-| `list_notes` | List all Apple Notes |
-| `search_notes` | Semantic search across notes |
-| `read_note` | Get full content of a note |
-| `create_note` | Create a new note |
-
 **Decisions:**
 - Chose RafalWilinski version for semantic search capabilities
 - Apple Passwords MCP not feasible (no Apple API)
-- Clarified: No existing Apple Notes push was set up (user thought there was)
+- Clarified: Session notes WAS already going to Apple Notes via git hook
 
-**Pending:**
+**Completed:**
 - Restart Claude Desktop to activate
 - First run builds embeddings (on-device ML, no API calls)
 
