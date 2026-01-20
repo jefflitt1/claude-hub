@@ -160,7 +160,8 @@ server.tool("session_start", "Initialize session context - call this at the star
             } : null,
             activeProject: sessionContext.activeProject,
             recentTasks: sessionContext.recentTasks.slice(0, 5),
-            supabaseConnected: !!supabaseContext,
+            supabaseConnected: !!supabase,
+            hasPreviousSession: !!supabaseContext,
             tip: lastSession
                 ? `Last session was on ${lastSession.date}. Use session_get_last_summary for full context.`
                 : 'No previous session found. This appears to be a fresh start.'

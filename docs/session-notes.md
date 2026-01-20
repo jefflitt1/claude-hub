@@ -1,7 +1,31 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-19 (Session 19)
+**Last Updated:** 2026-01-19 (Session 20)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs on commit (cleaned for readability)
+
+---
+
+## Session Summary: 2026-01-19 (Session 20)
+
+### Session-Context MCP Server - Supabase Integration Complete
+Verified and fixed the session-context MCP server after restart:
+
+**Verifications Completed:**
+- session-context MCP server responding
+- l7_activate_workflow tool working
+- l7_deactivate_workflow tool working
+- `claude_session_context` table created in Supabase
+
+**Bug Fixed:**
+- `supabaseConnected` flag was checking `!!supabaseContext` (data existence) instead of `!!supabase` (connection status)
+- Added `hasPreviousSession` field to distinguish between connection and data availability
+- Rebuilt server with fix
+
+**Test Data:**
+- Inserted test session record to verify retrieval after next restart
+
+**Pending After Restart:**
+- Verify `session_start()` shows `supabaseConnected: true` and `hasPreviousSession: true`
 
 ---
 
