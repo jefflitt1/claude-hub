@@ -1,7 +1,33 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 15)
+**Last Updated:** 2026-01-21 (Session 1)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-21 (Session 1)
+
+### PDF to Supabase Workflow - Credentials Fixed
+
+Fixed authentication issues in the PDF to Supabase (Vector Store) workflow.
+
+**Issues Fixed:**
+1. OpenAI 401 error - HTTP Header Auth didn't include "Bearer " prefix
+2. Supabase 401 error - HTTP Header Auth only supports one header, but Supabase needs both `apikey` AND `Authorization`
+
+**Solution:**
+Replaced generic HTTP Header Auth with native n8n credential types:
+- `openAiApi` - Automatically handles Bearer auth
+- `supabaseApi` - Automatically handles both required headers
+
+**Workflow Details:**
+- **ID:** `SQGYg7V8RO0oiAET`
+- **Form:** `https://n8n.l7-partners.com/form/pdf-to-supabase-form`
+- **API:** `https://n8n.l7-partners.com/webhook/pdf-upload-api`
+- **Status:** Working - tested with equinox.pdf, data inserted into Supabase
+
+**Documentation Updated:**
+- `docs/workflows/pdf-to-supabase-vector-store.md` - Updated flow diagram, credentials section, troubleshooting
 
 ---
 

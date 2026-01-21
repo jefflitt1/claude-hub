@@ -23,28 +23,26 @@ Ingests PDF documents into the Supabase `document_embeddings` vector store for s
 └─────────────┘     │  Normalize  │     ┌─────────┐     ┌────────────┐
                     │    Input    │────►│ Extract │────►│   Chunk    │
 ┌─────────────┐     │             │     │   PDF   │     │    Text    │
-│ API Upload  │────►│             │     └─────────┘     └─────┬──────┘
+│ API Upload  │────►│             │     └─────────┘     └────────────┘
 └─────────────┘     └─────────────┘                           │
                                                               ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                        BATCH PROCESSING LOOP                         │
-│  ┌──────────┐     ┌───────────┐     ┌─────────┐     ┌────────────┐ │
-│  │  Batch   │────►│  Generate │────►│ Prepare │────►│   Filter   │ │
-│  │  Chunks  │     │ Embedding │     │ Insert  │     │   Valid    │ │
-│  └────▲─────┘     └───────────┘     └─────────┘     └──────┬─────┘ │
-│       │                                                     │       │
-│       │           ┌───────────────┐                         │       │
-│       └───────────│ Continue Loop │◄────────────────────────┤       │
-│                   └───────────────┘                         │       │
-│                                         ┌────────────┐      │       │
-│                                         │ Log Skipped│◄─────┘ (false)│
-│                                         └────────────┘              │
-└─────────────────────────────────────────────────────────────────────┘
-                              │ (done)
-                              ▼
-                    ┌─────────────────┐
-                    │ Insert Supabase │────► Summary
-                    └─────────────────┘
+                    ┌───────────┐     ┌─────────┐     ┌────────────┐
+                    │  Generate │────►│ Prepare │────►│   Filter   │
+                    │ Embedding │     │ Insert  │     │   Valid    │
+                    └───────────┘     └─────────┘     └──────┬─────┘
+                                                             │
+                              ┌───────────────────────────────┤
+                              │                               │
+                              ▼                               ▼
+                    ┌─────────────────┐              ┌────────────┐
+                    │ Insert Supabase │              │ Log Skipped│
+                    └────────┬────────┘              └──────┬─────┘
+                             │                              │
+                             └──────────┬───────────────────┘
+                                        ▼
+                                   ┌─────────┐
+                                   │ Summary │
+                                   └─────────┘
 ```
 
 ## Node Details
@@ -81,38 +79,32 @@ Intelligent semantic chunking with:
 - Document hash generation (MD5, first 8 chars)
 - Metadata attached to each chunk
 
-### 6. Batch Chunks
-- **Batch Size:** 20 chunks per batch
-- Prevents rate limiting on OpenAI API
-- Enables progress tracking for large documents
-
-### 7. Generate Embedding
+### 6. Generate Embedding
+- **Type:** HTTP Request
 - **Model:** `text-embedding-3-small` (OpenAI)
-- **Credential:** `OpenAI API Header`
+- **Credential Type:** `openAiApi` (native n8n credential)
 - **Error Handling:** Continue on error (skips failed chunks)
 - **Timeout:** 30 seconds
 
-### 8. Prepare Insert
+### 7. Prepare Insert
 Combines chunk metadata with embedding vector:
 - Handles embedding errors gracefully
 - Marks failed chunks as skipped
 - Preserves all metadata for Supabase insert
 
-### 9. Filter Valid
+### 8. Filter Valid
 Routes items based on embedding success:
 - **True path:** Valid embeddings → Insert to Supabase
 - **False path:** Failed/skipped → Log Skipped
 
-### 10. Insert to Supabase
+### 9. Insert to Supabase
+- **Type:** HTTP Request
 - **Table:** `document_embeddings`
-- **Credential:** `Supabase Service Key`
+- **Credential Type:** `supabaseApi` (native n8n credential)
 - **Error Handling:** Continue on error
 
-### 11. Continue Loop
-Returns to Batch Chunks for next batch until all chunks processed.
-
-### 12. Summary
-Returns final status after all batches complete:
+### 10. Summary
+Returns final status:
 ```json
 {
   "status": "success",
@@ -120,11 +112,12 @@ Returns final status after all batches complete:
   "project": "l7-partners",
   "source": "form",
   "total_chunks": 15,
+  "inserted_count": 15,
   "processed_at": "2026-01-21T00:00:00.000Z"
 }
 ```
 
-### 13. Log Skipped
+### 11. Log Skipped
 Records chunks that failed embedding generation for debugging.
 
 ## Database Schema
@@ -156,10 +149,16 @@ Records chunks that failed embedding generation for debugging.
 
 ## Required Credentials
 
-| Credential | ID | Purpose |
-|------------|-----|---------|
-| OpenAI API Header | `openai-header` | Embedding generation |
-| Supabase Service Key | `supabase-header` | Database insert |
+| Credential Type | n8n Type | Purpose |
+|-----------------|----------|---------|
+| **OpenAI API** | `openAiApi` | Embedding generation (handles Bearer auth automatically) |
+| **Supabase API** | `supabaseApi` | Database insert (handles both `apikey` and `Authorization` headers) |
+
+**Setup in n8n:**
+1. **OpenAI API** - Create credential with your API key (`sk-proj-...`)
+2. **Supabase API** - Create credential with:
+   - Host: `https://donnmhbwhpjlmpnwgdqr.supabase.co`
+   - Service Role Key: Full JWT token (`eyJ...`)
 
 ## Error Handling
 
@@ -196,11 +195,10 @@ curl -X POST \
 
 1. **Input Normalization** - Single code node handles all trigger variations
 2. **Semantic Chunking** - Paragraph-aware with overlap for context preservation
-3. **Batch Processing** - Prevents rate limits, enables large document handling
-4. **Error Resilience** - Failed chunks don't stop workflow
-5. **Document Hashing** - Enables deduplication detection
-6. **Credential References** - No inline API keys
-7. **Newer Embedding Model** - `text-embedding-3-small` for better quality/cost ratio
+3. **Error Resilience** - Failed chunks don't stop workflow
+4. **Document Hashing** - Enables deduplication detection
+5. **Native Credentials** - Uses `openAiApi` and `supabaseApi` types (auto-handles auth headers)
+6. **Newer Embedding Model** - `text-embedding-3-small` for better quality/cost ratio
 
 ## Troubleshooting
 
@@ -209,8 +207,9 @@ curl -X POST \
 | "No PDF file found" | Binary not in expected property | Check trigger type and binary property name |
 | "Invalid file type" | Non-PDF uploaded | Ensure file has .pdf extension |
 | "PDF extraction failed" | Corrupted or image-only PDF | Use OCR preprocessing for scanned docs |
-| Embedding errors | Rate limit or API key issue | Check OpenAI credentials, reduce batch size |
-| Supabase insert fails | Schema mismatch | Verify `document_embeddings` table exists |
+| OpenAI 401 error | Invalid API key | Verify OpenAI API credential has valid key |
+| Supabase 401 error | Missing headers | Use native `supabaseApi` credential type (not HTTP Header Auth) |
+| Supabase insert fails | Schema mismatch | Verify `document_embeddings` table exists with correct columns |
 
 ## Related Workflows
 
