@@ -1,7 +1,36 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 17)
+**Last Updated:** 2026-01-20 (Session 18)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 18)
+
+### Multi-AI CLI Integration - File System & /consult Skill
+
+Completed the multi-AI CLI integration for Gemini and Codex collaboration.
+
+**Structure Created:**
+- `ai-orchestration/` folder with shared-context, configs, templates
+- `GEMINI.md` - Gemini CLI context (1M context, research synthesis)
+- `AGENTS.md` - Codex CLI context (security review, refactoring)
+- `multi-agent.json` - Orchestration workflows config
+
+**`/consult` Skill Created:**
+Commands: `/consult gemini`, `/consult codex`, `/consult arch-review`, `/consult security`, `/consult second-opinion`
+
+**Proactive Thinking Added:**
+All agents now have guidance to proactively consider multi-model consultation:
+- Claude: Mental checklist before complex tasks
+- Gemini: Suggests Codex for security issues
+- Codex: Suggests Gemini for large context needs
+
+**Files Created/Updated:**
+- `~/.claude/skills/consult/SKILL.md`
+- `~/CLAUDE.md` (Multi-Model Thinking section)
+- `ai-orchestration/` folder and all contents
+- `GEMINI.md`, `AGENTS.md` (response formats, cross-consultation)
 
 ---
 
