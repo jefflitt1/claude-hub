@@ -1,7 +1,26 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 13)
+**Last Updated:** 2026-01-20 (Session 14)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 14)
+
+### Telegram Bot Credential Alignment - System Alerts
+Fixed Telegram bot credential routing for system alert workflows that were incorrectly using the approvals bot.
+
+**Workflows Updated:**
+| Workflow | ID | Old Credential | New Credential |
+|----------|-----|----------------|----------------|
+| System Health Check | `btzTPdQPMQNBwujF` | JeffN8NCommunicationBot | L7 Action Items Bot |
+| Weekly IT Security Scan | `UBnTTrQrT8EnaC0f` | Claude Terminal Bot | L7 Action Items Bot |
+
+**Bot Architecture Established:**
+- `@JeffN8NCommunicationbot` (`rnodyIjRrNxnmYkd`) → Interactive approvals (Claude Code Mobile Approvals)
+- `@claudeterminal1463bot` / L7 Action Items Bot (`wi08dcbxZEEx61tR`) → One-way system alerts
+
+**Technical Note:** n8n_update_partial_workflow had issues; used n8n_update_full_workflow with minimal settings `{"executionOrder": "v1"}` instead.
 
 ---
 
