@@ -1,10 +1,21 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 5)
+**Last Updated:** 2026-01-21 (Session 6)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 6 - 2026-01-21 (Mac Studio Migration Prep)
+- Created comprehensive Mac Studio migration package at `~/Desktop/mac-studio-migration/`
+- Built 6 sequential setup scripts (01-06) for automated Mac Studio configuration
+- Created secrets archive (secrets.tar.gz) containing OAuth tokens, Cloudflare creds, Claude configs
+- Documented all 17 MCP server configurations with environment variables
+- Created Docker Compose file for containerized MCP deployment option
+- Created Windows VM setup guide for TradeStation trading systems
+- Prepared MacBook SSH thin client configuration
+- Created IT infrastructure agent file (`~/.claude/agents/it-infrastructure.md`)
+- Saved migration summary to Apple Notes for quick reference tomorrow
 
 ### Session 5 - 2026-01-21 (Claude Approvals Formatting)
 - Improved Claude Code Mobile Approvals workflow message formatting
@@ -24,6 +35,14 @@
 ## Open Items / Next Steps
 
 ### High Priority
+
+1. **Mac Studio arrives tomorrow** - Run migration scripts from `~/Desktop/mac-studio-migration/`
+2. **Decide Windows VM platform** - Parallels ($99/yr) vs UTM (free) vs VMware (free)
+3. **Determine Pi 5 AI HAT 2 dedicated task** - Currently n8n only
+4. **Configure TradeStation credentials** - Need real API creds for MCP
+5. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
+
+### Medium Priority
 
 1. **Delete unnamed Telegram bot** - Bot ID 8471835561 (orphaned) - delete manually in Telegram app
 2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
