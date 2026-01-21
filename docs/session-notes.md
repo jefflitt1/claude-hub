@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 1)
+**Last Updated:** 2026-01-21 (Session 5)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 5 - 2026-01-21 (Claude Approvals Formatting)
+- Improved Claude Code Mobile Approvals workflow message formatting
+- Added smart command summarization (curl → "POST domain/path...", git → "Create commit", etc.)
+- Added tool emojis based on type (Bash, Edit, Write, Read, Glob)
+- Cleaner receipts: "💻 Bash\n\nDescription\n\n📍 ID" instead of raw commands
+- Emoji buttons: ✅ Yes, 🔄 Always, ❌ No
 
 ### Session 1 - 2026-01-21 (n8n Workflow Fixes)
 - Fixed Master Telegram Bot Code node return formats (Process + Format nodes)
