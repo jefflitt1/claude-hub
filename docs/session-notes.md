@@ -1,7 +1,59 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 14)
+**Last Updated:** 2026-01-21 (Session 15)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-21 (Session 15)
+
+### n8n Sync Workflow Fixed + Lovable Documentation
+
+#### 1. Sync Execution Stats Workflow - Fixed
+Fixed workflow `tccihUEblcHVo7CD` (Sync Execution Stats to Supabase) that syncs n8n execution stats to Supabase.
+
+**Issues Fixed:**
+1. `returnAll: true` caused socket timeout (56+ API pages) → Changed to `limit: 250`
+2. n8n API max limit is 250, not 1000
+3. Native Supabase node had field mapping issues → Replaced with HTTP Request PATCH
+
+**Working Workflow:**
+- **ID:** `tccihUEblcHVo7CD`
+- **Webhook:** `https://n8n.l7-partners.com/webhook/sync-execution-stats`
+- **Schedule:** Daily at 6am
+- **Result:** Syncs `success_count_7d`, `error_count_7d`, `last_success_at`, `last_error_at` for all 60 workflows
+
+**Technical Solution:**
+- Used HTTP Request node with `supabaseApi` credential
+- PATCH to `https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/n8n_workflows?n8n_id=eq.{{ $json.n8n_id }}`
+
+#### 2. Lovable ↔ GitHub ↔ Claude Code Workflow Documented
+
+Discovered and documented that **Claude Hub dashboard is part of `l7partners-rewrite`** Lovable project (not a separate repo).
+
+**Architecture:**
+```
+Lovable Project (0623dc91-517d-423f-8ad2-54a46bcdd8ac)
+         ↕ 2-way sync
+GitHub: jefflitt1/l7partners-rewrite
+         ↕ git pull/push
+Local: ~/Documents/Claude Code/claude-agents/projects/l7partners-rewrite/
+```
+
+**Claude Hub Components (in l7partners-rewrite):**
+| Component | File |
+|-----------|------|
+| HomeSection | `src/components/sections/HomeSection.tsx` |
+| CommandPalette | `src/components/CommandPalette.tsx` |
+| PinnedItems | `src/components/PinnedItemsSection.tsx` |
+| ClaudeLogin | `src/pages/claude/ClaudeLogin.tsx` |
+
+**Documentation Updated:**
+- `CLAUDE.md` - Added Lovable sync section, architecture diagram
+- `projects/l7partners-rewrite/CLAUDE.md` - Added Claude Hub components table, sync workflow
+- `docs/operations/lovable-workflow.md` - NEW: Complete Lovable development guide
+
+**Key Insight:** The prompts in `prompts/lovable-*.md` are instructions TO Lovable, not the code itself. The actual React code lives in `l7partners-rewrite`.
 
 ---
 

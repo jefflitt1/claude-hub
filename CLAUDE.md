@@ -1,7 +1,8 @@
 # Claude Hub
 
 **URL:** https://claude.l7-partners.com
-**Repo:** https://github.com/jefflitt1/claude-hub
+**Data Repo:** https://github.com/jefflitt1/claude-hub
+**Frontend Repo:** https://github.com/jefflitt1/l7partners-rewrite (shared with L7 Partners site)
 
 ## Overview
 
@@ -10,19 +11,27 @@ Knowledge graph & dashboard for Claude agents, prompts, MCP servers, and n8n wor
 ## Architecture
 
 ```
-Mac (Development)          Cloud Services
-├── Claude Code CLI        ├── Lovable (React frontend)
-├── Interactive editing    ├── Supabase (PostgreSQL)
-└── Push to repo           └── Cloudflare (hosting)
-
-Raspberry Pi (Automation)
-├── n8n (self-hosted)
-└── cloudflared tunnel
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           REPOSITORIES                                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│  claude-hub (this repo)              l7partners-rewrite                  │
+│  ├── data/ (JSON)                    ├── src/components/sections/        │
+│  ├── docs/                           │   └── HomeSection.tsx             │
+│  ├── prompts/                        ├── src/pages/claude/               │
+│  ├── workflows/                      │   └── ClaudeLogin.tsx             │
+│  └── scripts/                        └── src/pages/ClaudeCatalog.tsx     │
+│       ↓                                        ↓                         │
+│  Data & Documentation                 React Frontend (Lovable)           │
+└─────────────────────────────────────────────────────────────────────────┘
+                    ↓                              ↓
+              Supabase DB  ←────────────→  Dashboard UI
+                    ↓
+              n8n Workflows (Raspberry Pi)
 ```
 
 ## Tech Stack
 
-- **Frontend:** Lovable (React)
+- **Frontend:** Lovable (React + Vite + TypeScript) - lives in `l7partners-rewrite`
 - **Database:** Supabase (PostgreSQL)
 - **Automation:** n8n at https://n8n.l7-partners.com
 - **Hosting:** Cloudflare + Raspberry Pi
@@ -30,24 +39,68 @@ Raspberry Pi (Automation)
 ## Project Structure
 
 ```
-claude-agents/
-├── CLAUDE.md              # This file
-├── data/                  # JSON data (synced to Supabase)
+claude-agents/                          # THIS REPO - Data & Docs
+├── CLAUDE.md                           # This file
+├── data/                               # JSON data (synced to Supabase)
 ├── docs/
-│   ├── session-notes.md   # Running session notes
-│   ├── session-logs/      # Per-terminal recap logs
-│   └── operations/        # Operational docs (MCP servers, coaching, etc.)
-├── scripts/               # Maintenance & utility scripts
-├── skills/                # Custom Claude skills
-├── prompts/               # System instruction files
-├── workflows/             # n8n workflow exports
-└── projects/              # Subprojects
+│   ├── session-notes.md                # Running session notes
+│   ├── session-logs/                   # Per-terminal recap logs
+│   └── operations/                     # Operational docs
+├── scripts/                            # Maintenance & utility scripts
+├── skills/                             # Custom Claude skills
+├── prompts/                            # System instruction files (inc. Lovable prompts)
+├── workflows/                          # n8n workflow exports
+└── projects/
+    └── l7partners-rewrite/             # FRONTEND REPO (git subproject)
+        └── src/
+            ├── components/sections/HomeSection.tsx
+            ├── components/CommandPalette.tsx
+            ├── components/PinnedItemsSection.tsx
+            ├── pages/claude/ClaudeLogin.tsx
+            └── pages/ClaudeCatalog.tsx
 ```
+
+## Lovable ↔ GitHub ↔ Claude Code Sync
+
+**IMPORTANT:** The Claude Hub dashboard frontend is part of the `l7partners-rewrite` Lovable project.
+
+### Two-Way Sync Setup
+```
+Lovable Project (0623dc91-517d-423f-8ad2-54a46bcdd8ac)
+         ↕ automatic 2-way sync
+GitHub: jefflitt1/l7partners-rewrite
+         ↕ git pull/push
+Local: ~/Documents/Claude Code/claude-agents/projects/l7partners-rewrite/
+```
+
+### Workflow for Changes
+
+| Edit Location | Sync Steps |
+|---------------|------------|
+| **Lovable** | Auto-pushes to GitHub → Run `git pull` locally |
+| **Claude Code** | Edit locally → `git push` → Lovable syncs in ~30s |
+
+### Best Practices
+- Always `git pull` before starting work in Claude Code
+- Commit frequently with clear messages
+- Avoid editing same file in both places simultaneously
+- If conflicts occur, resolve in Git (Lovable's merge handling is limited)
+
+### Key Frontend Files
+| File | Purpose |
+|------|---------|
+| `src/components/sections/HomeSection.tsx` | Dashboard home with stats, activity, errors |
+| `src/components/CommandPalette.tsx` | Cmd+K global search |
+| `src/components/PinnedItemsSection.tsx` | Favorites/pinned items |
+| `src/pages/claude/ClaudeLogin.tsx` | Claude Hub authentication |
+| `src/pages/ClaudeCatalog.tsx` | Main Claude Hub page |
 
 ## Data Flow
 
 ```
 JSON files → GitHub push → n8n sync → Supabase → Lovable dashboard
+                                          ↑
+                              n8n API (execution stats)
 ```
 
 ## Supabase Tables
