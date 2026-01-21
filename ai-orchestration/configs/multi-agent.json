@@ -1,0 +1,104 @@
+{
+  "version": "1.0",
+  "description": "Multi-agent orchestration configuration for Claude + Gemini + Codex",
+
+  "agents": {
+    "claude": {
+      "role": "primary",
+      "cli": "claude",
+      "contextFile": "CLAUDE.md",
+      "strengths": [
+        "multi-step reasoning",
+        "agentic workflows",
+        "tool orchestration",
+        "security analysis"
+      ],
+      "useFor": [
+        "planning",
+        "implementation",
+        "debugging",
+        "tool integration"
+      ]
+    },
+    "gemini": {
+      "role": "advisor",
+      "cli": "gemini",
+      "contextFile": "GEMINI.md",
+      "strengths": [
+        "large context (1M tokens)",
+        "multimodal",
+        "research synthesis",
+        "web/UI development"
+      ],
+      "useFor": [
+        "codebase analysis",
+        "document synthesis",
+        "architecture review",
+        "multimodal tasks"
+      ]
+    },
+    "codex": {
+      "role": "advisor",
+      "cli": "codex",
+      "contextFile": "AGENTS.md",
+      "strengths": [
+        "long-horizon coding",
+        "refactoring",
+        "security review",
+        "migrations"
+      ],
+      "useFor": [
+        "code review",
+        "security audit",
+        "alternative implementations",
+        "large refactors"
+      ]
+    }
+  },
+
+  "workflows": {
+    "architecture-review": {
+      "description": "Get multiple perspectives on architectural decisions",
+      "steps": [
+        {"agent": "gemini", "task": "Analyze full codebase, identify patterns and issues"},
+        {"agent": "codex", "task": "Review for security and suggest alternatives"},
+        {"agent": "claude", "task": "Synthesize and make final recommendation"}
+      ]
+    },
+    "security-audit": {
+      "description": "Comprehensive security review",
+      "steps": [
+        {"agent": "codex", "task": "Scan for OWASP vulnerabilities"},
+        {"agent": "claude", "task": "Review and prioritize findings"},
+        {"agent": "claude", "task": "Implement fixes"}
+      ]
+    },
+    "large-refactor": {
+      "description": "Major codebase refactoring",
+      "steps": [
+        {"agent": "gemini", "task": "Analyze current architecture with full context"},
+        {"agent": "codex", "task": "Plan refactoring approach"},
+        {"agent": "claude", "task": "Execute refactoring incrementally"}
+      ]
+    },
+    "research-to-implementation": {
+      "description": "Research topic then implement",
+      "steps": [
+        {"agent": "gemini", "task": "Research and synthesize documentation"},
+        {"agent": "claude", "task": "Plan implementation based on research"},
+        {"agent": "claude", "task": "Implement solution"}
+      ]
+    }
+  },
+
+  "routing": {
+    "triggers": {
+      "fullCodebaseAnalysis": "gemini",
+      "securityReview": "codex",
+      "largeDocumentSynthesis": "gemini",
+      "alternativeApproach": "codex",
+      "multimodalTask": "gemini",
+      "default": "claude"
+    }
+  }
+}
