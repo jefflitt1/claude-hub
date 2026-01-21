@@ -1,7 +1,33 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 18)
+**Last Updated:** 2026-01-20 (Session 19)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 19)
+
+### Master Telegram Bot Fix - n8n Code Node JSON Structure
+
+Fixed the Master Telegram Bot Conversations workflow - JGL Personal Assistant bot now responding.
+
+**Root Cause:**
+n8n Code nodes require `{ json: <object> }`, but Load History nodes were returning `{ json: [] }` (array).
+When Supabase returned empty history, the workflow errored: "A 'json' property isn't an object [item 0]"
+
+**Fix Applied:**
+- **Load History nodes (x4):** Changed `return [{ json: history }]` to `return [{ json: { history: history } }]`
+- **Process nodes (x4):** Changed `$input.first().json` to `$input.first().json.history`
+
+**Workflow Details:**
+- **ID:** `stlQoP2huGVmGzRS`
+- **Status:** Active, all 4 Telegram bots working with conversation memory
+
+**Bots Fixed:**
+- JGL Personal Assistant (@JGLPersonalBot)
+- JGL Capital (@JGLCapitalBot)
+- L7 Partners (@L7PartnersBot)
+- Magic Agent (@Magic_agent1_bot)
 
 ---
 
