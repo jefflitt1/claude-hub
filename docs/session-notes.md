@@ -1,11 +1,53 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 15)
+**Last Updated:** 2026-01-20 (Session 15)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
 
 ---
 
-## Session Summary: 2026-01-21 (Session 15)
+## Session Summary: 2026-01-20 (Session 15)
+
+### Circular Dependency Fix + Database Migration
+
+#### 1. Fixed Circular Dependency Issue
+Fixed "Circular: Magic Agent -> Magic Agent" error caused by project name matching file header.
+
+**Solution:** Renamed project from "Magic Agent" to "Magic KB" in:
+- `~/CLAUDE.md` - Active Projects table
+- `~/.claude/skills/context-loader/SKILL.md` - Project mapping
+- `~/.claude/skills/recap/SKILL.md` - Project ID reference
+
+#### 2. Database Migration: magic-agent → magic-kb
+Migrated all database references across 8 tables with proper foreign key handling:
+
+1. Created new `magic-kb` project in `claude_projects`
+2. Updated dependent tables:
+   - `claude_tasks` (1 record)
+   - `jeff_tasks` (2 records)
+   - `telegram_bot_configs` (1 record)
+   - `claude_session_logs` (2 records)
+   - `telegram_context_templates` (1 record)
+   - `claude_agents` (1 record)
+   - `jeff_project_activity` (2 records)
+3. Deleted old `magic-agent` project
+
+#### 3. Deleted Unused n8n Workflow
+Deleted inactive L7 Submission Form workflow (`hthOCOMjdIq08cWy`):
+- Status: INACTIVE, ARCHIVED
+- All nodes disabled
+- triggerCount: 0
+
+#### 4. Verified claude_session_context Table
+Table already existed in Supabase. Removed "Pending Setup" section from CLAUDE.md.
+
+**Technical Notes:**
+- Foreign key constraints require: create new → update dependents → delete old
+- DDL (CREATE TABLE) not allowed via MCP - must use Supabase dashboard
+- SQL JSON defaults need explicit casts: `'{}'::jsonb`, `ARRAY[]::TEXT[]`
+
+---
+
+## Session Summary: 2026-01-20 (Earlier Session 15)
 
 ### n8n Sync Workflow Fixed + Lovable Documentation
 
