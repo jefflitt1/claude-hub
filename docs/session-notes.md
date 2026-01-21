@@ -1,7 +1,37 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 19)
+**Last Updated:** 2026-01-21 (Session 2)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-21 (Session 2)
+
+### Telegram Callback Flow Fix - Mobile Approvals
+
+Fixed the Telegram callback handling for the Claude Code Mobile Approvals workflow.
+
+**Root Cause:**
+Messages were sent via HTTP Request with correct bot token (8338596281), but callback handling used native Telegram nodes with a different credential (Claude Terminal Bot). This meant callbacks weren't being received by the correct webhook.
+
+**Fix Applied:**
+- Replaced Telegram Callback Trigger with standard webhook node (path: telegram-callback)
+- Added missing webhookId property to webhook node
+- Converted all callback-related Telegram nodes to HTTP Request:
+  - Answer Callback → HTTP Request (answerCallbackQuery API)
+  - Edit Message → HTTP Request (editMessageText API)
+  - Reject Unauthorized → HTTP Request (answerCallbackQuery API)
+  - Edit Message (Cleanup) → HTTP Request (editMessageText API)
+- Registered webhook with Telegram via setWebhook API
+
+**Workflow Details:**
+- **ID:** `VLodg6UPtMa6DV30`
+- **Bot:** @JeffN8Ncommunicationbot (token: 8338596281)
+- **Status:** Active, callbacks working end-to-end
+
+**Verified:** User clicked "Yes" button, callback received, message edited to "OK APPROVED by Jeff"
+
+**Minor Issue:** security_audit_log table missing 'source' column (non-critical logging)
 
 ---
 
