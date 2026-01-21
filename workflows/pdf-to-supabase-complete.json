@@ -10,7 +10,8 @@
             {
               "fieldLabel": "pdf_file",
               "fieldType": "file",
-              "requiredField": true
+              "requiredField": true,
+              "acceptFileTypes": ".pdf"
             },
             {
               "fieldLabel": "project",
@@ -32,30 +33,45 @@
       "name": "Upload PDF Form",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.3,
-      "position": [200, 300],
+      "position": [0, 0],
       "webhookId": "pdf-to-supabase-form"
     },
     {
       "parameters": {
+        "httpMethod": "POST",
+        "path": "pdf-upload-api",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-api",
+      "name": "API Upload Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 200],
+      "webhookId": "pdf-upload-api"
+    },
+    {
+      "parameters": {
         "operation": "pdf",
-        "binaryPropertyName": "pdf_file",
+        "binaryPropertyName": "data",
         "options": {}
       },
       "id": "extract-pdf",
       "name": "Extract PDF Content",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
-      "position": [400, 300]
+      "position": [208, 0]
     },
     {
       "parameters": {
-        "jsCode": "// Intelligent chunking with overlap\nconst text = $input.first().json.data || $input.first().json.text || '';\nconst project = $('Upload PDF Form').first().json.project || 'l7-partners';\nconst fileName = $input.first().binary?.pdf_file?.fileName || 'document.pdf';\n\nif (!text || text.length < 50) {\n  console.log('No content found in PDF');\n  return [];\n}\n\nconst CHUNK_SIZE = 1200;\nconst OVERLAP = 150;\n\nfunction intelligentChunk(content) {\n  if (content.length <= CHUNK_SIZE) {\n    return [content];\n  }\n  \n  const chunks = [];\n  const paragraphs = content.split(/\\n\\s*\\n/);\n  let currentChunk = '';\n  \n  for (const paragraph of paragraphs) {\n    const trimmedPara = paragraph.trim();\n    if (!trimmedPara) continue;\n    \n    if ((currentChunk + trimmedPara).length > CHUNK_SIZE && currentChunk) {\n      chunks.push(currentChunk.trim());\n      const sentences = currentChunk.split(/[.!?]+\\s+/);\n      const overlapSentences = sentences.slice(-2).join('. ');\n      currentChunk = overlapSentences + (overlapSentences ? '. ' : '') + trimmedPara;\n    } else {\n      currentChunk += (currentChunk ? '\\n\\n' : '') + trimmedPara;\n    }\n  }\n  \n  if (currentChunk.trim()) {\n    chunks.push(currentChunk.trim());\n  }\n  \n  return chunks.filter(chunk => chunk.trim().length > 50);\n}\n\nconst chunks = intelligentChunk(text);\nconsole.log(`Created ${chunks.length} chunks for ${fileName}`);\n\nreturn chunks.map((chunk, index) => ({\n  json: {\n    content: chunk,\n    source_name: fileName,\n    source_type: 'pdf',\n    project: project,\n    chunk_index: index,\n    total_chunks: chunks.length,\n    doc_metadata: {\n      original_filename: fileName,\n      chunked_at: new Date().toISOString(),\n      chunk_size: chunk.length\n    }\n  }\n}));"
+        "jsCode": "// Intelligent chunking with overlap\nconst text = $input.first().json.data || $input.first().json.text || '';\n\n// Get project from query params or default\nlet project = 'l7-partners';\ntry {\n  const webhookData = $('API Upload Webhook').first();\n  if (webhookData?.json?.query?.project) {\n    project = webhookData.json.query.project;\n  }\n} catch (e) {\n  // Form trigger path\n  try {\n    const formData = $('Upload PDF Form').first();\n    if (formData?.json?.project) {\n      project = formData.json.project;\n    }\n  } catch (e2) {}\n}\n\nconst fileName = $input.first().binary?.data?.fileName || 'document.pdf';\n\nif (!text || text.length < 50) {\n  console.log('No content found in PDF');\n  return [];\n}\n\nconst CHUNK_SIZE = 1200;\n\nfunction intelligentChunk(content) {\n  if (content.length <= CHUNK_SIZE) {\n    return [content];\n  }\n  \n  const chunks = [];\n  const paragraphs = content.split(/\\n\\s*\\n/);\n  let currentChunk = '';\n  \n  for (const paragraph of paragraphs) {\n    const trimmedPara = paragraph.trim();\n    if (!trimmedPara) continue;\n    \n    if ((currentChunk + trimmedPara).length > CHUNK_SIZE && currentChunk) {\n      chunks.push(currentChunk.trim());\n      const sentences = currentChunk.split(/[.!?]+\\s+/);\n      const overlapSentences = sentences.slice(-2).join('. ');\n      currentChunk = overlapSentences + (overlapSentences ? '. ' : '') + trimmedPara;\n    } else {\n      currentChunk += (currentChunk ? '\\n\\n' : '') + trimmedPara;\n    }\n  }\n  \n  if (currentChunk.trim()) {\n    chunks.push(currentChunk.trim());\n  }\n  \n  return chunks.filter(chunk => chunk.trim().length > 50);\n}\n\nconst chunks = intelligentChunk(text);\nconsole.log(`Created ${chunks.length} chunks for ${fileName}`);\n\nreturn chunks.map((chunk, index) => ({\n  json: {\n    content: chunk,\n    source_name: fileName,\n    source_type: 'pdf',\n    project: project,\n    chunk_index: index,\n    total_chunks: chunks.length,\n    doc_metadata: {\n      original_filename: fileName,\n      chunked_at: new Date().toISOString(),\n      chunk_size: chunk.length\n    }\n  }\n}));"
       },
       "id": "chunk-text",
       "name": "Chunk Text",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [600, 300]
+      "position": [400, 0]
     },
     {
       "parameters": {
@@ -89,7 +105,7 @@
       "name": "Generate Embedding",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [800, 300]
+      "position": [608, 0]
     },
     {
       "parameters": {
@@ -99,7 +115,7 @@
       "name": "Combine Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 300]
+      "position": [800, 0]
     },
     {
       "parameters": {
@@ -141,21 +157,24 @@
       "name": "Insert to Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 300]
+      "position": [1008, 0]
     },
     {
       "parameters": {
-        "jsCode": "// Processing summary\nconst items = $input.all();\nconst successful = items.filter(i => i.json.id || (Array.isArray(i.json) && i.json[0]?.id)).length;\nconst fileName = $('Chunk Text').first().json.source_name;\n\nreturn [{\n  json: {\n    summary: {\n      status: 'complete',\n      file: fileName,\n      total_chunks: items.length,\n      successful_inserts: successful,\n      timestamp: new Date().toISOString()\n    }\n  }\n}];"
+        "jsCode": "// Processing summary\nconst items = $input.all();\nconst successful = items.filter(i => i.json.id || (Array.isArray(i.json) && i.json[0]?.id)).length;\nlet fileName = 'unknown';\ntry {\n  fileName = $('Chunk Text').first().json.source_name;\n} catch(e) {}\n\nreturn [{\n  json: {\n    summary: {\n      status: 'complete',\n      file: fileName,\n      total_chunks: items.length,\n      successful_inserts: successful,\n      timestamp: new Date().toISOString()\n    }\n  }\n}];"
       },
       "id": "summary",
       "name": "Processing Summary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1400, 300]
+      "position": [1200, 0]
     }
   ],
   "connections": {
     "Upload PDF Form": {
+      "main": [[{"node": "Extract PDF Content", "type": "main", "index": 0}]]
+    },
+    "API Upload Webhook": {
       "main": [[{"node": "Extract PDF Content", "type": "main", "index": 0}]]
     },
     "Extract PDF Content": {

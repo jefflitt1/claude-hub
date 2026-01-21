@@ -1,7 +1,35 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-20 (Session 12)
+**Last Updated:** 2026-01-20 (Session 13)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 13)
+
+### PDF to Supabase Workflow - Fixed & Operational
+Fixed the PDF to Supabase vector store workflow after discovering multiple configuration issues:
+
+**Issues Fixed:**
+1. **Missing OPENAI_API_KEY** - Added to n8n `.env` and `stack.canonical.yml`
+2. **Legacy Supabase key disabled** - Replaced with new `sb_secret_...` format key
+3. **Dual-trigger support** - Added try/catch blocks in code nodes for form + API webhook paths
+
+**Workflow Details:**
+- **ID:** `SQGYg7V8RO0oiAET`
+- **Form URL:** https://n8n.l7-partners.com/form/pdf-to-supabase-form
+- **API endpoint:** https://n8n.l7-partners.com/webhook/pdf-upload-api?project=<project>
+- **Projects:** l7-partners, probis, jgl-capital
+
+**Weaviate Status:**
+- Discovered Weaviate was empty (`ObjectsCount: 0`) - no migration needed
+- Deactivated 3 old Weaviate workflows: `BdmQTuQ9YwkiFp2M`, `G0iqjev1R4IsFxrA`, `pK0muoyUOFyrfUUL`
+
+**Files Updated:**
+- `workflows/pdf-to-supabase-complete.json` - Synced working version from n8n
+- `scripts/weaviate-to-supabase-migrate.sh` - Removed (not needed)
+
+**Test Result:** PDF uploaded → chunked → embedded with OpenAI → stored in Supabase `document_embeddings` table ✓
 
 ---
 
