@@ -1,6 +1,16 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21
+**Last Updated:** 2026-01-21 (Session 1)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
+
+---
+
+## Completed This Session
+
+### Session 1 - 2026-01-21 (n8n Workflow Fixes)
+- Fixed Master Telegram Bot Code node return formats (Process + Format nodes)
+- Migrated deprecated `continueOnFail` to `onError` on Save History nodes
+- Added retry logic (3 retries, 5s wait) to Claude API nodes
+- Fixed Mobile Approvals workflow error handling
 
 ---
 
@@ -10,6 +20,7 @@
 
 1. **Delete unnamed Telegram bot** - Bot ID 8471835561 (orphaned) - delete manually in Telegram app
 2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
+3. **n8n node typeVersion upgrades** - IF nodes 2.2→2.3, HTTP Request 4.2→4.4 (cosmetic only)
 
 ### Pending Migrations
 
