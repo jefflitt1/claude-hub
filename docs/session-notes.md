@@ -1,7 +1,33 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 1)
+**Last Updated:** 2026-01-20 (Session 16)
 **Resume context for next session**
 **Apple Notes:** Auto-syncs to "Claude Session Notes" on commit
+
+---
+
+## Session Summary: 2026-01-20 (Session 16)
+
+### PDF to Supabase Workflow - Validation Fixes
+
+Fixed validation errors and upgraded node versions in the PDF to Supabase (Vector Store) workflow.
+
+**Issues Fixed:**
+1. Missing `combinator: "and"` in Filter Valid node conditions (critical error)
+2. Upgraded 6 nodes to latest versions:
+   - Form Upload: 2.3 → 2.5
+   - API Upload: 2 → 2.1
+   - Extract PDF: 1 → 1.1
+   - Generate Embedding: 4.2 → 4.3
+   - Filter Valid: 2 → 2.3
+   - Insert to Supabase: 4.2 → 4.3
+
+**Workflow Details:**
+- **ID:** `SQGYg7V8RO0oiAET`
+- **Status:** Valid (0 errors, 11 warnings remaining - all non-blocking)
+
+**Remaining Warnings (Optional):**
+- Log Skipped: Change `$json` to `$input.first().json` (manual fix in n8n UI)
+- Filter Valid: Add `onError: continueErrorOutput` (manual fix in n8n UI)
 
 ---
 
