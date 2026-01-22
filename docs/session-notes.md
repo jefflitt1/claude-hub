@@ -1,10 +1,15 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 7)
+**Last Updated:** 2026-01-21 (Session 8)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 8 - 2026-01-21 (N8n Folder Review)
+- Reviewed ~/Desktop/N8n folder (~95 files from Build Room Skool community)
+- Assessed workflow value for agent patterns (Gmail AI Manager, MCP Server Trigger, Knowledge DB, RAG Chatbot)
+- Created jeff-agent task to track N8n workflow review (low priority, claude-hub project)
 
 ### Session 7 - 2026-01-21 (Telegram Bot Fixes)
 - Fixed Claude Terminal Bot channel in Master Telegram Bot Conversations workflow
