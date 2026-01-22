@@ -205,12 +205,27 @@ If issues arise:
 
 ---
 
-## Decision Points (Answer Before Starting)
+## Decision Points ✅ RESOLVED (2026-01-21)
 
-- [ ] **xAI API key obtained?** (console.x.ai)
-- [ ] **DeepSeek API key obtained?** (platform.deepseek.com)
-- [ ] **Local models desired?** If yes, confirm RAM (16GB/32GB/64GB+)
-- [ ] **Priority order:** Grok first or DeepSeek first?
+- [x] **xAI API key obtained?** ✅ Saved to `~/.config/grok-cli/config.json`
+- [x] **DeepSeek API key obtained?** ✅ Saved to `~/.config/deepseek/config.json`
+- [x] **Local models desired?** ✅ Yes - 32GB Mac Studio (M2 Max baseline)
+- [x] **Priority order:** Both - parallel setup
+
+### Hardware Confirmed
+- **Mac Studio M2 Max** (baseline, $2K)
+- **32GB RAM** - Can run DeepSeek R1 32B, Gemma 3 27B locally
+- **Ollama models to install:**
+  - `deepseek-r1:14b` (fast, fits easily)
+  - `deepseek-r1:32b` (best reasoning, uses ~20GB)
+  - `gemma3:27b` (vision-capable backup)
+
+### API Keys Configured
+```
+~/.config/grok-cli/config.json    # xAI Grok 4
+~/.config/deepseek/config.json    # DeepSeek API
+~/.zshrc                          # Both as env vars
+```
 
 ---
 Created: 2026-01-20
