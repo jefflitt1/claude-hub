@@ -1,10 +1,29 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 10)
+**Last Updated:** 2026-01-22 (Session 11)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 11 - 2026-01-22 (Mac Studio Migration Plan Review)
+- Thoroughly reviewed entire Mac Studio migration plan as requested
+- Researched and verified all tool selections:
+  - Tailscale free tier (3 users, 100 devices - sufficient)
+  - VMware Fusion Pro (free since Nov 2024, stable)
+  - Jump Desktop ($53 Mac + iOS, native RDP for Windows VMs)
+  - grok-cli/grok-mcp options (MCP support confirmed)
+  - Ollama + DeepSeek R1 on 32GB RAM (14b and 32b models)
+- Fixed Jump Desktop pricing in IT infrastructure doc ($35 → $53)
+- Documented user decisions:
+  - Mac Studio username: `jgl`
+  - Pi 5 AI HAT 2 task: Security camera AI processing (Frigate NVR + Hailo NPU)
+  - Docker vs Native MCPs: Docker (docker-compose.mcp.yml)
+  - Windows licenses: Try transfer first, then Kinguin keys (~$30-60)
+  - Grok integration: `grok-mcp` (MCP-only, not full CLI)
+- Updated IT infrastructure doc with finalized architecture diagram
+- Updated pending-sql.md with all resolved decision points
+- Updated cost summary to accurate $83-113 total
 
 ### Session 10 - 2026-01-21 (Multi-Model LLM Integration)
 - Researched Grok CLI options (official Grok Build coming Feb 2026, community grok-cli with MCP support)
@@ -71,13 +90,13 @@
 
 ### High Priority
 
-1. **Mac Studio arrives tomorrow** - Run migration scripts from `~/Desktop/mac-studio-migration/`
+1. **Mac Studio arrives TODAY** - Run migration scripts from `~/Desktop/mac-studio-migration/`
 2. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
-3. **Purchase Windows 11 Pro ARM64 licenses** - Need 2x (~$400 total) for trading VMs
-4. **Determine Pi 5 AI HAT 2 dedicated task** - Currently n8n only
+3. ~~**Purchase Windows 11 Pro ARM64 licenses**~~ → **Try transfer first, then Kinguin keys (~$30-60)**
+4. ~~**Determine Pi 5 AI HAT 2 dedicated task**~~ → **Frigate NVR + Hailo NPU** (security camera AI)
 5. **Configure TradeStation credentials** - Need real API creds for MCP
 6. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
-7. **Multi-Model Integration (Tomorrow)** - Install grok-cli, deepseek-cli MCP servers, Ollama local models
+7. **Multi-Model Integration (Today)** - Install grok-mcp, deepseek-cli MCP servers, Ollama local models
 
 ### Medium Priority
 

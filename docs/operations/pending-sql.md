@@ -164,14 +164,16 @@ ollama pull deepseek-r1:32b  # 32GB+ RAM option
 
 ### Phase 3: MCP Server Creation
 
-Create `grok-cli` and `deepseek-cli` MCP servers following the pattern from `gemini-cli`:
+Create MCP servers for new LLM integrations:
 
 **Location:** `~/Documents/Claude Code/claude-agents/projects/meta-tools/servers/`
 
-| Server | Template | Key Tools |
+| Server | Approach | Key Tools |
 |--------|----------|-----------|
-| `grok-cli` | gemini-cli | `ask-grok`, `grok-realtime` (X/Twitter context) |
-| `deepseek-cli` | codex-cli | `ask-deepseek`, `deepseek-reason` (chain-of-thought) |
+| `grok-mcp` | Clone [Bob-lance/grok-mcp](https://github.com/Bob-lance/grok-mcp) | `ask-grok` (MCP-only, lighter) |
+| `deepseek-cli` | Build from codex-cli template | `ask-deepseek`, `deepseek-reason` (chain-of-thought) |
+
+**Note:** Using dedicated `grok-mcp` instead of full grok-cli per user preference.
 
 ### Phase 4: Update CLAUDE.md
 
@@ -205,12 +207,98 @@ If issues arise:
 
 ---
 
+## Remote Access Overhaul (Tailscale + Jump Desktop)
+
+Replacing RealVNC + Cloudflare access tunnels with a simpler stack.
+
+### Phase 1: Tailscale Setup (All Devices)
+
+```bash
+# Mac Studio
+brew install tailscale
+sudo tailscale up
+
+# MacBook
+brew install tailscale
+sudo tailscale up
+
+# Raspberry Pi
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+
+# Windows VMs (in each VM)
+# Download from https://tailscale.com/download/windows
+# Install → Sign in with same account
+```
+
+**After setup, devices auto-discover:**
+- `mac-studio` (100.x.x.x)
+- `macbook` (100.x.x.x)
+- `pi5` (100.x.x.x)
+- `trading-vm1` (100.x.x.x)
+- `trading-vm2` (100.x.x.x)
+
+### Phase 2: Jump Desktop ($35 one-time)
+
+1. Purchase from App Store (covers Mac + iOS)
+2. Add connections:
+
+| Name | Host | Protocol |
+|------|------|----------|
+| Mac Studio | `mac-studio` | Fluid |
+| Trading VM 1 | `trading-vm1` | RDP |
+| Trading VM 2 | `trading-vm2` | RDP |
+| Pi 5 | `pi5` | VNC |
+
+### Phase 3: Cleanup (After Verified Working)
+
+Remove obsolete configs:
+```bash
+# Remove VNC Cloudflare tunnel
+rm ~/.cloudflared/vnc.yml
+launchctl unload ~/Library/LaunchAgents/com.l7partners.vnc-access.plist
+
+# Keep Cloudflare only for public endpoints:
+# - n8n.l7-partners.com (webhooks)
+# - claude-api.l7-partners.com (HTTP API)
+```
+
+### Benefits Over Previous Setup
+
+| Before | After |
+|--------|-------|
+| RealVNC + Cloudflare tunnels | Tailscale (mesh VPN) |
+| Multiple tunnel configs | Auto-discovery |
+| cloudflared client required | Native protocols |
+| VNC (basic) | Fluid/RDP (better quality) |
+| Complex DNS routing | MagicDNS (`ssh mac-studio`) |
+
+### Cost Summary
+
+| Item | Cost |
+|------|------|
+| Tailscale | Free (personal) |
+| Jump Desktop | $53 (Mac $35 + iOS $18) |
+| Windows keys (x2) | ~$30-60 (Kinguin) |
+| **Total** | **~$83-113** |
+
+---
+
 ## Decision Points ✅ RESOLVED (2026-01-21)
 
+### LLM Integration
 - [x] **xAI API key obtained?** ✅ Saved to `~/.config/grok-cli/config.json`
 - [x] **DeepSeek API key obtained?** ✅ Saved to `~/.config/deepseek/config.json`
 - [x] **Local models desired?** ✅ Yes - 32GB Mac Studio (M2 Max baseline)
-- [x] **Priority order:** Both - parallel setup
+- [x] **Grok integration type?** ✅ `grok-mcp` (MCP-only, not full CLI)
+
+### Mac Studio Migration
+- [x] **Username:** `jgl` (different from MacBook's `jeff-probis`)
+- [x] **Docker vs Native MCPs:** Docker (single docker-compose.mcp.yml)
+- [x] **Windows licenses:** Try transfer first, then Kinguin keys (~$15-30 each)
+
+### Pi 5 AI HAT 2
+- [x] **Dedicated task:** Security camera AI processing (Frigate NVR + Hailo NPU)
 
 ### Hardware Confirmed
 - **Mac Studio M2 Max** (baseline, $2K)
