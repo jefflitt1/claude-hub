@@ -123,6 +123,96 @@ COMMENT ON TABLE memory_graph IS 'Persistent storage for MCP memory graph entiti
 ```
 
 ---
+
+# PENDING: Tomorrow's Migration (2026-01-22)
+
+## Multi-Model LLM Integration
+
+### Phase 1: API Setup (Prerequisites)
+
+| Service | API Console | Key Storage |
+|---------|-------------|-------------|
+| **xAI (Grok 4)** | https://console.x.ai | `~/.config/grok-cli/config.json` |
+| **DeepSeek** | https://platform.deepseek.com | `DEEPSEEK_API_KEY` env var |
+
+**Cost Comparison:**
+- Grok 4: ~$2/1M input, $10/1M output
+- DeepSeek V3.2: ~$0.14/1M input, $0.28/1M output (14x cheaper than GPT-4)
+
+### Phase 2: CLI Installation
+
+```bash
+# Grok CLI (community, MCP-enabled)
+npm install -g @superagent-ai/grok-cli
+
+# Verify installation
+grok --version
+
+# Configure (after getting API key)
+export XAI_API_KEY="your-key"
+```
+
+```bash
+# Ollama for local models (optional)
+brew install ollama
+ollama serve &
+
+# Pull DeepSeek R1 (requires 32GB+ RAM for 32B)
+ollama pull deepseek-r1:14b  # 16GB RAM option
+ollama pull deepseek-r1:32b  # 32GB+ RAM option
+```
+
+### Phase 3: MCP Server Creation
+
+Create `grok-cli` and `deepseek-cli` MCP servers following the pattern from `gemini-cli`:
+
+**Location:** `~/Documents/Claude Code/claude-agents/projects/meta-tools/servers/`
+
+| Server | Template | Key Tools |
+|--------|----------|-----------|
+| `grok-cli` | gemini-cli | `ask-grok`, `grok-realtime` (X/Twitter context) |
+| `deepseek-cli` | codex-cli | `ask-deepseek`, `deepseek-reason` (chain-of-thought) |
+
+### Phase 4: Update CLAUDE.md
+
+Add to Multi-Model section:
+
+```markdown
+| Model | Context | Best For | Access |
+|-------|---------|----------|--------|
+| **Grok 4** | 128K | Real-time X/Twitter, current events | grok-cli MCP |
+| **DeepSeek R1** | 128K | Cheap reasoning, math, bulk tasks | deepseek-cli MCP |
+| **DeepSeek V3.2** | 128K | General coding at 10x lower cost | deepseek-cli MCP |
+```
+
+### Phase 5: Update /consult Skill
+
+Add routing logic for new models:
+
+| Task Pattern | Route To |
+|--------------|----------|
+| Real-time info, Twitter/X analysis | Grok 4 |
+| Bulk reasoning, cost-sensitive | DeepSeek R1 |
+| Large codebase analysis | Gemini (1M context) |
+| Security review | Codex + Claude |
+
+### Rollback Plan
+
+If issues arise:
+1. MCP servers are additive - existing setup unaffected
+2. Can disable in `claude_desktop_config.json`
+3. Keep gemini-cli/codex-cli as primary consultants
+
+---
+
+## Decision Points (Answer Before Starting)
+
+- [ ] **xAI API key obtained?** (console.x.ai)
+- [ ] **DeepSeek API key obtained?** (platform.deepseek.com)
+- [ ] **Local models desired?** If yes, confirm RAM (16GB/32GB/64GB+)
+- [ ] **Priority order:** Grok first or DeepSeek first?
+
+---
 Created: 2026-01-20
-Updated: 2026-01-20
+Updated: 2026-01-21
 Run these in Supabase Dashboard → SQL Editor

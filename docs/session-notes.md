@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 8)
+**Last Updated:** 2026-01-21 (Session 9)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 9 - 2026-01-21 (TradeStation VM & RDP Setup)
+- Researched best approach for running 2 TradeStation instances on Mac Studio
+- Discovered Parallels has freezing issues with TradeStation on Mac Studio Ultra (network I/O bottlenecks)
+- Changed VM platform recommendation to VMware Fusion Pro (free since Nov 2024)
+- Updated `03-cloudflare-tunnel.sh` with RDP routes for trading VMs
+  - `trading-vm1.l7-partners.com` and `trading-vm2.l7-partners.com`
+- Updated `windows-vms-setup.md` with complete remote access docs
+- Updated IT infrastructure agent with remote access strategy
 
 ### Session 8 - 2026-01-21 (N8n Folder Review)
 - Reviewed ~/Desktop/N8n folder (~95 files from Build Room Skool community)
@@ -51,10 +60,11 @@
 ### High Priority
 
 1. **Mac Studio arrives tomorrow** - Run migration scripts from `~/Desktop/mac-studio-migration/`
-2. **Decide Windows VM platform** - Parallels ($99/yr) vs UTM (free) vs VMware (free)
-3. **Determine Pi 5 AI HAT 2 dedicated task** - Currently n8n only
-4. **Configure TradeStation credentials** - Need real API creds for MCP
-5. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
+2. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
+3. **Purchase Windows 11 Pro ARM64 licenses** - Need 2x (~$400 total) for trading VMs
+4. **Determine Pi 5 AI HAT 2 dedicated task** - Currently n8n only
+5. **Configure TradeStation credentials** - Need real API creds for MCP
+6. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
 
 ### Medium Priority
 
