@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-21 (Session 6)
+**Last Updated:** 2026-01-21 (Session 7)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 7 - 2026-01-21 (Telegram Bot Fixes)
+- Fixed Claude Terminal Bot channel in Master Telegram Bot Conversations workflow
+  - Renamed "Terminal Trigger" → "TerminalTrigger" (removed space causing webhook 404)
+  - Updated code references in Load History Terminal and Process Terminal nodes
+  - Fixed Format Terminal to extract `claude.output` instead of `claude.message.content[0].text`
+- Fixed Claude Code Mobile Approvals workflow - button removal after selection
+  - Added `reply_markup: {"inline_keyboard": []}` to Edit Message nodes
+  - Fixed "Has Message?" condition from `number:isNotEmpty` to `message_id > 0` (strict validation was failing)
 
 ### Session 6 - 2026-01-21 (Mac Studio Migration Prep)
 - Created comprehensive Mac Studio migration package at `~/Desktop/mac-studio-migration/`
