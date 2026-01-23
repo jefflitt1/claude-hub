@@ -1,10 +1,21 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-22 (Session 11)
+**Last Updated:** 2026-01-23 (Session 1)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 1 - 2026-01-23 (L7 DNS/Hosting Infrastructure Cleanup)
+- Clarified DNS/hosting architecture: Cloudflare manages DNS, Netlify hosts sites
+- Confirmed l7-partners.com is served by Netlify (not Lovable despite dashboard showing "Live")
+- Decided on `admin.l7-partners.com` as subdomain for new L7 management dashboard
+- Deployed jgl-capital-terminal as new Netlify site (`jglcap.netlify.app`)
+- Configured `jglcap.l7-partners.com` with DNS verification TXT record
+- Confirmed Cloudflare Access protection working for jglcap subdomain
+- Cleaned up Lovable custom domains (removed stale l7-partners.com config)
+- Removed jglcap from old Netlify site aliases
+- Decided to retire unused Appsmith admin.l7 setup
 
 ### Session 11 - 2026-01-22 (Mac Studio Migration Plan Review)
 - Thoroughly reviewed entire Mac Studio migration plan as requested
@@ -90,7 +101,8 @@
 
 ### High Priority
 
-1. **Mac Studio arrives TODAY** - Run migration scripts from `~/Desktop/mac-studio-migration/`
+1. **Build admin.l7-partners.com dashboard** - Add subdomain route in Lovable, update Cloudflare CNAME to point to Netlify
+2. **Mac Studio arrives TODAY** - Run migration scripts from `~/Desktop/mac-studio-migration/`
 2. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
 3. ~~**Purchase Windows 11 Pro ARM64 licenses**~~ → **Try transfer first, then Kinguin keys (~$30-60)**
 4. ~~**Determine Pi 5 AI HAT 2 dedicated task**~~ → **Frigate NVR + Hailo NPU** (security camera AI)
