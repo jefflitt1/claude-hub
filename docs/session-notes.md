@@ -1,10 +1,30 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-23 (Session 4)
+**Last Updated:** 2026-01-23 (Session 5)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 5 - 2026-01-23 (Mac Studio Always-On Hub)
+- Migrated full Claude Code MCP setup to new Mac Studio (17 servers connected)
+- Set up Mac Studio as always-on central hub
+- Configured Ollama with DeepSeek R1 14B and Llama 3.2 local models
+- Created launchd auto-start services for Ollama
+- Set up scheduled Claude automations:
+  - Morning digest (6:30 AM)
+  - Inbox triage (8 AM, 2 PM)
+  - Market scan (9:30 AM)
+  - Hourly health check with Telegram alerts
+- Created Telegram hub bot for remote commands (/wake, /status, /digest, /triage, /market, /run)
+- Configured prevent-sleep settings (sleep 0, disablesleep 1)
+- Enabled Wake on LAN and Remote Management
+- Set up Tailscale VPN for remote access (Mac Studio: 100.87.10.83)
+- Installed Telegram app on Mac Studio
+- Created hub-status dashboard script
+- Added shell aliases (hub-status, hub-notify, claude-digest, claude-triage)
+- Configured passwordless SSH between old Mac and new Mac Studio
+- Time Machine backup running
 
 ### Session 4 - 2026-01-23 (Mac Cleanup)
 - Removed ChatGPT Atlas.app and all support files
@@ -130,13 +150,13 @@
 ### High Priority
 
 1. ~~**Build admin.l7-partners.com dashboard**~~ - **COMPLETE** - 14-page admin portal live at admin.l7-partners.com
-2. **Mac Studio arrives TODAY** - Run migration scripts from `~/Desktop/mac-studio-migration/`
-2. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
-3. ~~**Purchase Windows 11 Pro ARM64 licenses**~~ → **Try transfer first, then Kinguin keys (~$30-60)**
-4. ~~**Determine Pi 5 AI HAT 2 dedicated task**~~ → **Frigate NVR + Hailo NPU** (security camera AI)
-5. **Configure TradeStation credentials** - Need real API creds for MCP
-6. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
-7. **Multi-Model Integration (Today)** - Install grok-mcp, deepseek-cli MCP servers, Ollama local models
+2. ~~**Mac Studio arrives TODAY**~~ - **COMPLETE** - Full hub setup with 17 MCP servers, Telegram bot, scheduled automations
+3. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
+4. ~~**Purchase Windows 11 Pro ARM64 licenses**~~ → **Try transfer first, then Kinguin keys (~$30-60)**
+5. ~~**Determine Pi 5 AI HAT 2 dedicated task**~~ → **Frigate NVR + Hailo NPU** (security camera AI)
+6. **Configure TradeStation credentials** - Need real API creds for MCP
+7. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
+8. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
 
 ### Medium Priority
 

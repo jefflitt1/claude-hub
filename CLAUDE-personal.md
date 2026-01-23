@@ -244,13 +244,372 @@ Located in `~/.claude/scripts/`:
 - **n8n Feedly Digest** - Automated 6:30am email with top articles by category (requires Feedly API credential in n8n)
 - **saved_articles table** - Supabase table for article archiving if `/reading` usage warrants persistence
 - **Article-to-task associations** - Link saved articles to projects/tasks in jeff-agent
-- **L7 Vendor Network (HomeAdvisor-style)** - Contractor/vendor management system for L7 properties:
-  - Vendor database with ratings, specialties, service areas, pricing tiers
-  - Work order creation → auto-match to qualified vendors → quote requests
-  - Vendor performance tracking (response time, quality scores, cost history)
-  - Tenant request intake → triage → vendor dispatch workflow
-  - Integration with L7 Supabase (properties, units, maintenance_requests tables)
-  - Potential n8n workflows: new request → vendor matching → quote collection → approval → scheduling
+- **Home Automation Hub (Mac Studio)** - Self-hosted home automation monitoring:
+  - **Home Assistant** via Docker - central hub for all smart devices, automations, dashboards
+  - **Homebridge** - bridge non-HomeKit devices to Apple Home app
+  - **MQTT broker (Mosquitto)** - lightweight messaging for IoT devices
+  - **Node-RED** - visual automation flows (alternative/complement to n8n for home)
+  - **Scrypted** - HomeKit camera integration with hardware transcoding
+  - Setup: `brew install docker` → Home Assistant container → Homebridge container
+  - Potential integrations: Telegram alerts, Feedly smart home feeds, Claude voice assistant
+
+## Home Automation Setup (TODO)
+
+### Core Stack
+| Component | Purpose | Install Method |
+|-----------|---------|----------------|
+| **Home Assistant** | Central hub, automations, dashboards | Docker container |
+| **Homebridge** | Non-HomeKit → Apple Home bridge | Docker or `npm install -g homebridge` |
+| **Mosquitto** | MQTT broker for IoT messaging | `brew install mosquitto` or Docker |
+| **Scrypted** | Camera NVR + HomeKit Secure Video | Docker container |
+| **Node-RED** | Visual automation builder | Docker or `npm install -g node-red` |
+
+### Quick Start Commands
+```bash
+# Create home automation directory
+mkdir -p ~/home-automation/{homeassistant,homebridge,mosquitto,scrypted,nodered}
+
+# Home Assistant (port 8123)
+docker run -d --name homeassistant \
+  --restart=unless-stopped \
+  -v ~/home-automation/homeassistant:/config \
+  -v /etc/localtime:/etc/localtime:ro \
+  --network=host \
+  ghcr.io/home-assistant/home-assistant:stable
+
+# Homebridge (port 8581)
+docker run -d --name homebridge \
+  --restart=unless-stopped \
+  --network=host \
+  -v ~/home-automation/homebridge:/homebridge \
+  homebridge/homebridge:latest
+
+# Mosquitto MQTT (port 1883)
+docker run -d --name mosquitto \
+  --restart=unless-stopped \
+  -p 1883:1883 -p 9001:9001 \
+  -v ~/home-automation/mosquitto:/mosquitto/config \
+  eclipse-mosquitto
+
+# Scrypted NVR (port 10443)
+docker run -d --name scrypted \
+  --restart=unless-stopped \
+  --network=host \
+  -v ~/home-automation/scrypted:/server/volume \
+  ghcr.io/koush/scrypted
+
+# Node-RED (port 1880)
+docker run -d --name nodered \
+  --restart=unless-stopped \
+  -p 1880:1880 \
+  -v ~/home-automation/nodered:/data \
+  nodered/node-red
+```
+
+### Access URLs (after setup)
+| Service | URL | Default Login |
+|---------|-----|---------------|
+| Home Assistant | http://localhost:8123 | Create on first run |
+| Homebridge | http://localhost:8581 | admin / admin |
+| Node-RED | http://localhost:1880 | None (add auth!) |
+| Scrypted | https://localhost:10443 | Create on first run |
+
+### Recommended Integrations
+- **Z-Wave/Zigbee**: USB stick (Zooz, HUSBZB-1) + Home Assistant ZHA/Z-Wave JS
+- **Matter**: Native in Home Assistant 2023.x+
+- **Ring/Nest/Wyze**: Via Homebridge plugins or Scrypted
+- **Tesla/EV**: Home Assistant Tesla integration
+- **Weather**: Home Assistant + OpenWeatherMap
+- **Energy monitoring**: Home Assistant Energy dashboard
+
+### Claude Integration Ideas
+- n8n webhook → Home Assistant automation trigger
+- Telegram bot for home status/control
+- Morning digest includes home status (doors, temps, energy)
+- Voice control via Siri Shortcuts → Homebridge
+
+### Popular Homebridge Plugins
+```bash
+# Install via Homebridge UI or npm
+homebridge-ring          # Ring doorbells/cameras
+homebridge-nest          # Google Nest thermostats
+homebridge-wyze          # Wyze cameras/sensors (unofficial)
+homebridge-myq           # Chamberlain/LiftMaster garage doors
+homebridge-tplink-smarthome  # TP-Link Kasa switches/plugs
+homebridge-roku          # Roku TV control
+homebridge-sonos         # Sonos speakers
+homebridge-harmonyhub    # Logitech Harmony remotes
+homebridge-camera-ffmpeg # Generic RTSP camera support
+homebridge-dummy         # Virtual switches for automations
+```
+
+### Home Assistant Add-ons (HACS)
+Popular community integrations via HACS (Home Assistant Community Store):
+- **Alarmo** - Full alarm system with zones, codes, automations
+- **Browser Mod** - Turn browsers into controllable devices
+- **Frigate** - AI object detection for cameras (requires Coral TPU or CPU)
+- **Mushroom Cards** - Modern, clean dashboard cards
+- **Auto Entities** - Dynamic card population
+- **Scheduler** - Visual scheduling for automations
+- **Watchman** - Find broken integrations/entities
+
+### Automation Recipes
+| Trigger | Action | How |
+|---------|--------|-----|
+| Sunset | Turn on porch lights | HA automation, sun trigger |
+| Door opens + away | Send alert | HA + Telegram/Pushover |
+| Motion + night | Turn on path lights 30% | HA motion sensor + light |
+| Leave home | Set away mode, arm alarm | HA geofence + Alarmo |
+| Arrive home | Disarm, unlock, lights on | HA geofence + automations |
+| Washer done | Notify (power drop detected) | HA energy monitoring |
+| Smoke/CO alarm | All lights on, unlock doors | HA + Z-Wave smoke detectors |
+| Morning routine | Gradual lights, weather TTS | HA time trigger + script |
+
+### Hardware Recommendations
+| Category | Recommended | Why |
+|----------|-------------|-----|
+| **Zigbee/Z-Wave Stick** | HUSBZB-1, Zooz ZST39 | Dual-protocol, well-supported |
+| **Smart Switches** | Lutron Caseta, Inovelli | Reliable, local control |
+| **Sensors** | Aqara (Zigbee) | Cheap, tiny, long battery |
+| **Cameras** | Reolink, Amcrest (RTSP) | Local storage, no cloud |
+| **Doorbell** | Reolink, Amcrest | No subscription, RTSP |
+| **Thermostat** | Ecobee | HomeKit native, good sensors |
+| **Locks** | Yale Assure, Schlage | Z-Wave/Zigbee, no cloud |
+| **Garage** | Ratgdo (local) | Replaces MyQ cloud dependency |
+
+### Network Setup (recommended)
+- **Separate IoT VLAN** - Isolate smart devices from main network
+- **Pi-hole/AdGuard** - Block telemetry, ad tracking
+- **Local DNS** - homeassistant.local, homebridge.local
+- **Tailscale** - Secure remote access without port forwarding
+
+### Backup Strategy
+```bash
+# Cron job for daily backups
+0 3 * * * tar -czf ~/backups/home-automation-$(date +%Y%m%d).tar.gz ~/home-automation/
+```
+
+### Monitoring & Dashboards
+
+**Home Assistant Dashboard Types:**
+- **Overview** - Main control panel, room-by-room
+- **Energy** - Solar, grid, device consumption
+- **Floor Plan** - Interactive house map with device states
+- **Security** - Cameras, locks, alarm status
+- **Climate** - Thermostats, humidity, air quality
+
+**External Monitoring:**
+```bash
+# Uptime Kuma - monitor all home services (port 3001)
+docker run -d --name uptime-kuma \
+  --restart=unless-stopped \
+  -p 3001:3001 \
+  -v ~/home-automation/uptime-kuma:/app/data \
+  louislam/uptime-kuma
+
+# Grafana + InfluxDB for historical data (optional)
+# Home Assistant has native long-term statistics now
+```
+
+### Integration with Existing Stack
+
+**n8n Workflows for Home:**
+| Workflow | Trigger | Actions |
+|----------|---------|---------|
+| Morning Home Status | Cron 6:30am | HA API → format → Telegram digest |
+| Security Alert | HA webhook (motion+away) | Telegram alert + camera snapshot |
+| Energy Report | Weekly cron | HA energy data → email summary |
+| Guest Mode | Manual/Telegram | Set temps, unlock, send WiFi info |
+
+**Home Assistant → n8n Webhook:**
+```yaml
+# Home Assistant automation.yaml
+- alias: "Alert n8n on door open"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.front_door
+      to: "on"
+  action:
+    - service: rest_command.n8n_webhook
+      data:
+        event: door_open
+        door: front
+        timestamp: "{{ now().isoformat() }}"
+```
+
+**Telegram Bot Commands (via n8n or HA):**
+- `/home status` - Quick overview
+- `/home arm` - Arm alarm system
+- `/home cameras` - Get camera snapshots
+- `/home lights off` - All lights off
+- `/home temp 72` - Set thermostat
+
+### Mobile Access
+| Method | Pros | Cons |
+|--------|------|------|
+| **Home Assistant Companion** | Full control, notifications, sensors | Requires HA |
+| **Apple Home** | Native iOS, Siri, widgets | Limited to HomeKit |
+| **Tailscale** | Secure remote, no port forward | Extra app |
+| **Nabu Casa** | HA cloud, easy setup | $6.50/mo subscription |
+
+### Project Path
+`~/home-automation/` - All Docker volumes and configs
+
+### Setup Checklist
+- [ ] Install Docker Desktop for Mac
+- [ ] Create directory structure
+- [ ] Deploy Home Assistant container
+- [ ] Deploy Homebridge container
+- [ ] Configure HACS in Home Assistant
+- [ ] Add Zigbee/Z-Wave USB stick
+- [ ] Onboard devices
+- [ ] Create basic automations
+- [ ] Set up Telegram notifications
+- [ ] Connect to n8n for advanced workflows
+- [ ] Configure backups
+- [ ] Set up remote access (Tailscale or Nabu Casa)
+
+### Mac Studio Advantages (32GB RAM)
+Your Mac Studio can easily run the full stack plus AI features:
+
+| Service | RAM | Notes |
+|---------|-----|-------|
+| Home Assistant | ~500MB | Core hub |
+| Homebridge | ~200MB | Bridge layer |
+| Scrypted | ~1GB | Camera processing |
+| Node-RED | ~300MB | Automations |
+| Frigate (CPU) | ~2GB | AI object detection |
+| Ollama (local AI) | ~10GB | Voice/chat assistant |
+| **Total** | ~14GB | Plenty of headroom |
+
+**AI-Enhanced Home Automation:**
+```bash
+# Frigate with CPU detection (no Coral TPU needed on M-series)
+docker run -d --name frigate \
+  --restart=unless-stopped \
+  --shm-size=256mb \
+  -p 5000:5000 -p 8554:8554 \
+  -v ~/home-automation/frigate:/config \
+  -v ~/home-automation/frigate/media:/media/frigate \
+  ghcr.io/blakeblackshear/frigate:stable
+
+# Local voice assistant with Whisper + Ollama
+# Home Assistant has Wyoming protocol for local voice
+```
+
+**Scrypted + Apple Silicon:**
+- Hardware video transcoding via VideoToolbox
+- Efficient H.265/HEVC encoding
+- HomeKit Secure Video without cloud
+
+### Voice Assistant Options
+| Option | Cloud | Local | Setup |
+|--------|-------|-------|-------|
+| **Siri + HomeKit** | Partial | Via Homebridge | Native |
+| **Alexa** | Yes | No | Skill or HA Cloud |
+| **Google Assistant** | Yes | No | HA Cloud |
+| **Home Assistant Voice** | No | Yes | Wyoming + Whisper |
+| **Ollama + Whisper** | No | Yes | Custom integration |
+
+**Local Voice (Wyoming Protocol):**
+```yaml
+# Home Assistant configuration.yaml
+wyoming:
+  - name: "Local Whisper"
+    host: localhost
+    port: 10300
+```
+
+### Docker Compose (All-in-One)
+```yaml
+# ~/home-automation/docker-compose.yml
+version: '3.8'
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+
+  homebridge:
+    image: homebridge/homebridge:latest
+    container_name: homebridge
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./homebridge:/homebridge
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto:/mosquitto/config
+
+  scrypted:
+    image: ghcr.io/koush/scrypted
+    container_name: scrypted
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./scrypted:/server/volume
+
+  nodered:
+    image: nodered/node-red
+    container_name: nodered
+    restart: unless-stopped
+    ports:
+      - "1880:1880"
+    volumes:
+      - ./nodered:/data
+
+  uptime-kuma:
+    image: louislam/uptime-kuma
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./uptime-kuma:/app/data
+```
+
+**Start everything:**
+```bash
+cd ~/home-automation && docker compose up -d
+```
+
+### Useful Commands
+```bash
+# View all home automation containers
+docker ps --filter "name=homeassistant|homebridge|mosquitto|scrypted|nodered"
+
+# View logs
+docker logs -f homeassistant
+docker logs -f homebridge
+
+# Restart a service
+docker restart homeassistant
+
+# Update all containers
+docker compose pull && docker compose up -d
+
+# Check resource usage
+docker stats
+```
+
+### Skill Integration
+Add to `/jeff` or create `/home` skill:
+- "What's the status of my home?"
+- "Turn off all lights"
+- "Set thermostat to 70"
+- "Show me the front door camera"
+- "Arm the alarm system"
 
 ## API Credentials (MCP Docker Secrets)
 | Service | Key Location | Login Method |
