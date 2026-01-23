@@ -244,6 +244,13 @@ Located in `~/.claude/scripts/`:
 - **n8n Feedly Digest** - Automated 6:30am email with top articles by category (requires Feedly API credential in n8n)
 - **saved_articles table** - Supabase table for article archiving if `/reading` usage warrants persistence
 - **Article-to-task associations** - Link saved articles to projects/tasks in jeff-agent
+- **L7 Vendor Network (HomeAdvisor-style)** - Contractor/vendor management system for L7 properties:
+  - Vendor database with ratings, specialties, service areas, pricing tiers
+  - Work order creation → auto-match to qualified vendors → quote requests
+  - Vendor performance tracking (response time, quality scores, cost history)
+  - Tenant request intake → triage → vendor dispatch workflow
+  - Integration with L7 Supabase (properties, units, maintenance_requests tables)
+  - Potential n8n workflows: new request → vendor matching → quote collection → approval → scheduling
 
 ## API Credentials (MCP Docker Secrets)
 | Service | Key Location | Login Method |

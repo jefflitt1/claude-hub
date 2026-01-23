@@ -1,10 +1,15 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-23 (Session 3)
+**Last Updated:** 2026-01-23 (Session 4)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 4 - 2026-01-23 (Mac Cleanup)
+- Removed ChatGPT Atlas.app and all support files
+- Clarified ChatGPT Helper is a component of main ChatGPT.app (not standalone)
+- Identified Canon MFScanner apps for manual removal (requires sudo)
 
 ### Session 3 - 2026-01-23 (Admin.L7 Dashboard Complete)
 - Built complete Admin.L7 dashboard with 14 pages:
