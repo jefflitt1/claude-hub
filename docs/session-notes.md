@@ -1,10 +1,22 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-24 (Session 4)
+**Last Updated:** 2026-01-24 (Session 5)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 5 - 2026-01-24 (Mac Studio Final Sync)
+- Synced 12 skills to Mac Studio (jeff, reading, consult, recap, done, deal-analysis, n8n, etc.)
+- Synced 5 agents to Mac Studio (l7-analyst, trading-researcher, email-drafter, code-reviewer, it-infrastructure)
+- Synced missing ~/.config directories (google-sheets-mcp, google-tasks-mcp)
+- Fixed corrupted .zshrc env vars on Mac Studio (XAI_API_KEY had line break)
+- Added all API env vars (SUPABASE_URL, SUPABASE_KEY, N8N webhooks, XAI_API_KEY, DEEPSEEK_API_KEY)
+- Discovered Mac Studio reachable via local network (192.168.5.38) when Tailscale disconnected
+- Updated SSH config: `studio` (local 192.168.5.38), `studio-tailscale`, `studio-remote` (Cloudflare)
+- Created mac-studio-verify.sh and mac-studio-sync-missing.sh helper scripts
+- Verified GitHub SSH works on Mac Studio (jefflitt1 authenticated)
+- **Mac Studio now fully equivalent to MacBook for Claude Code**
 
 ### Session 4 - 2026-01-24 (Jump Desktop + Windows VM Access)
 - Configured Jump Desktop to connect to Windows VMs via Tailscale
@@ -332,8 +344,11 @@ Mac (Development)              Raspberry Pi (Production)
 
 | Alias | Command | Use Case |
 |-------|---------|----------|
-| pi-local | `ssh pi-local` | Direct LAN (faster) |
-| pi | `ssh pi` | Via cloudflared (remote) |
+| studio | `ssh studio` | Mac Studio via LAN (192.168.5.38) |
+| studio-tailscale | `ssh studio-tailscale` | Mac Studio via Tailscale |
+| studio-remote | `ssh studio-remote` | Mac Studio via Cloudflare |
+| pi-local | `ssh pi-local` | Pi direct LAN (faster) |
+| pi | `ssh pi` | Pi via cloudflared (remote) |
 
 ---
 
