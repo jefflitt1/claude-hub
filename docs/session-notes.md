@@ -1,10 +1,35 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-24 (Session 2)
+**Last Updated:** 2026-01-24 (Session 3)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 3 - 2026-01-24 (Mac Studio Claude Code + Auto-Sync)
+
+**Mac Studio Claude Code Setup:**
+- Built all meta-tools (unified-browser, unified-comms, l7-business, jeff-agent, feedly, session-context)
+- Copied OAuth credentials (unified-comms, google-calendar, gdrive)
+- Configured 17 MCP servers in settings.json
+- Installed bun (for apple-notes), terminal-notifier, telegram-mcp
+- Verified Tailscale and Jump Desktop auto-start on both machines
+
+**Automatic Git Sync Between Machines:**
+- SessionStart hook: git pull (fetches latest from remote)
+- Stop hook: git commit + push (auto-syncs on session end)
+- Scripts detect repo path dynamically (~/Projects/ or ~/Documents/Claude Code/)
+- Full round-trip tested: MacBook → GitHub → Mac Studio and reverse
+
+**Mac Studio Git Fixes:**
+- Discovered iCloud Drive causing "Resource deadlock avoided" errors
+- Moved repo to ~/Projects/claude-agents (outside iCloud sync)
+- Switched git remote to SSH for headless authentication
+- Updated MCP server paths in settings.json to new location
+
+**Paths:**
+- Mac Studio: `~/Projects/claude-agents`
+- MacBook: `~/Documents/Claude Code/claude-agents`
 
 ### Session 2 - 2026-01-24 (Mac Studio Migration Complete)
 
@@ -347,7 +372,3 @@ ssh pi-local "cd ~/mcp-gateway && docker compose logs -f"      # Logs
 ssh pi-local "cd ~/mcp-gateway && docker compose restart"      # Restart all
 ssh pi-local "curl -s http://localhost:8808/sse | head -2"     # Test endpoint
 ```
-# Test sync Sat Jan 24 11:31:32 EST 2026
-# Round-trip test Sat Jan 24 11:40:56 EST 2026
-# Reverse test from Mac Studio
-# Final auto-push test
