@@ -81,14 +81,25 @@ Use jeff_create_task with:
 
 This ensures actionable items are tracked, not just documented.
 
-### Step 6: Commit and Push
+### Step 6: Commit and Push (MANDATORY)
+
+**IMPORTANT:** This step is REQUIRED for multi-machine sync. Always push after recap.
 
 ```bash
-cd ~/claude-agents
-git add -A
-git commit -m "Session recap: {brief_summary}"
-git push
+cd ~/Documents/Claude\ Code/claude-agents
+git add docs/session-logs/ docs/session-notes.md
+git commit -m "Session recap: {brief_summary}
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+git push origin main
 ```
+
+If push fails due to remote changes, pull first:
+```bash
+git pull --rebase origin main && git push origin main
+```
+
+**Confirm to user:** "Changes pushed to remote - other machines will sync on next session start."
 
 ---
 

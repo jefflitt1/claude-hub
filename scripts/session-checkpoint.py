@@ -11,6 +11,7 @@ Location: ~/.claude/scripts/session-checkpoint.py
 import json
 import sys
 import logging
+import subprocess
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -31,6 +32,101 @@ PREFS_FILE = Path.home() / ".claude" / "preferences.json"
 LEARNING_FILE = Path.home() / ".claude" / "coaching-learning.json"
 SESSION_LOGS_DIR = Path.home() / "Documents" / "Claude Code" / "claude-agents" / "docs" / "session-logs"
 AUTO_CAPTURE_FILE = Path.home() / ".claude" / "last-session-context.json"
+
+
+def git_sync_push():
+    """Commit and push changes to sync across machines."""
+    repo_path = Path.home() / "Documents" / "Claude Code" / "claude-agents"
+
+    if not (repo_path / ".git").exists():
+        logger.warning(f"Not a git repo: {repo_path}")
+        return None
+
+    try:
+        # Check if there are changes to commit
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if not status_result.stdout.strip():
+            logger.info("No changes to commit")
+            return "no-changes"
+
+        # Add common files that change during sessions
+        subprocess.run(
+            ["git", "add",
+             "docs/",
+             "scripts/",
+             "skills/",
+             "CLAUDE-personal.md",
+             "CLAUDE.md",
+             "projects/meta-tools/"],
+            cwd=repo_path,
+            capture_output=True,
+            timeout=30
+        )
+
+        # Check if there's anything staged
+        diff_result = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            cwd=repo_path,
+            capture_output=True,
+            timeout=30
+        )
+
+        if diff_result.returncode == 0:
+            logger.info("No staged changes to commit")
+            return "no-staged"
+
+        # Commit with auto-generated message
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        commit_result = subprocess.run(
+            ["git", "commit", "-m", f"Auto-sync: session end {timestamp}"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if commit_result.returncode != 0:
+            logger.error(f"Git commit failed: {commit_result.stderr}")
+            return "commit-failed"
+
+        # Pull with rebase first to avoid conflicts
+        subprocess.run(
+            ["git", "pull", "--rebase", "origin", "main"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        # Push to remote
+        push_result = subprocess.run(
+            ["git", "push", "origin", "main"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        if push_result.returncode == 0:
+            logger.info("Git push successful")
+            return "pushed"
+        else:
+            logger.error(f"Git push failed: {push_result.stderr}")
+            return "push-failed"
+
+    except subprocess.TimeoutExpired:
+        logger.error("Git operation timed out")
+        return "timeout"
+    except Exception as e:
+        logger.error(f"Git sync error: {e}")
+        return "error"
 
 
 def auto_capture_session(state: dict, prefs: dict):
@@ -295,6 +391,15 @@ def main():
 
         logger.info(f"Checkpoint recorded: prompt_count={state.get('prompt_count', 0)}")
 
+        # Auto-sync to remote for multi-machine sync
+        sync_status = git_sync_push()
+        if sync_status == "pushed":
+            sys.stderr.write("\n[Git Sync] Changes pushed to remote\n")
+        elif sync_status == "no-changes":
+            pass  # Silent - no changes
+        elif sync_status in ("push-failed", "commit-failed", "error"):
+            sys.stderr.write(f"\n[Git Sync] Sync failed: {sync_status}\n")
+
         # Run workflow analysis for end-of-session suggestions
         suggestions = analyze_session_end(state, prefs)
         if suggestions:
@@ -304,7 +409,6 @@ def main():
 
         # Trigger analytics sync (fire and forget)
         try:
-            import subprocess
             subprocess.Popen(
                 ["python3", str(Path.home() / ".claude" / "scripts" / "sync-analytics.py")],
                 stdout=subprocess.DEVNULL,

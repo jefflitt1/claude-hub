@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import logging
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -199,9 +200,69 @@ def get_recent_session_context(project_key: str = None) -> str:
     return '\n'.join(context_lines) if context_lines else None
 
 
+def git_pull_repo():
+    """Pull latest changes from remote to sync across machines."""
+    repo_path = Path.home() / "Documents" / "Claude Code" / "claude-agents"
+
+    if not (repo_path / ".git").exists():
+        logger.warning(f"Not a git repo: {repo_path}")
+        return None
+
+    try:
+        # First, stash any local changes to avoid conflicts
+        stash_result = subprocess.run(
+            ["git", "stash", "--include-untracked"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        had_changes = "No local changes" not in stash_result.stdout
+
+        # Pull latest
+        pull_result = subprocess.run(
+            ["git", "pull", "--rebase", "origin", "main"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        # Pop stash if we had changes
+        if had_changes:
+            subprocess.run(
+                ["git", "stash", "pop"],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+        if pull_result.returncode == 0:
+            if "Already up to date" in pull_result.stdout:
+                logger.info("Git repo already up to date")
+                return "up-to-date"
+            else:
+                logger.info(f"Git pull successful: {pull_result.stdout.strip()}")
+                return "updated"
+        else:
+            logger.error(f"Git pull failed: {pull_result.stderr}")
+            return "error"
+
+    except subprocess.TimeoutExpired:
+        logger.error("Git pull timed out")
+        return "timeout"
+    except Exception as e:
+        logger.error(f"Git pull error: {e}")
+        return "error"
+
+
 def main():
     """Initialize fresh session state."""
     logger.info("Session starting - initializing fresh state")
+
+    # Sync repo from remote first
+    git_status = git_pull_repo()
 
     try:
         # Load existing state to archive if significant
@@ -247,6 +308,16 @@ def main():
 
         # Auto-load context and output to stderr (shown to user)
         context_output = []
+
+        # Show git sync status
+        if git_status == "updated":
+            context_output.append("[Git Sync] Pulled latest changes from remote")
+        elif git_status == "up-to-date":
+            context_output.append("[Git Sync] Already up to date")
+        elif git_status == "error":
+            context_output.append("[Git Sync] Pull failed - check network/auth")
+        elif git_status == "timeout":
+            context_output.append("[Git Sync] Pull timed out")
 
         if project:
             context_output.append(f"\n[Session Init] Project: {project['name']}")
