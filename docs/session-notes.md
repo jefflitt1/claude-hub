@@ -350,3 +350,4 @@ ssh pi-local "curl -s http://localhost:8808/sse | head -2"     # Test endpoint
 # Test sync Sat Jan 24 11:31:32 EST 2026
 # Round-trip test Sat Jan 24 11:40:56 EST 2026
 # Reverse test from Mac Studio
+# Final auto-push test
