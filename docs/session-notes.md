@@ -1,10 +1,23 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-23 (Session 6)
+**Last Updated:** 2026-01-24 (Session 1)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 1 - 2026-01-24 (Hailo-Ollama LLM Setup on Pi 5)
+- Built Hailo-Ollama from source on Raspberry Pi 5 with Hailo-10H NPU (40 TOPS)
+- Installed hailo-ollama binary to ~/.local/bin/ with systemd service for auto-start
+- Pulled and installed all 5 available LLM models:
+  - qwen2.5:1.5b (2.37 GB) - General chat, Q&A
+  - qwen2.5-coder:1.5b (1.68 GB) - Code generation
+  - qwen2:1.5b (1.70 GB) - Legacy Qwen
+  - deepseek_r1:1.5b (2.21 GB) - Reasoning/math
+  - llama3.2:1b (1.88 GB) - Fast lightweight tasks
+- Verified REST API working at http://192.168.4.147:8000
+- Documented n8n integration endpoints (Ollama and OpenAI compatible)
+- Total model storage: ~9.8 GB
 
 ### Session 7 - 2026-01-23 (Mac Studio Claude System Replication)
 - Created comprehensive Claude system migration package for Mac Studio
@@ -180,10 +193,12 @@
 7. **Configure TradeStation credentials** - Need real API creds for MCP
 8. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
 9. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
+10. ~~**Hailo-10H NPU LLM Setup**~~ - **COMPLETE** - 5 models on Pi 5 for n8n workflows (http://192.168.4.147:8000)
 
 ### Medium Priority
 
-1. **Delete unnamed Telegram bot** - Bot ID 8471835561 (orphaned) - delete manually in Telegram app
+1. **Create n8n workflow using Hailo LLM** - Use http://192.168.4.147:8000/api/chat endpoint
+2. **Delete unnamed Telegram bot** - Bot ID 8471835561 (orphaned) - delete manually in Telegram app
 2. **Query L7 property data** - Test Supabase MCP with 3 properties (200 East 2nd, 261 Suburban, 191 East 2nd)
 3. **n8n node typeVersion upgrades** - IF nodes 2.2→2.3, HTTP Request 4.2→4.4 (cosmetic only)
 
