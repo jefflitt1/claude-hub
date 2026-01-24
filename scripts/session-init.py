@@ -200,12 +200,24 @@ def get_recent_session_context(project_key: str = None) -> str:
     return '\n'.join(context_lines) if context_lines else None
 
 
+def get_repo_path():
+    """Find the claude-agents repo path (handles different locations)."""
+    candidates = [
+        Path.home() / "Projects" / "claude-agents",  # Mac Studio (non-iCloud)
+        Path.home() / "Documents" / "Claude Code" / "claude-agents",  # MacBook
+    ]
+    for path in candidates:
+        if (path / ".git").exists():
+            return path
+    return None
+
+
 def git_pull_repo():
     """Pull latest changes from remote to sync across machines."""
-    repo_path = Path.home() / "Documents" / "Claude Code" / "claude-agents"
+    repo_path = get_repo_path()
 
-    if not (repo_path / ".git").exists():
-        logger.warning(f"Not a git repo: {repo_path}")
+    if not repo_path:
+        logger.warning("Could not find claude-agents repo")
         return None
 
     try:
