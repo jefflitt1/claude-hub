@@ -1,10 +1,18 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-23 (Session 5)
+**Last Updated:** 2026-01-23 (Session 6)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 6 - 2026-01-23 (Infrastructure Audit for VM Migration)
+- Audited Raspberry Pi 5 (jeffn8nhost.local) - 14 Supabase containers, n8n, Frigate, Appsmith, Metabase, Weaviate, Elasticsearch
+- Documented Pi infrastructure in comprehensive IT-ready format for handoff
+- Audited current MacBook Pro M4 Pro - 125 Homebrew formulas, Docker gmail-mcp containers
+- Used mDNS discovery (dns-sd) to identify network hosts
+- Clarified target machines: need to audit 2 Windows PCs (TradeStation machines), not new Mac Studio
+- Researched VM platform: VMware Fusion Pro recommended over Parallels (documented freezing issues)
 
 ### Session 5 - 2026-01-23 (Mac Studio Always-On Hub)
 - Migrated full Claude Code MCP setup to new Mac Studio (17 servers connected)
@@ -154,9 +162,10 @@
 3. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
 4. ~~**Purchase Windows 11 Pro ARM64 licenses**~~ → **Try transfer first, then Kinguin keys (~$30-60)**
 5. ~~**Determine Pi 5 AI HAT 2 dedicated task**~~ → **Frigate NVR + Hailo NPU** (security camera AI)
-6. **Configure TradeStation credentials** - Need real API creds for MCP
-7. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
-8. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
+6. **Audit 2 Windows TradeStation PCs** - Need IP addresses and credentials (captured earlier today)
+7. **Configure TradeStation credentials** - Need real API creds for MCP
+8. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
+9. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
 
 ### Medium Priority
 
