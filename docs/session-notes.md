@@ -347,3 +347,4 @@ ssh pi-local "cd ~/mcp-gateway && docker compose logs -f"      # Logs
 ssh pi-local "cd ~/mcp-gateway && docker compose restart"      # Restart all
 ssh pi-local "curl -s http://localhost:8808/sse | head -2"     # Test endpoint
 ```
+# Test sync Sat Jan 24 11:31:32 EST 2026
