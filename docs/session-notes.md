@@ -1,10 +1,48 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-24 (Session 1)
+**Last Updated:** 2026-01-24 (Session 2)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 2 - 2026-01-24 (Mac Studio Migration Complete)
+
+**System Monitoring Infrastructure:**
+- Fixed TradeStation detection (changed from "TradeStation" to actual process names: ORPlat, ORCAL, orchart)
+- Fixed launchd permission issue (moved script to `~/.config/system-monitor/`)
+- System monitor running every 5 minutes, collecting from Mac + Windows VM
+
+**Mac Studio Migration Verification:**
+- Installed tmux (v3.6a)
+- Installed cloudflared (v2026.1.1)
+- Cloudflare tunnel authenticated and running (mac-studio tunnel)
+- Verified: Docker, Ollama, Email OAuth, Calendar OAuth all working
+
+**Windows VM (192.168.64.2):**
+- Configured: notifications disabled, auto-restart prevented
+- TradeStation running and detected by monitor
+
+**Cloudflare Tunnel Routes Active:**
+| Hostname | Service |
+|----------|---------|
+| studio-ssh.l7-partners.com | SSH (port 22) |
+| claude-api.l7-partners.com | HTTP API (port 3847) |
+| trading-vm1.l7-partners.com | RDP (needs VM IP) |
+| trading-vm2.l7-partners.com | RDP (needs VM IP) |
+
+**DNS Records Created:**
+- studio-ssh.l7-partners.com → mac-studio tunnel
+- trading-vm1.l7-partners.com → mac-studio tunnel
+- trading-vm2.l7-partners.com → mac-studio tunnel
+- claude-api.l7-partners.com → manual update needed in Cloudflare dashboard
+
+**Remaining Tasks (5):** See jeff-agent task list
+1. Run schema.sql in Supabase for system monitoring
+2. Add Telegram bot token to monitor
+3. Get Raspberry Pi direct IP
+4. Set up Claude HTTP server (port 3847)
+5. Audit physical Windows PCs
 
 ### Session 1 - 2026-01-24 (Hailo-Ollama LLM Setup on Pi 5)
 - Built Hailo-Ollama from source on Raspberry Pi 5 with Hailo-10H NPU (40 TOPS)
