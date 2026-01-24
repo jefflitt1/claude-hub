@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-24 (Session 3)
+**Last Updated:** 2026-01-24 (Session 4)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 4 - 2026-01-24 (Jump Desktop + Windows VM Access)
+- Configured Jump Desktop to connect to Windows VMs via Tailscale
+- Identified two Windows VM Tailscale IPs: 100.117.154.92 and 100.95.217.59
+- Diagnosed RDP connection failure - Windows 11 Home doesn't support incoming RDP
+- Provided alternatives: VNC server, Chrome Remote Desktop, or upgrade to Pro
+- Decided to connect to Mac Studio via VNC first, then access VMs from there (simpler architecture)
 
 ### Session 3 - 2026-01-24 (Mac Studio Claude Code + Auto-Sync)
 
