@@ -64,7 +64,7 @@ SYSTEMS = [
         'method': 'ssh',
         'ssh_user': 'jeff',
         'ssh_host': '192.168.64.2',
-        'services': ['TradeStation', 'ORPlat', 'ORCAL'],
+        'services': ['ORPlat', 'ORCAL', 'orchart'],  # TradeStation process names
     },
     {
         'hostname': 'raspberrypi',
