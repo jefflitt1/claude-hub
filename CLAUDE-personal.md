@@ -43,8 +43,8 @@
 | **deepwiki** | GitHub repo Q&A | - |
 | **gemini-cli** | Google Gemini via OAuth (uses Gemini Advanced sub) | - |
 | **codex-cli** | OpenAI Codex/GPT-5 via OAuth (uses ChatGPT Plus sub) | - |
-| **grok-cli** | xAI Grok 4 with real-time X/Twitter access | 🔜 Tomorrow |
-| **deepseek-cli** | DeepSeek R1/V3 (cheap reasoning, local option) | 🔜 Tomorrow |
+| **grok-mcp** | xAI Grok 4 with real-time X/Twitter access | ✅ Active |
+| **deepseek-mcp** | DeepSeek R1/V3 (cheap reasoning, local option) | ✅ Active |
 
 **Redundant (keep as fallbacks):**
 - `supabase-l7` (HTTP) - fallback only, use `l7-business`
@@ -148,8 +148,8 @@ Use these for second opinions, alternative approaches, and leveraging each model
 |-------|-----------------|--------|
 | Gemini | OAuth (`gemini` CLI) | ✅ Active |
 | Codex | OAuth (`codex login`) | ✅ Active |
-| Grok | `~/.config/grok-cli/config.json` | ✅ Configured |
-| DeepSeek | `~/.config/deepseek/config.json` | ✅ Configured |
+| Grok | `~/.claude.json` (grok-mcp) | ✅ Active |
+| DeepSeek | `~/.claude.json` (deepseek-mcp) | ✅ Active |
 
 #### Local Models (Ollama - 32GB Mac Studio)
 | Model | Size | RAM | Use Case |
