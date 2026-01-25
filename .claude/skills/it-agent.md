@@ -45,11 +45,9 @@ Check for common issues:
 Available tools:
 - `dig` / `nslookup` - DNS resolution
 - **Cloudflare MCP** (direct API access):
-  - `mcp__cloudflare__list_dns_records` - List all DNS records (filter by type/name)
-  - `mcp__cloudflare__get_dns_record` - Get specific record by ID
-  - `mcp__cloudflare__create_dns_record` - Create A, AAAA, CNAME, MX, TXT, etc.
-  - `mcp__cloudflare__update_dns_record` - Update existing record
-  - `mcp__cloudflare__delete_dns_record` - Delete record by ID
+  - DNS: `list_dns_records`, `get_dns_record`, `create_dns_record`, `update_dns_record`, `delete_dns_record`
+  - Tunnels: `list_tunnels`, `get_tunnel`, `get_tunnel_config`, `create_tunnel`, `delete_tunnel`, `update_tunnel_config`, `cleanup_tunnel_connections`
+  - Info: `cloudflare_info` - Server status and config
 - `mcp__l7-business__l7_list_tables` - Database inventory
 - `mcp__l7-business__l7_list_workflows` - n8n inventory
 - `mcp__n8n-mcp__n8n_health_check` - n8n status

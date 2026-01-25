@@ -12,6 +12,7 @@ meta-tools/
 ├── feedly/           # RSS aggregation (149 feeds)
 ├── jeff-agent/       # Personal assistant (tasks, email, calendar, habits)
 ├── session-context/  # Session persistence to Supabase
+├── cloudflare/       # DNS records + tunnel management
 ├── shared/           # Common utilities
 └── tests/            # Integration tests
 ```
@@ -26,6 +27,7 @@ meta-tools/
 | `feedly` | 10 | N/A (new) |
 | `jeff-agent` | 45+ | N/A (new) |
 | `session-context` | 10 | memory (for session state) |
+| `cloudflare` | 12 | @thelord/mcp-cloudflare (DNS only) |
 
 ## Development
 
@@ -75,6 +77,7 @@ All servers read from environment variables. See `~/.claude/.env.secrets.templat
 | `feedly` | `FEEDLY_ACCESS_TOKEN` |
 | `jeff-agent` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 | `session-context` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `cloudflare` | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_ACCOUNT_ID` |
 
 ## Design Principles
 
