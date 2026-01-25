@@ -1,10 +1,24 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-25 (Session 5)
+**Last Updated:** 2026-01-25 (Session 6)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 6 - 2026-01-25 (MacBook Pro Software Audit & Cleanup)
+- Full MacBook Pro software & settings audit (M4 Pro, 24GB, macOS)
+- Removed 11 applications: 1Password 7, TradeStation TITAN X, TeamViewer, VNC Viewer, Spark, Adobe XD, Mystiprint, Comet, ToDo, Disk Inventory X, Grammarly
+- Removed Grammarly launch agents (4 background processes)
+- Removed TeamViewer services and launch daemons
+- Cleaned Downloads folder (~3.9 GB): iris_tutorial video, Docker.dmg, drive-download zip, Ledger DMG, MEGAsync DMG, incomplete downloads, duplicate videos
+- Docker image prune: reclaimed 1.53 GB (14 unused images)
+- Homebrew upgrade: 19 packages updated (ffmpeg, gh, python, supabase CLI, etc.)
+- Pip cache purge: 27.9 MB cleared
+- Emptied Trash: 578 MB
+- Verified security posture: FileVault ON, Firewall ON, Gatekeeper ON
+- Total space recovered: ~6+ GB
+- 62 apps remaining, all security settings properly configured
 
 ### Session 5 - 2026-01-25 (Cloudflare Cleanup + Zero Trust MCP Tools)
 - Reviewed entire Cloudflare DNS (35 records) and tunnel configuration (3 tunnels)
