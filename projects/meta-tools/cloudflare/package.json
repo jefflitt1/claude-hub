@@ -1,7 +1,7 @@
 {
   "name": "cloudflare-mcp",
-  "version": "1.0.0",
-  "description": "Cloudflare MCP server - DNS records and tunnel management",
+  "version": "1.1.0",
+  "description": "Cloudflare MCP server - DNS, tunnels, and Zero Trust Access management",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
