@@ -76,7 +76,7 @@ Format:
 Additional context
 ```
 
-### Step 4: Auto-Merge
+### Step 4: Auto-Merge and Git Sync
 
 After saving the log file, AUTOMATICALLY run the merge process (do NOT ask):
 
@@ -84,7 +84,14 @@ After saving the log file, AUTOMATICALLY run the merge process (do NOT ask):
 2. Read and consolidate all logs
 3. Update session-notes.md
 4. Archive the log files
-5. Commit and push
+5. **Git commit and push to sync across devices:**
+
+```bash
+cd ~/Documents/Claude\ Code/claude-agents 2>/dev/null || cd ~/Projects/claude-agents
+git add -A
+git commit -m "Session recap: $(date +%Y-%m-%d)"
+git push
+```
 
 See "Instructions for `/recap merge`" below for details.
 
