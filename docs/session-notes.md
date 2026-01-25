@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-25 (Session 1)
+**Last Updated:** 2026-01-25 (Session 2)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 2 - 2026-01-25 (Cloudflare MCP Setup + Pi Audit)
+- Audited Cloudflare CNAMEs against Pi services via SSH (Tailscale)
+- Identified dead CNAMEs: `bot` (404) and `kuma` (no container)
+- Verified 22 Docker containers running on Pi (n8n stack + supabase stack + metabase)
+- Active services confirmed: n8n, supabase, metabase, kibana, webhooks, ssh
+- Researched and configured Cloudflare MCP server (`@thelord/mcp-cloudflare`)
+- Created Cloudflare API token with broad permissions (DNS, Tunnel, Access, WAF, Firewall)
+- Added cloudflare MCP to ~/.claude.json with Zone ID c4d2f07546dd7f8ddbb84e104c83a100
+- **Pending:** Delete dead CNAMEs (bot, kuma) after Claude restart
 
 ### Session 1 - 2026-01-25 (Claude Terminal Bot → Mac Studio)
 - Fixed Claude Terminal Bot to run on Mac Studio instead of MacBook Pro
@@ -293,6 +303,8 @@
 6. **Audit 2 Windows TradeStation PCs** - Need IP addresses and credentials (captured earlier today)
 7. **Configure TradeStation credentials** - Need real API creds for MCP
 8. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
+9. **Delete dead Cloudflare CNAMEs** - Remove `bot` and `kuma` after Cloudflare MCP loads
+10. **Consider monitoring replacement** - Uptime Kuma removed, no monitoring on Pi currently
 9. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
 10. ~~**Hailo-10H NPU LLM Setup**~~ - **COMPLETE** - 5 models on Pi 5 for n8n workflows (http://192.168.4.147:8000)
 
