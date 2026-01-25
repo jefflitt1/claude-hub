@@ -605,7 +605,9 @@ server.tool("create_access_policy", "Create a policy for a Cloudflare Access app
         // Build include rules
         const include = [];
         if (args.includeEmails?.length) {
-            include.push({ email: { email: args.includeEmails } });
+            args.includeEmails.forEach(email => {
+                include.push({ email: { email } });
+            });
         }
         if (args.includeEmailDomains?.length) {
             args.includeEmailDomains.forEach(domain => {
@@ -623,7 +625,9 @@ server.tool("create_access_policy", "Create a policy for a Cloudflare Access app
         // Build exclude rules
         const exclude = [];
         if (args.excludeEmails?.length) {
-            exclude.push({ email: { email: args.excludeEmails } });
+            args.excludeEmails.forEach(email => {
+                exclude.push({ email: { email } });
+            });
         }
         if (args.excludeEmailDomains?.length) {
             args.excludeEmailDomains.forEach(domain => {
