@@ -1,10 +1,24 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-25 (Session 4)
+**Last Updated:** 2026-01-25 (Session 5)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 5 - 2026-01-25 (Cloudflare Cleanup + Zero Trust MCP Tools)
+- Reviewed entire Cloudflare DNS (35 records) and tunnel configuration (3 tunnels)
+- Created missing DNS records: `studio-ssh`, `kuma`, `vnc`, `ollama` pointing to correct tunnels
+- Removed dead `admin.l7-partners.com` route from n8n-tunnel (DNS pointed to Netlify)
+- Removed unused VNC and Kibana routes from n8n-tunnel (reduced attack surface)
+- Deleted orphaned DNS records for `vnc.l7-partners.com` and `kibana.l7-partners.com`
+- Added `ollama.l7-partners.com` DNS for remote LLM API access via mac-studio tunnel
+- Verified n8n.l7-partners.com and kuma.l7-partners.com have Cloudflare Access protection
+- **Implemented 9 new Cloudflare Zero Trust Access tools in cloudflare-mcp:**
+  - `list_access_apps`, `get_access_app`, `create_access_app`, `update_access_app`, `delete_access_app`
+  - `list_access_policies`, `create_access_policy`, `update_access_policy`, `delete_access_policy`
+- Updated cloudflare-mcp to v1.1.0 (DNS + Tunnels + Access)
+- n8n-tunnel now v31 with 6 clean routes (was 9)
 
 ### Session 4 - 2026-01-25 (System Monitor Fixes)
 - Fixed Telegram alerts going to wrong bot (JGL Capital → claude_system_alerts)
@@ -318,8 +332,9 @@
 6. **Audit 2 Windows TradeStation PCs** - Need IP addresses and credentials (captured earlier today)
 7. **Configure TradeStation credentials** - Need real API creds for MCP
 8. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
-9. **Delete dead Cloudflare CNAMEs** - Remove `bot` and `kuma` after Cloudflare MCP loads
-10. **Consider monitoring replacement** - Uptime Kuma removed, no monitoring on Pi currently
+9. ~~**Delete dead Cloudflare CNAMEs**~~ - **DONE** - Cleaned up VNC, Kibana DNS records
+10. **Add Cloudflare Access to ollama.l7-partners.com** - Protect LLM API endpoint
+11. **Update mac-studio local tunnel config** - Add ollama route (localhost:11434)
 9. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
 10. ~~**Hailo-10H NPU LLM Setup**~~ - **COMPLETE** - 5 models on Pi 5 for n8n workflows (http://192.168.4.147:8000)
 
