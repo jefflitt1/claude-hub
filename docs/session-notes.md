@@ -6,6 +6,12 @@
 
 ## Completed This Session
 
+### Session 3 - 2026-01-25 (Sync Verification)
+- Verified Claude Code multi-device sync alignment after Session 2 work
+- Confirmed symlinks in place: `~/.claude/{agents,skills,scripts}` → repo
+- Confirmed 5 agents, 12 skills, 2 scripts tracked in git
+- Verified both local repo clones (`~/Documents/Claude Code/` and `~/Projects/`) synced to same GitHub remote
+
 ### Session 2 - 2026-01-25 (Cloudflare MCP Setup + Pi Audit)
 - Audited Cloudflare CNAMEs against Pi services via SSH (Tailscale)
 - Identified dead CNAMEs: `bot` (404) and `kuma` (no container)
