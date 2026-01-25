@@ -6,7 +6,9 @@
 
 ## Completed This Session
 
-### Session 6 - 2026-01-25 (MacBook Pro Software Audit & Cleanup)
+### Session 6 - 2026-01-25 (MacBook Pro Software Audit & Cleanup + Storage/Memory Audit)
+
+**Software Cleanup (~6 GB recovered):**
 - Full MacBook Pro software & settings audit (M4 Pro, 24GB, macOS)
 - Removed 11 applications: 1Password 7, TradeStation TITAN X, TeamViewer, VNC Viewer, Spark, Adobe XD, Mystiprint, Comet, ToDo, Disk Inventory X, Grammarly
 - Removed Grammarly launch agents (4 background processes)
@@ -16,9 +18,15 @@
 - Homebrew upgrade: 19 packages updated (ffmpeg, gh, python, supabase CLI, etc.)
 - Pip cache purge: 27.9 MB cleared
 - Emptied Trash: 578 MB
-- Verified security posture: FileVault ON, Firewall ON, Gatekeeper ON
-- Total space recovered: ~6+ GB
-- 62 apps remaining, all security settings properly configured
+- Verified security: FileVault ON, Firewall ON, Gatekeeper ON
+
+**Storage & Memory Audit:**
+- Full storage analysis: 460 GB total, ~130 GB used, 39 GB free
+- Memory analysis: 24 GB RAM, 66% free, 0 MB swap (healthy)
+- Identified top storage consumers: Chrome profile (23 GB), Claude vm_bundles (10 GB), Messages Attachments (5.1 GB)
+- Found orphaned app data: Comet (813 MB), Grammarly (28 MB)
+- Found PhotoRec leftovers: 330 MB + 111 MB log
+- Documented 25-30 GB additionally recoverable
 
 ### Session 5 - 2026-01-25 (Cloudflare Cleanup + Zero Trust MCP Tools)
 - Reviewed entire Cloudflare DNS (35 records) and tunnel configuration (3 tunnels)
