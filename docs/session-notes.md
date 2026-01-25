@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-24 (Session 5)
+**Last Updated:** 2026-01-24 (Session 6)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 6 - 2026-01-24 (System Monitor Complete + Task Cleanup)
+- Created schema.sql for system monitoring (system_metrics, system_alerts, service_status tables)
+- Added Telegram bot token + Supabase service key to system monitor .env
+- Verified Claude HTTP server already running on port 3847
+- Installed Python dependencies (requests, supabase) for central_collector.py
+- System monitor now fully operational: collecting → Supabase → Telegram alerts
+- Confirmed IT Agent already exists with /it skill and tech-stack-inventory.md
+- Marked 5 tasks complete (system monitor x3, IT agent review, IT agent creation)
+- **All high-priority system monitoring setup now complete**
 
 ### Session 5 - 2026-01-24 (Mac Studio Final Sync)
 - Synced 12 skills to Mac Studio (jeff, reading, consult, recap, done, deal-analysis, n8n, etc.)
@@ -81,12 +91,11 @@
 - trading-vm2.l7-partners.com → mac-studio tunnel
 - claude-api.l7-partners.com → manual update needed in Cloudflare dashboard
 
-**Remaining Tasks (5):** See jeff-agent task list
-1. Run schema.sql in Supabase for system monitoring
-2. Add Telegram bot token to monitor
-3. Get Raspberry Pi direct IP
-4. Set up Claude HTTP server (port 3847)
-5. Audit physical Windows PCs
+**Remaining Tasks:** See jeff-agent task list
+- ~~Run schema.sql in Supabase~~ **DONE** (Session 6)
+- ~~Add Telegram bot token~~ **DONE** (Session 6)
+- ~~Set up Claude HTTP server~~ **DONE** (was already running)
+- Audit physical Windows PCs
 
 ### Session 1 - 2026-01-24 (Hailo-Ollama LLM Setup on Pi 5)
 - Built Hailo-Ollama from source on Raspberry Pi 5 with Hailo-10H NPU (40 TOPS)
