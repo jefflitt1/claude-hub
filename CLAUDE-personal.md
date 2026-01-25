@@ -45,6 +45,7 @@
 | **codex-cli** | OpenAI Codex/GPT-5 via OAuth (uses ChatGPT Plus sub) | - |
 | **grok-mcp** | xAI Grok 4 with real-time X/Twitter access | ✅ Active |
 | **deepseek-mcp** | DeepSeek R1/V3 (cheap reasoning, local option) | ✅ Active |
+| **cloudflare** | DNS record management (list/create/update/delete) | ✅ Active |
 
 **Redundant (keep as fallbacks):**
 - `supabase-l7` (HTTP) - fallback only, use `l7-business`

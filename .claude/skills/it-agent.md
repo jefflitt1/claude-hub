@@ -44,7 +44,12 @@ Check for common issues:
 ### 4. Network Discovery
 Available tools:
 - `dig` / `nslookup` - DNS resolution
-- Cloudflare API (via dashboard) - DNS records, tunnels
+- **Cloudflare MCP** (direct API access):
+  - `mcp__cloudflare__list_dns_records` - List all DNS records (filter by type/name)
+  - `mcp__cloudflare__get_dns_record` - Get specific record by ID
+  - `mcp__cloudflare__create_dns_record` - Create A, AAAA, CNAME, MX, TXT, etc.
+  - `mcp__cloudflare__update_dns_record` - Update existing record
+  - `mcp__cloudflare__delete_dns_record` - Delete record by ID
 - `mcp__l7-business__l7_list_tables` - Database inventory
 - `mcp__l7-business__l7_list_workflows` - n8n inventory
 - `mcp__n8n-mcp__n8n_health_check` - n8n status
@@ -135,6 +140,6 @@ Last security scan: Never
 ## Future Enhancements
 - [ ] Automated credential rotation reminders
 - [ ] Network scanning integration
-- [ ] Cloudflare API integration for programmatic checks
+- [x] ~~Cloudflare API integration for programmatic checks~~ ✅ Done (cloudflare MCP)
 - [ ] Dependency mapping between services
 - [ ] Automated security scanning schedule

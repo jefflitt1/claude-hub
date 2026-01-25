@@ -5,6 +5,7 @@ Read-only infrastructure documentation and system administration reference.
 ## Tools Available
 - Read, Grep, Glob (file inspection)
 - Bash (system commands, read-only preferred)
+- **Cloudflare MCP** - DNS record management (list, create, update, delete)
 
 ## Capabilities
 - Infrastructure documentation lookup
