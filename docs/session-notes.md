@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-24 (Session 6)
+**Last Updated:** 2026-01-25 (Session 1)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 1 - 2026-01-25 (Claude Terminal Bot → Mac Studio)
+- Fixed Claude Terminal Bot to run on Mac Studio instead of MacBook Pro
+- Updated working directory paths from `/Users/jeff-probis/...` to `/Users/jgl/...` in n8n workflows
+- Fixed Claude HTTP server binary path (`~/.local/bin/claude` → `/opt/homebrew/bin/claude`)
+- Added PATH environment variable to spawned processes in HTTP server
+- Changed HTTP server binding from `127.0.0.1` to `0.0.0.0` for LAN access
+- Switched n8n workflow API endpoint from Cloudflare tunnel to direct LAN IP (`http://192.168.5.38:3847`)
+- Verified bot responds with correct hostname: `Jeffs-Mac-Studio.local`
+- **Open:** Cloudflare tunnel DNS route for `claude-api.l7-partners.com` needs manual fix in dashboard
 
 ### Session 6 - 2026-01-24 (System Monitor Complete + Task Cleanup)
 - Created schema.sql for system monitoring (system_metrics, system_alerts, service_status tables)
