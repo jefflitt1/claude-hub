@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-25 (Session 2)
+**Last Updated:** 2026-01-25 (Session 4)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 4 - 2026-01-25 (System Monitor Fixes)
+- Fixed Telegram alerts going to wrong bot (JGL Capital → claude_system_alerts)
+- Fixed n8n/docker false positive alerts on jeffn8nhost (updated service detection)
+- Added `alert_when_offline: False` for Windows VM (no alerts when VM is off)
+- Updated n8n Critical Workflow Monitor to use correct Telegram bot
+- Fixed Weekly Backup workflow credential issue (direct HTTP header auth)
+- Deactivated broken Credentials Health Check workflow
+- Verified Telegram integration with test message
 
 ### Session 3 - 2026-01-25 (Sync Verification)
 - Verified Claude Code multi-device sync alignment after Session 2 work
