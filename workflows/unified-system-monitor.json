@@ -1,0 +1,186 @@
+{
+  "name": "Unified System Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "schedule",
+      "name": "Every 30 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.l7-partners.com/healthz",
+        "options": { "timeout": 15000 }
+      },
+      "id": "check-n8n",
+      "name": "Check n8n",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": { "timeout": 15000 }
+      },
+      "id": "check-supabase",
+      "name": "Check Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 260],
+      "credentials": { "supabaseApi": { "id": "HtfdX00X8v7ebxlb", "name": "Supabase L7 Cloud" } },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "https://claude.l7-partners.com",
+        "options": { "timeout": 15000 }
+      },
+      "id": "check-claude",
+      "name": "Check Claude Hub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 420],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://n8n.l7-partners.com/api/v1/executions?status=error&limit=50",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-N8N-API-KEY", "value": "={{ $env.N8N_API_KEY }}" }]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "get-errors",
+      "name": "Get Recent Errors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 580],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/system_alerts?resolved=eq.false&order=created_at.desc&limit=10",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": { "timeout": 10000 }
+      },
+      "id": "get-active-alerts",
+      "name": "Get Active Alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 740],
+      "credentials": { "supabaseApi": { "id": "HtfdX00X8v7ebxlb", "name": "Supabase L7 Cloud" } },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all health check results\nconst n8nResult = $('Check n8n').first().json;\nconst supabaseResult = $('Check Supabase').first().json;\nconst claudeResult = $('Check Claude Hub').first().json;\nconst errorsResult = $('Get Recent Errors').first().json;\nconst activeAlerts = $('Get Active Alerts').first().json || [];\n\nconst now = new Date();\nconst thirtyMinAgo = new Date(now - 30 * 60 * 1000);\n\n// Check service health\nconst services = [];\n\n// n8n health\nconst n8nOk = n8nResult && !n8nResult.error && n8nResult.status !== 'error';\nservices.push({\n  name: 'n8n',\n  status: n8nOk ? 'healthy' : 'down',\n  url: 'https://n8n.l7-partners.com'\n});\n\n// Supabase health\nconst supabaseOk = supabaseResult && !supabaseResult.error;\nservices.push({\n  name: 'supabase',\n  status: supabaseOk ? 'healthy' : 'down',\n  url: 'https://donnmhbwhpjlmpnwgdqr.supabase.co'\n});\n\n// Claude Hub health\nconst claudeOk = claudeResult && !claudeResult.error;\nservices.push({\n  name: 'claude-hub',\n  status: claudeOk ? 'healthy' : 'down',\n  url: 'https://claude.l7-partners.com'\n});\n\n// Count recent errors (last 30 min)\nconst recentErrors = (errorsResult?.data || []).filter(e => {\n  const startTime = new Date(e.startedAt);\n  return startTime > thirtyMinAgo;\n});\n\n// Group errors by workflow\nconst errorsByWorkflow = {};\nrecentErrors.forEach(e => {\n  const wfId = e.workflowId;\n  if (!errorsByWorkflow[wfId]) errorsByWorkflow[wfId] = 0;\n  errorsByWorkflow[wfId]++;\n});\n\n// Build alerts\nconst newAlerts = [];\nconst downServices = services.filter(s => s.status === 'down');\n\nif (downServices.length > 0) {\n  newAlerts.push({\n    type: 'service_down',\n    severity: 'critical',\n    message: `Services DOWN: ${downServices.map(s => s.name).join(', ')}`,\n    services: downServices.map(s => s.name)\n  });\n}\n\nif (recentErrors.length > 10) {\n  newAlerts.push({\n    type: 'high_error_rate',\n    severity: 'warning',\n    message: `High error rate: ${recentErrors.length} errors in last 30min`,\n    errorCount: recentErrors.length\n  });\n}\n\n// Check for duplicate/recent alerts (cooldown)\nconst activeAlertTypes = (Array.isArray(activeAlerts) ? activeAlerts : []).map(a => a.alert_type);\nconst alertsToSend = newAlerts.filter(a => !activeAlertTypes.includes(a.type));\n\n// Build overall status\nlet overallStatus = 'healthy';\nlet emoji = '\\u2705';\nif (downServices.length > 0) {\n  overallStatus = 'critical';\n  emoji = '\\ud83d\\udea8';\n} else if (recentErrors.length > 10) {\n  overallStatus = 'warning';\n  emoji = '\\u26a0\\ufe0f';\n}\n\nreturn {\n  checkedAt: now.toISOString(),\n  overallStatus,\n  emoji,\n  services,\n  downServices,\n  recentErrorCount: recentErrors.length,\n  errorsByWorkflow,\n  newAlerts,\n  alertsToSend,\n  shouldAlert: alertsToSend.length > 0,\n  summary: `${emoji} Status: ${overallStatus} | Services: ${services.filter(s => s.status === 'healthy').length}/${services.length} | Errors: ${recentErrors.length} (30min)`\n};"
+      },
+      "id": "analyze",
+      "name": "Analyze Health",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{ "id": "should-alert", "leftValue": "={{ $json.shouldAlert }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }],
+          "combinator": "and"
+        }
+      },
+      "id": "should-alert",
+      "name": "Should Alert?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 400]
+    },
+    {
+      "parameters": {
+        "chatId": "7938188628",
+        "text": "={{ $json.emoji }} *System Monitor Alert*\\n\\n{{ $json.summary }}\\n\\n{{ $json.alertsToSend.map(a => '\\u2022 ' + a.message).join('\\\\n') }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "id": "send-alert",
+      "name": "Send Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [940, 300],
+      "credentials": { "telegramApi": { "id": "wi08dcbxZEEx61tR", "name": "L7 Action Items Bot" } }
+    },
+    {
+      "parameters": {},
+      "id": "no-alert",
+      "name": "No Alert Needed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [940, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/system_health_checks",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Prefer", "value": "return=minimal" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ check_name: 'unified_monitor', service: 'all', status: $('Analyze Health').item.json.overallStatus, error_message: $('Analyze Health').item.json.summary }) }}"
+      },
+      "id": "log-health",
+      "name": "Log to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1160, 400],
+      "credentials": { "supabaseApi": { "id": "HtfdX00X8v7ebxlb", "name": "Supabase L7 Cloud" } }
+    }
+  ],
+  "connections": {
+    "Every 30 Minutes": {
+      "main": [[
+        { "node": "Check n8n", "type": "main", "index": 0 },
+        { "node": "Check Supabase", "type": "main", "index": 0 },
+        { "node": "Check Claude Hub", "type": "main", "index": 0 },
+        { "node": "Get Recent Errors", "type": "main", "index": 0 },
+        { "node": "Get Active Alerts", "type": "main", "index": 0 }
+      ]]
+    },
+    "Check n8n": { "main": [[{ "node": "Analyze Health", "type": "main", "index": 0 }]] },
+    "Check Supabase": { "main": [[{ "node": "Analyze Health", "type": "main", "index": 0 }]] },
+    "Check Claude Hub": { "main": [[{ "node": "Analyze Health", "type": "main", "index": 0 }]] },
+    "Get Recent Errors": { "main": [[{ "node": "Analyze Health", "type": "main", "index": 0 }]] },
+    "Get Active Alerts": { "main": [[{ "node": "Analyze Health", "type": "main", "index": 0 }]] },
+    "Analyze Health": { "main": [[{ "node": "Should Alert?", "type": "main", "index": 0 }]] },
+    "Should Alert?": {
+      "main": [
+        [{ "node": "Send Telegram Alert", "type": "main", "index": 0 }],
+        [{ "node": "No Alert Needed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Telegram Alert": { "main": [[{ "node": "Log to Supabase", "type": "main", "index": 0 }]] },
+    "No Alert Needed": { "main": [[{ "node": "Log to Supabase", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
