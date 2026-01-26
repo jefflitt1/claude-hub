@@ -17,15 +17,18 @@ Consolidates supabase + gdrive-l7 + n8n with caching.
 
 ---
 
-## Mac (Claude Desktop)
-| Server | Purpose |
-|--------|---------|
-| n8n-mcp | Workflow automation (https://n8n.l7-partners.com) |
-| gmail | jglittell@gmail.com |
-| gmail-l7 | jeff@jglcap.com |
-| supabase | L7 Partners (donnmhbwhpjlmpnwgdqr.supabase.co) |
-| gdrive-jgl | Personal Google Drive |
-| gdrive-l7 | L7 Partners Google Drive |
+## Mac (Claude Desktop) - DEPRECATED SECTION
+> **Note:** This section is outdated. See `~/CLAUDE.md` for current MCP server configuration.
+> n8n-mcp has been consolidated into l7-business. Gmail consolidated into unified-comms.
+
+| Server | Purpose | Status |
+|--------|---------|--------|
+| ~~n8n-mcp~~ | ~~Workflow automation~~ | Replaced by l7-business |
+| ~~gmail~~ | ~~jglittell@gmail.com~~ | Replaced by unified-comms |
+| ~~gmail-l7~~ | ~~jeff@jglcap.com~~ | Replaced by unified-comms |
+| ~~supabase~~ | ~~L7 Partners DB~~ | Replaced by l7-business |
+| gdrive-jgl | Personal Google Drive | Active |
+| gdrive-l7 | L7 Partners Google Drive | Active |
 
 ### MCP_DOCKER Gateway
 | Server | Tools | Notes |
