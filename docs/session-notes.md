@@ -1,10 +1,15 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-26 (Session 10)
+**Last Updated:** 2026-01-26 (Session 11)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 11 - 2026-01-26 (MCP Cross-Machine Sync)
+- SSH'd to Mac Studio and added MCP env vars to `~/.zshrc`
+- Both MacBook and Mac Studio now have identical credential setup
+- Verified env vars working on Studio via SSH
 
 ### Session 10 - 2026-01-26 (Self-Healing Monitor + MCP Credential Sharing)
 - Recovered from frozen Claude terminal (API thinking block corruption)
