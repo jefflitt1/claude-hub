@@ -1,10 +1,14 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-26 (Session 7)
+**Last Updated:** 2026-01-26 (Session 9)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 9 - 2026-01-26 (VNC Cleanup)
+- Identified duplicate Mac Studio entry in Screen Sharing connection list
+- Advised removing manual `jeffs-mac-studio:5900` in favor of Automatic (Bonjour/mDNS) entry
 
 ### Session 8 - 2026-01-26 (System Audit & Optimization - Phase 1-4)
 
