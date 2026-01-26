@@ -1,10 +1,18 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-26 (Session 9)
+**Last Updated:** 2026-01-26 (Session 10)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 10 - 2026-01-26 (Self-Healing Monitor Infrastructure)
+- Recovered from frozen Claude terminal (API thinking block corruption)
+- Created `self_healing_attempts` and `self_healing_runbooks` tables in Supabase
+- Updated Self-Healing Monitor workflow to use proper tables for cooldown tracking
+- Added Self-Healing Monitor documentation to `~/CLAUDE.md`
+- Exported workflow to `workflows/self-healing-monitor.json`
+- Decision: Keep hardcoded runbooks (fast), use DB for logging only
 
 ### Session 9 - 2026-01-26 (VNC Cleanup)
 - Identified duplicate Mac Studio entry in Screen Sharing connection list
