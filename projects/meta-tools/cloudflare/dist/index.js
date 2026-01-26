@@ -594,8 +594,10 @@ server.tool("create_access_policy", "Create a policy for a Cloudflare Access app
     includeEmailDomains: z.array(z.string()).optional().describe('Allow email domains (e.g., example.com)'),
     includeEveryone: z.boolean().optional().describe('Allow everyone (use with caution)'),
     includeGroups: z.array(z.string()).optional().describe('Allow Access group IDs'),
+    includeIps: z.array(z.string()).optional().describe('Allow specific IP addresses or CIDR ranges (e.g., 100.67.99.120/32)'),
     excludeEmails: z.array(z.string()).optional().describe('Exclude specific email addresses'),
     excludeEmailDomains: z.array(z.string()).optional().describe('Exclude email domains'),
+    excludeIps: z.array(z.string()).optional().describe('Exclude specific IP addresses or CIDR ranges'),
     requireMfa: z.boolean().optional().describe('Require multi-factor authentication')
 }, async (args) => {
     try {
@@ -622,6 +624,11 @@ server.tool("create_access_policy", "Create a policy for a Cloudflare Access app
                 include.push({ group: { id } });
             });
         }
+        if (args.includeIps?.length) {
+            args.includeIps.forEach(ip => {
+                include.push({ ip: { ip } });
+            });
+        }
         // Build exclude rules
         const exclude = [];
         if (args.excludeEmails?.length) {
@@ -634,13 +641,18 @@ server.tool("create_access_policy", "Create a policy for a Cloudflare Access app
                 exclude.push({ email_domain: { domain } });
             });
         }
+        if (args.excludeIps?.length) {
+            args.excludeIps.forEach(ip => {
+                exclude.push({ ip: { ip } });
+            });
+        }
         // Build require rules
         const require = [];
         if (args.requireMfa) {
             require.push({ mfa: {} });
         }
         if (include.length === 0) {
-            return formatResponse('At least one include rule is required (includeEmails, includeEmailDomains, includeEveryone, or includeGroups)', true);
+            return formatResponse('At least one include rule is required (includeEmails, includeEmailDomains, includeEveryone, includeGroups, or includeIps)', true);
         }
         const body = {
             name: args.name,
@@ -670,6 +682,47 @@ server.tool("create_access_policy", "Create a policy for a Cloudflare Access app
     }
     catch (error) {
         return formatResponse(`Error creating Access policy: ${error.message}`, true);
+    }
+});
+// Tool: Create IP bypass policy (convenience wrapper)
+server.tool("create_ip_bypass_policy", "Create a bypass policy that allows specific IP addresses without authentication (ideal for Tailscale IPs)", {
+    appId: z.string().describe('The Access application ID'),
+    name: z.string().optional().default('Tailscale IP Bypass').describe('Policy name'),
+    ips: z.array(z.string()).describe('IP addresses or CIDR ranges to bypass (e.g., ["100.67.99.120/32", "100.85.201.111/32"])'),
+    precedence: z.number().optional().default(1).describe('Policy precedence (1 = highest priority)')
+}, async (args) => {
+    try {
+        if (!CLOUDFLARE_ACCOUNT_ID) {
+            return formatResponse('CLOUDFLARE_ACCOUNT_ID not configured', true);
+        }
+        if (!args.ips?.length) {
+            return formatResponse('At least one IP address is required', true);
+        }
+        const include = args.ips.map(ip => ({ ip: { ip } }));
+        const body = {
+            name: args.name,
+            decision: 'bypass',
+            precedence: args.precedence,
+            include
+        };
+        const data = await cloudflareApi(`/accounts/${CLOUDFLARE_ACCOUNT_ID}/access/apps/${args.appId}/policies`, {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        return formatResponse({
+            success: true,
+            message: `IP bypass policy created - ${args.ips.length} IP(s) can now access without authentication`,
+            policy: {
+                id: data.result.id,
+                name: data.result.name,
+                decision: data.result.decision,
+                precedence: data.result.precedence,
+                ips: args.ips
+            }
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error creating IP bypass policy: ${error.message}`, true);
     }
 });
 // Tool: Update Access policy
@@ -782,7 +835,7 @@ server.tool("cloudflare_info", "Get Cloudflare MCP server status and configurati
         tools: {
             dns: ['list_dns_records', 'get_dns_record', 'create_dns_record', 'update_dns_record', 'delete_dns_record'],
             tunnels: ['list_tunnels', 'get_tunnel', 'get_tunnel_config', 'create_tunnel', 'delete_tunnel', 'update_tunnel_config', 'cleanup_tunnel_connections'],
-            access: ['list_access_apps', 'get_access_app', 'create_access_app', 'update_access_app', 'delete_access_app', 'list_access_policies', 'create_access_policy', 'update_access_policy', 'delete_access_policy']
+            access: ['list_access_apps', 'get_access_app', 'create_access_app', 'update_access_app', 'delete_access_app', 'list_access_policies', 'create_access_policy', 'create_ip_bypass_policy', 'update_access_policy', 'delete_access_policy']
         }
     });
 });
