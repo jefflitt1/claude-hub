@@ -1,10 +1,28 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-25 (Session 6)
+**Last Updated:** 2026-01-26 (Session 7)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 7 - 2026-01-26 (Cloudflare Access IP Bypass + System Monitor Fix)
+
+**Cloudflare Access IP Bypass:**
+- Added IP bypass support to Cloudflare MCP - new `includeIps` param and `create_ip_bypass_policy` tool
+- Created Tailscale IP bypass policies for n8n.l7-partners.com and claude.l7-partners.com
+- Bypassed IPs: Mac Studio (100.67.99.120), MacBook Pro (100.85.201.111), iPhone (100.102.117.40)
+- Devices on Tailscale now skip email OTP authentication
+
+**Cross-Machine Credential Sharing:**
+- Set up secure credential sharing via `~/.zshrc` (not hardcoded in config)
+- Configured SSH access from MacBook Pro → Mac Studio (jgl@100.67.99.120)
+- Updated both machines to use inherited env vars (`env: {}` in .claude.json)
+- Updated `.env.secrets.template` with Cloudflare vars documentation
+
+**System Monitor Fix:**
+- Fixed Unified System Monitor workflow race condition (n8n workflow pDI59EqR19L3DJ7s)
+- Updated "Analyze Health" node to use safe `$items()` calls with try-catch
 
 ### Session 6 - 2026-01-25 (MacBook Pro Software Audit & Cleanup + Storage/Memory Audit)
 
