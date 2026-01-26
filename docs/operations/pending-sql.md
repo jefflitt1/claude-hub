@@ -398,6 +398,88 @@ FROM claude_skills WHERE name = 'jeff';
 ```
 
 ---
+
+# PENDING: Self-Healing Infrastructure (2026-01-26)
+
+## self_healing_attempts table
+
+Tracks self-healing attempts with cooldown management to prevent repeated attempts for the same issue.
+
+```sql
+-- Create self_healing_attempts table
+CREATE TABLE IF NOT EXISTS self_healing_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  issue_signature TEXT NOT NULL,
+  service_name TEXT,
+  trigger_type TEXT DEFAULT 'auto' CHECK (trigger_type IN ('auto', 'manual', 'webhook')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'success', 'failed', 'skipped')),
+  prompt_sent TEXT,
+  ai_response TEXT,
+  resolution_notes TEXT,
+  error_message TEXT,
+  cooldown_until TIMESTAMPTZ,
+  attempt_count INTEGER DEFAULT 1,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_self_healing_signature ON self_healing_attempts(issue_signature);
+CREATE INDEX idx_self_healing_status ON self_healing_attempts(status);
+CREATE INDEX idx_self_healing_created ON self_healing_attempts(created_at DESC);
+
+-- Enable RLS
+ALTER TABLE self_healing_attempts ENABLE ROW LEVEL SECURITY;
+
+-- Policy for authenticated access
+CREATE POLICY "Enable all for authenticated users" ON self_healing_attempts
+  FOR ALL USING (true);
+
+-- Comments
+COMMENT ON TABLE self_healing_attempts IS 'Tracks self-healing attempts with cooldown management';
+COMMENT ON COLUMN self_healing_attempts.issue_signature IS 'Unique identifier for the type of issue (e.g., n8n_health_check_failed)';
+COMMENT ON COLUMN self_healing_attempts.cooldown_until IS 'Do not retry this issue signature until this time';
+```
+
+## self_healing_runbooks table
+
+Stores known issue patterns and their documented solutions for automatic remediation.
+
+```sql
+-- Create self_healing_runbooks table
+CREATE TABLE IF NOT EXISTS self_healing_runbooks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  issue_pattern TEXT NOT NULL UNIQUE,
+  issue_description TEXT,
+  severity TEXT DEFAULT 'medium' CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+  auto_remediate BOOLEAN DEFAULT false,
+  remediation_script TEXT,
+  remediation_type TEXT DEFAULT 'manual' CHECK (remediation_type IN ('manual', 'script', 'restart', 'notify')),
+  success_count INTEGER DEFAULT 0,
+  failure_count INTEGER DEFAULT 0,
+  last_used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_runbooks_pattern ON self_healing_runbooks(issue_pattern);
+CREATE INDEX idx_runbooks_auto ON self_healing_runbooks(auto_remediate) WHERE auto_remediate = true;
+
+-- Enable RLS
+ALTER TABLE self_healing_runbooks ENABLE ROW LEVEL SECURITY;
+
+-- Policy for authenticated access
+CREATE POLICY "Enable all for authenticated users" ON self_healing_runbooks
+  FOR ALL USING (true);
+
+-- Comments
+COMMENT ON TABLE self_healing_runbooks IS 'Known issue patterns with documented remediation steps';
+COMMENT ON COLUMN self_healing_runbooks.issue_pattern IS 'Regex or exact match pattern for issue signatures';
+COMMENT ON COLUMN self_healing_runbooks.auto_remediate IS 'Whether to automatically apply remediation without AI';
+```
+
+---
 Created: 2026-01-20
 Updated: 2026-01-26
 Run these in Supabase Dashboard → SQL Editor
