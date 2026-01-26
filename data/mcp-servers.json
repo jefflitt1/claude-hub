@@ -4,10 +4,12 @@
     "name": "n8n MCP Server",
     "url": "https://n8n.l7-partners.com",
     "purpose": "Connect Claude Code to n8n workflows",
-    "status": "active",
+    "status": "removed",
+    "removedDate": "2026-01-26",
+    "replacedBy": "l7-business",
     "platforms": {
-      "mac": "connected",
-      "pi": "connected"
+      "mac": "removed",
+      "pi": "removed"
     },
     "capabilities": [
       "List/create/update workflows",
@@ -15,7 +17,8 @@
       "View executions",
       "Search n8n nodes"
     ],
-    "usedBy": ["claude-hub", "l7-partners"]
+    "usedBy": ["claude-hub", "l7-partners"],
+    "note": "REMOVED - Use l7-business for n8n operations"
   },
   {
     "id": "gmail",
@@ -88,10 +91,12 @@
     "name": "Supabase (L7 Partners)",
     "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co",
     "purpose": "Direct database access to L7 Partners Supabase project",
-    "status": "active",
+    "status": "removed",
+    "removedDate": "2026-01-26",
+    "replacedBy": "l7-business",
     "platforms": {
-      "mac": "connected",
-      "pi": "not-supported"
+      "mac": "removed",
+      "pi": "removed"
     },
     "capabilities": [
       "Query database tables",
@@ -100,7 +105,7 @@
       "List storage buckets and files"
     ],
     "usedBy": ["l7-partners", "claude-hub"],
-    "note": "Doesn't work on Pi due to package bug with stdio mode"
+    "note": "REMOVED - Use l7-business for Supabase operations"
   },
   {
     "id": "github",
@@ -257,6 +262,7 @@
     "name": "L7 Business",
     "purpose": "Unified L7 Partners operations with caching",
     "status": "active",
+    "isPrimary": true,
     "platforms": {
       "mac": "connected",
       "pi": "not-tested"
@@ -267,11 +273,14 @@
       "Execute SQL",
       "Trigger n8n workflows",
       "Search Google Drive",
-      "Cache management"
+      "Cache management",
+      "Vector search with embeddings",
+      "Document search"
     ],
     "usedBy": ["l7-partners", "claude-hub"],
     "type": "meta-tool",
     "consolidates": ["supabase-l7", "gdrive-l7", "n8n-mcp"],
-    "note": "1-minute Supabase cache, 5-minute Drive cache, 10-minute n8n cache"
+    "note": "PRIMARY for Supabase/n8n operations. 1-minute Supabase cache, 5-minute Drive cache, 10-minute n8n cache",
+    "consolidationDate": "2026-01-26"
   }
 ]
