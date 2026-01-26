@@ -1,5 +1,63 @@
 # MCP Server Reference
 
+## ⚠️ Credential Sharing Best Practices (IMPORTANT)
+
+**All API-key based MCPs must use environment variable inheritance for cross-machine compatibility.**
+
+### Adding a New MCP Server
+
+1. **Identify credential type:**
+   - API Key → Use env var inheritance (shareable)
+   - OAuth Token → Machine-specific, store in `~/.config/`
+
+2. **For API-key MCPs:**
+   ```bash
+   # Step 1: Add to ~/.zshrc on ALL machines (MacBook + Mac Studio)
+   export NEW_MCP_API_KEY="your-key-here"
+
+   # Step 2: Use empty env in .claude.json
+   "new-mcp": {
+     "type": "stdio",
+     "command": "node",
+     "args": ["/path/to/mcp.js"],
+     "env": {}  // Inherits from shell
+   }
+   ```
+
+3. **Update documentation:**
+   - Add to `~/CLAUDE.md` MCP Credential Sharing table
+   - Add to this file if needed
+
+### Current Shared Env Vars (~/.zshrc)
+
+| Env Var | Used By |
+|---------|---------|
+| `SUPABASE_URL` | l7-business, jeff-agent, session-context |
+| `SUPABASE_SERVICE_ROLE_KEY` | l7-business, jeff-agent, session-context |
+| `N8N_URL` | l7-business |
+| `N8N_API_KEY` | l7-business |
+| `FEEDLY_ACCESS_TOKEN` | feedly |
+
+### Anti-Patterns (Don't Do This)
+
+```json
+// ❌ WRONG - hardcoded secrets, breaks on other machines
+"my-mcp": {
+  "env": {
+    "API_KEY": "sk-1234567890"
+  }
+}
+
+// ❌ WRONG - machine-specific paths without env vars
+"my-mcp": {
+  "env": {
+    "CONFIG_PATH": "/Users/jeff-probis/specific/path"
+  }
+}
+```
+
+---
+
 ## Unified Meta-Tools (Mac - Custom)
 Built for 41% token reduction and improved success rates.
 

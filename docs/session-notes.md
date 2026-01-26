@@ -6,13 +6,18 @@
 
 ## Completed This Session
 
-### Session 10 - 2026-01-26 (Self-Healing Monitor Infrastructure)
+### Session 10 - 2026-01-26 (Self-Healing Monitor + MCP Credential Sharing)
 - Recovered from frozen Claude terminal (API thinking block corruption)
 - Created `self_healing_attempts` and `self_healing_runbooks` tables in Supabase
 - Updated Self-Healing Monitor workflow to use proper tables for cooldown tracking
 - Added Self-Healing Monitor documentation to `~/CLAUDE.md`
 - Exported workflow to `workflows/self-healing-monitor.json`
 - Decision: Keep hardcoded runbooks (fast), use DB for logging only
+- **NEW PATTERN: MCP Credential Sharing via env vars**
+  - API-key MCPs now use `"env": {}` to inherit from shell
+  - Added env vars to `~/.zshrc`: SUPABASE_*, N8N_*, FEEDLY_*
+  - Updated `~/CLAUDE.md` and `docs/operations/mcp-servers.md` with best practices
+  - Same `.claude.json` now works on MacBook and Mac Studio
 
 ### Session 9 - 2026-01-26 (VNC Cleanup)
 - Identified duplicate Mac Studio entry in Screen Sharing connection list
