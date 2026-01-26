@@ -316,6 +316,88 @@ launchctl unload ~/Library/LaunchAgents/com.l7partners.vnc-access.plist
 ```
 
 ---
+
+# PENDING: Skill Registry (2026-01-26)
+
+## skill_project_mappings table
+
+Maps skills to projects with priority, auto-surface, and context triggers for intelligent skill discovery.
+
+```sql
+-- Create skill_project_mappings table
+CREATE TABLE IF NOT EXISTS skill_project_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  skill_id UUID REFERENCES claude_skills(id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL,
+  priority INTEGER DEFAULT 0,
+  auto_surface BOOLEAN DEFAULT false,
+  context_triggers TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(skill_id, project_id)
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_skill_mappings_project ON skill_project_mappings(project_id);
+CREATE INDEX idx_skill_mappings_auto_surface ON skill_project_mappings(auto_surface) WHERE auto_surface = true;
+
+-- Enable RLS
+ALTER TABLE skill_project_mappings ENABLE ROW LEVEL SECURITY;
+
+-- Policy for authenticated access
+CREATE POLICY "Enable all for authenticated users" ON skill_project_mappings
+  FOR ALL USING (true);
+
+-- Comments
+COMMENT ON TABLE skill_project_mappings IS 'Maps skills to projects with priority and auto-surface settings';
+COMMENT ON COLUMN skill_project_mappings.priority IS 'Higher priority skills surface first (0 = normal)';
+COMMENT ON COLUMN skill_project_mappings.auto_surface IS 'Whether to proactively suggest this skill';
+COMMENT ON COLUMN skill_project_mappings.context_triggers IS 'Keywords/phrases that trigger skill suggestion';
+```
+
+### Populate Initial Mappings
+
+After creating the table, run this to populate mappings for all 13 skills:
+
+```sql
+-- Get skill IDs first
+WITH skill_ids AS (
+  SELECT id, name FROM claude_skills
+)
+-- Insert base skills (all projects)
+INSERT INTO skill_project_mappings (skill_id, project_id, priority, auto_surface, context_triggers)
+SELECT
+  s.id,
+  p.project,
+  CASE
+    WHEN s.name IN ('recap', 'done') THEN 10
+    WHEN s.name = 'consult' THEN 5
+    ELSE 0
+  END as priority,
+  CASE WHEN s.name IN ('workflow-coach', 'context-loader') THEN true ELSE false END as auto_surface,
+  CASE
+    WHEN s.name = 'recap' THEN ARRAY['end of session', 'what did we do', 'save progress']
+    WHEN s.name = 'done' THEN ARRAY['exit', 'finished', 'end session']
+    WHEN s.name = 'consult' THEN ARRAY['second opinion', 'other model', 'gemini', 'codex']
+    WHEN s.name = 'reading' THEN ARRAY['articles', 'feedly', 'news']
+    ELSE ARRAY[]::TEXT[]
+  END as context_triggers
+FROM skill_ids s
+CROSS JOIN (VALUES ('l7-partners'), ('jgl-capital'), ('claude-hub'), ('personal')) AS p(project)
+WHERE s.name IN ('recap', 'done', 'context-loader', 'consult', 'reading', 'workflow-coach');
+
+-- Insert L7-specific skills
+INSERT INTO skill_project_mappings (skill_id, project_id, priority, auto_surface, context_triggers)
+SELECT id, 'l7-partners', 5, true, ARRAY['deal', 'property', 'underwriting', 'investment']
+FROM claude_skills WHERE name = 'deal-analysis';
+
+-- Insert personal skills
+INSERT INTO skill_project_mappings (skill_id, project_id, priority, auto_surface, context_triggers)
+SELECT id, 'personal', 10, true, ARRAY['email', 'task', 'calendar', 'family']
+FROM claude_skills WHERE name = 'jeff';
+```
+
+---
 Created: 2026-01-20
-Updated: 2026-01-21
+Updated: 2026-01-26
 Run these in Supabase Dashboard → SQL Editor
