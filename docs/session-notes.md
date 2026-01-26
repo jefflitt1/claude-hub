@@ -6,6 +6,41 @@
 
 ## Completed This Session
 
+### Session 8 - 2026-01-26 (System Audit & Optimization - Phase 1-4)
+
+**MCP Server Consolidation (Phase 1):**
+- Removed redundant supabase-l7 from project-level mcpServers in ~/.claude.json
+- Removed redundant n8n-mcp from global mcpServers in ~/.claude.json
+- Updated mcp-servers.json inventory with removal status and consolidationDate
+- Target: 43% reduction in active MCP servers (14+ → 8)
+
+**Agent Generalization (Phase 2):**
+- Renamed l7-analyst → property-analyst with PROJECT_ID context variable
+- Renamed trading-researcher → market-researcher with DATA_SOURCE and PROJECT_ID context variables
+- Agents now support multi-project context (l7-partners, jgl-capital, claude-hub, personal)
+- Data sources configurable: feedly-markets, feedly-cre, feedly-learn, web-only
+
+**Skill Registry (Phase 3):**
+- Created skill_project_mappings table SQL (fixed UUID→TEXT type mismatch)
+- Populated initial 13 skill mappings with priority, auto_surface, and context_triggers
+- SQL documented in docs/operations/pending-sql.md for Supabase execution
+
+**Infrastructure Documentation (Phase 4):**
+- Added device roles section to ~/CLAUDE.md (Mac Studio, MacBook, Pi responsibilities)
+- Added backup & resilience strategy to ~/CLAUDE.md
+- Updated CLAUDE.md agent names (property-analyst, market-researcher)
+
+**Backup & Resilience (Phase 5):**
+- Created Mac Studio Daily Backup n8n workflow (ID: iGPSOZde0PaSLNsO)
+- Configured SSH credentials for Pi→Mac Studio connection (password + key auth)
+- Used local network IP (192.168.5.38) instead of Tailscale for Docker networking
+- Fixed Telegram notification to use correct bot token and chat_id (7938188628)
+- Workflow runs daily at 4 AM: SSH → compress logs → Telegram notification
+
+**Cloudflare Access Updates:**
+- Added Tailscale IP bypass (100.64.0.0/10) to existing Cloudflare Access policies
+- Policies use OR logic - combined email + IP in single policy
+
 ### Session 7 - 2026-01-26 (Cloudflare Access IP Bypass + System Monitor Fix)
 
 **Cloudflare Access IP Bypass:**
@@ -23,6 +58,12 @@
 **System Monitor Fix:**
 - Fixed Unified System Monitor workflow race condition (n8n workflow pDI59EqR19L3DJ7s)
 - Updated "Analyze Health" node to use safe `$items()` calls with try-catch
+
+**Cloudflare Service Token (for automation):**
+- Created "Claude Code Automation" service token (never expires - 100 years)
+- Added non_identity policies to n8n.l7-partners.com and claude.l7-partners.com
+- Saved credentials to ~/.zshrc on both MacBook Pro and Mac Studio
+- Usage: `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` headers bypass email OTP
 
 ### Session 6 - 2026-01-25 (MacBook Pro Software Audit & Cleanup + Storage/Memory Audit)
 
@@ -373,10 +414,12 @@
 7. **Configure TradeStation credentials** - Need real API creds for MCP
 8. **Update Cloudflare DNS** - Point claude-api.l7-partners.com to Mac Studio after verification
 9. ~~**Delete dead Cloudflare CNAMEs**~~ - **DONE** - Cleaned up VNC, Kibana DNS records
-10. **Add Cloudflare Access to ollama.l7-partners.com** - Protect LLM API endpoint
-11. **Update mac-studio local tunnel config** - Add ollama route (localhost:11434)
-9. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
-10. ~~**Hailo-10H NPU LLM Setup**~~ - **COMPLETE** - 5 models on Pi 5 for n8n workflows (http://192.168.4.147:8000)
+10. ~~**Add Cloudflare Access to ollama.l7-partners.com**~~ - **DONE** - Used existing chat.l7-partners.com Access app
+11. ~~**MCP Server Consolidation**~~ - **DONE** - Removed supabase-l7, n8n-mcp (43% reduction target)
+12. ~~**Agent Generalization**~~ - **DONE** - property-analyst + market-researcher with context variables
+13. ~~**Mac Studio Daily Backup workflow**~~ - **DONE** - n8n workflow iGPSOZde0PaSLNsO runs daily 4 AM
+14. ~~**Multi-Model Integration**~~ - **COMPLETE** - Ollama with DeepSeek R1 14B, Llama 3.2 on Mac Studio
+15. ~~**Hailo-10H NPU LLM Setup**~~ - **COMPLETE** - 5 models on Pi 5 for n8n workflows (http://192.168.4.147:8000)
 
 ### Medium Priority
 
