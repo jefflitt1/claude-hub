@@ -1,10 +1,31 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-26 (Session 12)
+**Last Updated:** 2026-01-27 (Session 14)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 14 - 2026-01-27 (Pi Infrastructure Cleanup + Supabase Backup)
+- Removed 16 Docker containers from Pi: 13 Supabase + Elasticsearch + Kibana + Weaviate
+- Removed Metabase (unused since Sep 2025, freed 886MB disk + 512MB-1GB RAM)
+- Pi: 24 containers → 7, swap 100% → 7%, RAM 6GB → 2.5GB
+- Cleaned 3 stale Pi cron entries
+- Upgraded Uptime Kuma to v2 with Watchtower auto-updates
+- Set up 13 Uptime Kuma monitors with Telegram notifications (including cloud Supabase)
+- Removed dead Cloudflare tunnel route (supabase.l7-partners.com)
+- Deleted 3 dead DNS records (supabase, claude-api, ollama)
+- Set up nightly Supabase cloud backup on Mac Studio (tested: 244K compressed)
+- Deployed SUPABASE_ACCESS_TOKEN to Mac Studio keychain + .zshrc
+- Backup cron: 3:30 AM daily at /Users/jgl/backups/supabase/backup-supabase-cloud.sh
+- Modified n8n Mac Studio backup workflow for failure-only notifications
+- Audited remaining Pi services: Redis (keep - n8n dependency), Beszel (keep - lightweight), Cloudflared (fixed routes)
+- Confirmed admin.l7-partners.com already deployed (Lovable React SPA in l7partners-rewrite)
+
+### Session 13 - 2026-01-27 (Cloudflare Access IP Bypass)
+- Audited Cloudflare Access policies for claude.l7-partners.com
+- Fixed IP bypass policy precedence and added home public IPs (IPv4 + IPv6)
+- Created reusable IP Bypass policy applied across all apps
 
 ### Session 12 - 2026-01-26 (n8n Gmail Attribution Audit)
 - Audited all 37 active n8n workflows for Gmail nodes with "sent from n8n" attribution tag

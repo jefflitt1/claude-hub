@@ -1,0 +1,402 @@
+{
+  "name": "Email Classification Pipeline",
+  "description": "Polls Gmail via Supabase REST, classifies with DeepSeek R1 on Mac Studio Ollama, stores results in Supabase, creates action proposals for actionable emails.",
+  "active": false,
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 200],
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "minutes", "minutesInterval": 5}]
+        }
+      }
+    },
+    {
+      "id": "webhook-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 400],
+      "webhookId": "email-classify",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-classify",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-emails",
+      "name": "Fetch Gmail (Personal)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [250, 200],
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 10,
+        "filters": {
+          "labelIds": ["INBOX"],
+          "q": "is:unread newer_than:1h"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7zuVIkkwAAoP6dOr",
+          "name": "Gmail JGL"
+        }
+      }
+    },
+    {
+      "id": "fetch-emails-l7",
+      "name": "Fetch Gmail (L7)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [250, 400],
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 10,
+        "filters": {
+          "labelIds": ["INBOX"],
+          "q": "is:unread newer_than:1h"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zEfb82AfSeFgbzpm",
+          "name": "Gmail L7"
+        }
+      }
+    },
+    {
+      "id": "merge-emails",
+      "name": "Merge Emails",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [500, 300],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "check-already-classified",
+      "name": "Filter Already Classified",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "parameters": {
+        "jsCode": "// Filter out emails already classified in Supabase\nconst items = $input.all();\nconst SUPABASE_URL = 'https://donnmhbwhpjlmpnwgdqr.supabase.co';\n// Note: API key should be set as n8n credential or environment variable\nconst API_KEY = $env.SUPABASE_SERVICE_ROLE_KEY || '';\n\nconst results = [];\n\nfor (const item of items) {\n  const threadId = item.json.threadId || item.json.id;\n  if (!threadId) continue;\n  \n  // Check if this thread is already tracked and classified\n  try {\n    const response = await fetch(\n      `${SUPABASE_URL}/rest/v1/jeff_email_threads?gmail_thread_id=eq.${threadId}&classification=not.is.null&select=id`,\n      {\n        headers: {\n          'apikey': API_KEY,\n          'Authorization': `Bearer ${API_KEY}`\n        }\n      }\n    );\n    const existing = await response.json();\n    if (!existing || existing.length === 0) {\n      results.push(item);\n    }\n  } catch (e) {\n    // If check fails, include the email anyway\n    results.push(item);\n  }\n}\n\nif (results.length === 0) {\n  return [{ json: { skip: true, reason: 'All emails already classified' } }];\n}\n\nreturn results;"
+      }
+    },
+    {
+      "id": "check-skip",
+      "name": "Has Emails?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "notEquals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "prepare-for-classification",
+      "name": "Prepare Email Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 200],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// Extract key fields for classification\nconst from = item.from?.text || item.from || 'Unknown';\nconst subject = item.subject || '(no subject)';\nconst snippet = (item.snippet || item.textPlain || '').substring(0, 500);\nconst threadId = item.threadId || item.id;\nconst messageId = item.id || item.messageId;\nconst account = item._account || 'personal'; // Set by credential context\nconst date = item.date || new Date().toISOString();\n\n// Extract sender email\nconst emailMatch = from.match(/<([^>]+)>/) || [null, from];\nconst senderEmail = emailMatch[1] || from;\nconst senderName = from.replace(/<[^>]+>/, '').trim();\n\nreturn [{\n  json: {\n    threadId,\n    messageId,\n    from: from,\n    senderEmail,\n    senderName,\n    subject,\n    snippet,\n    account,\n    date,\n    // Build classification prompt (10 categories)\n    classificationPrompt: `Analyze this email and classify it. Output ONLY valid JSON, no other text.\n\nFrom: ${senderName} <${senderEmail}>\nSubject: ${subject}\nBody preview: ${snippet}\n\nCategories:\n- spam: Unsolicited junk, phishing\n- marketing: Promotions, sales, newsletters (non-intel)\n- orders: Purchase confirmations, shipping, receipts (Amazon, retailers, TradeStation confirms)\n- intel_cre: Commercial real estate news, deal alerts, market reports (CoStar, Bisnow, GlobeSt)\n- intel_markets: Financial/trading news, market analysis (Bloomberg, WSJ Markets, Morning Brew)\n- intel_general: Tech, business, general knowledge newsletters (HBR, Stratechery, TLDR)\n- local: Community, schools, sports, church, local news (Darien-specific)\n- fyi: Informational but not intel - internal updates, notifications, service alerts\n- needs_response: Requires a reply from me (personal email, question, request)\n- urgent: Time-sensitive, requires immediate attention (deadlines, emergencies)\n\nRespond with this exact JSON structure:\n{\"classification\":\"<one of above>\",\"confidence\":0.0,\"suggested_action\":\"auto_delete|auto_archive|archive_and_index|tag_status|read|reply|create_task|create_proposal|suggest_draft|notify|escalate\",\"reasoning\":\"brief explanation\"}`\n  }\n}];"
+      }
+    },
+    {
+      "id": "apply-rules-first",
+      "name": "Apply Email Rules",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 200],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/rpc/apply_email_rules",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"},
+            {"name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_thread_id: null, p_sender_email: $json.senderEmail, p_subject: $json.subject, p_account: $json.account }) }}",
+        "options": { "timeout": 5000 }
+      }
+    },
+    {
+      "id": "check-rule-match",
+      "name": "Rule Matched?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 200],
+      "parameters": {
+        "jsCode": "const ruleResult = $input.first().json;\nconst emailData = $('Prepare Email Data').item.json;\n\n// apply_email_rules returns {matched: true/false, classification, action, rule_name, ...}\nif (ruleResult && ruleResult.matched) {\n  return [{\n    json: {\n      ...emailData,\n      classifiedByRule: true,\n      classification: ruleResult.classification,\n      confidence: ruleResult.confidence || 0.95,\n      suggested_action: ruleResult.action,\n      reasoning: `Matched rule: ${ruleResult.rule_name}`,\n      model: 'rule-based',\n      ruleId: ruleResult.rule_id\n    }\n  }];\n}\n\n// No rule match - needs LLM classification\nreturn [{\n  json: {\n    ...emailData,\n    classifiedByRule: false\n  }\n}];"
+      }
+    },
+    {
+      "id": "route-classification",
+      "name": "Rule or LLM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1700, 200],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.classifiedByRule }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "call-ollama",
+      "name": "Classify with DeepSeek R1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1900, 300],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "http://100.67.99.120:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'deepseek-r1:14b', prompt: $json.classificationPrompt, stream: false, options: { temperature: 0.1, num_predict: 200 } }) }}",
+        "options": { "timeout": 30000 }
+      }
+    },
+    {
+      "id": "parse-llm-response",
+      "name": "Parse LLM Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2100, 300],
+      "parameters": {
+        "jsCode": "const ollamaResult = $input.first().json;\nconst emailData = $('Rule or LLM?').item.json;\n\ntry {\n  const response = ollamaResult.response || '';\n  \n  // Extract JSON from response (may contain thinking/explanation text)\n  const jsonMatch = response.match(/\\{[\\s\\S]*?\"classification\"[\\s\\S]*?\\}/);\n  \n  if (!jsonMatch) {\n    throw new Error('No JSON found in response: ' + response.substring(0, 200));\n  }\n  \n  const parsed = JSON.parse(jsonMatch[0]);\n  \n  // Validate classification (10 categories)\n  const validClassifications = ['spam', 'marketing', 'orders', 'intel_cre', 'intel_markets', 'intel_general', 'local', 'fyi', 'needs_response', 'urgent'];\n  const validActions = ['auto_delete', 'auto_archive', 'archive_and_index', 'tag_status', 'read', 'reply', 'create_task', 'create_proposal', 'suggest_draft', 'notify', 'escalate'];\n  \n  const classification = validClassifications.includes(parsed.classification) \n    ? parsed.classification \n    : 'fyi';\n  const action = validActions.includes(parsed.suggested_action)\n    ? parsed.suggested_action\n    : 'read';\n  const confidence = typeof parsed.confidence === 'number'\n    ? Math.max(0, Math.min(1, parsed.confidence))\n    : 0.5;\n  \n  return [{\n    json: {\n      ...emailData,\n      classification,\n      confidence,\n      suggested_action: action,\n      reasoning: parsed.reasoning || '',\n      model: 'deepseek-r1:14b',\n      inference_time_ms: ollamaResult.total_duration \n        ? Math.round(ollamaResult.total_duration / 1000000) \n        : null\n    }\n  }];\n} catch (error) {\n  // Fallback classification on parse failure\n  return [{\n    json: {\n      ...emailData,\n      classification: 'fyi',\n      confidence: 0.3,\n      suggested_action: 'read',\n      reasoning: 'LLM parse error: ' + error.message,\n      model: 'deepseek-r1:14b-fallback',\n      inference_time_ms: null\n    }\n  }];\n}"
+      }
+    },
+    {
+      "id": "merge-classified",
+      "name": "Merge Classified",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [2300, 200],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "upsert-thread",
+      "name": "Upsert Thread to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2500, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_email_threads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"},
+            {"name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"},
+            {"name": "Prefer", "value": "resolution=merge-duplicates,return=representation"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ gmail_thread_id: $json.threadId, account: $json.account, subject: $json.subject, from_email: $json.senderEmail, from_name: $json.senderName, snippet: $json.snippet, classification: $json.classification, classification_confidence: $json.confidence, suggested_action: $json.suggested_action, classified_by: $json.model, classified_at: new Date().toISOString(), priority: $json.classification === 'urgent' ? 'urgent' : ['needs_response', 'intel_cre'].includes($json.classification) ? 'high' : ['intel_markets'].includes($json.classification) ? 'normal' : 'low', needs_response: ['needs_response', 'urgent'].includes($json.classification), status: 'active', last_message_at: $json.date }) }}",
+        "options": { "timeout": 10000 }
+      }
+    },
+    {
+      "id": "check-actionable",
+      "name": "Needs Action?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2700, 200],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.classification }}",
+              "rightValue": "needs_response",
+              "operator": { "type": "string", "operation": "equals" }
+            },
+            {
+              "leftValue": "={{ $json.classification }}",
+              "rightValue": "urgent",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "or"
+        }
+      }
+    },
+    {
+      "id": "generate-draft",
+      "name": "Generate Draft Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2900, 100],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "http://100.67.99.120:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'deepseek-r1:32b', prompt: 'Draft a brief, professional email reply.\\n\\nOriginal email:\\nFrom: ' + $json.senderName + ' <' + $json.senderEmail + '>\\nSubject: ' + $json.subject + '\\nBody: ' + $json.snippet + '\\n\\nWrite ONLY the reply body (no subject, no greeting, no signature - those are added automatically). Keep it concise (2-4 sentences). Be professional but not overly formal. Jeff\\'s tone is direct and friendly.', stream: false, options: { temperature: 0.7, num_predict: 300 } }) }}",
+        "options": { "timeout": 60000 }
+      }
+    },
+    {
+      "id": "create-proposal",
+      "name": "Create Action Proposal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3100, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/rpc/create_proposal_from_classification",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"},
+            {"name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}"},
+            {"name": "Content-Type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const upsertResult = $('Upsert Thread to Supabase').item.json; const threadId = Array.isArray(upsertResult) ? upsertResult[0]?.id : upsertResult?.id; const draftResponse = $json.response || ''; return JSON.stringify({ p_thread_id: threadId, p_classification: $('Merge Classified').item.json.classification, p_confidence: $('Merge Classified').item.json.confidence, p_draft_content: { subject: 'Re: ' + $('Merge Classified').item.json.subject, body: draftResponse, tone: 'professional' }, p_model: 'deepseek-r1:32b' }); })() }}",
+        "options": { "timeout": 10000 }
+      }
+    },
+    {
+      "id": "log-result",
+      "name": "Log Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3300, 200],
+      "parameters": {
+        "jsCode": "const classifiedData = $('Merge Classified').item.json;\n\nreturn [{\n  json: {\n    status: 'classified',\n    threadId: classifiedData.threadId,\n    from: classifiedData.senderEmail,\n    subject: classifiedData.subject,\n    classification: classifiedData.classification,\n    confidence: classifiedData.confidence,\n    action: classifiedData.suggested_action,\n    model: classifiedData.model,\n    hasProposal: ['needs_response', 'urgent'].includes(classifiedData.classification),\n    isIntel: ['intel_cre', 'intel_markets', 'intel_general'].includes(classifiedData.classification)\n  }\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [[
+        {"node": "Fetch Gmail (Personal)", "type": "main", "index": 0},
+        {"node": "Fetch Gmail (L7)", "type": "main", "index": 0}
+      ]]
+    },
+    "Manual Trigger": {
+      "main": [[
+        {"node": "Fetch Gmail (Personal)", "type": "main", "index": 0},
+        {"node": "Fetch Gmail (L7)", "type": "main", "index": 0}
+      ]]
+    },
+    "Fetch Gmail (Personal)": {
+      "main": [[{"node": "Merge Emails", "type": "main", "index": 0}]]
+    },
+    "Fetch Gmail (L7)": {
+      "main": [[{"node": "Merge Emails", "type": "main", "index": 1}]]
+    },
+    "Merge Emails": {
+      "main": [[{"node": "Filter Already Classified", "type": "main", "index": 0}]]
+    },
+    "Filter Already Classified": {
+      "main": [[{"node": "Has Emails?", "type": "main", "index": 0}]]
+    },
+    "Has Emails?": {
+      "main": [
+        [{"node": "Prepare Email Data", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "Prepare Email Data": {
+      "main": [[{"node": "Apply Email Rules", "type": "main", "index": 0}]]
+    },
+    "Apply Email Rules": {
+      "main": [[{"node": "Rule Matched?", "type": "main", "index": 0}]]
+    },
+    "Rule Matched?": {
+      "main": [[{"node": "Rule or LLM?", "type": "main", "index": 0}]]
+    },
+    "Rule or LLM?": {
+      "main": [
+        [{"node": "Merge Classified", "type": "main", "index": 0}],
+        [{"node": "Classify with DeepSeek R1", "type": "main", "index": 0}]
+      ]
+    },
+    "Classify with DeepSeek R1": {
+      "main": [[{"node": "Parse LLM Classification", "type": "main", "index": 0}]]
+    },
+    "Parse LLM Classification": {
+      "main": [[{"node": "Merge Classified", "type": "main", "index": 1}]]
+    },
+    "Merge Classified": {
+      "main": [[{"node": "Upsert Thread to Supabase", "type": "main", "index": 0}]]
+    },
+    "Upsert Thread to Supabase": {
+      "main": [[{"node": "Needs Action?", "type": "main", "index": 0}]]
+    },
+    "Needs Action?": {
+      "main": [
+        [{"node": "Generate Draft Reply", "type": "main", "index": 0}],
+        [{"node": "Log Classification", "type": "main", "index": 0}]
+      ]
+    },
+    "Generate Draft Reply": {
+      "main": [[{"node": "Create Action Proposal", "type": "main", "index": 0}]]
+    },
+    "Create Action Proposal": {
+      "main": [[{"node": "Log Classification", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "meta": {
+    "notes": "Email Classification Pipeline - Polls Gmail every 5 min, classifies with rule-based (fast) or DeepSeek R1 on Mac Studio Ollama (LLM), stores results in Supabase jeff_email_threads, creates action proposals for emails needing response.",
+    "ollama_endpoint": "http://100.67.99.120:11434",
+    "models_used": ["deepseek-r1:14b (classification)", "deepseek-r1:32b (draft generation)"],
+    "tables_used": ["jeff_email_threads", "jeff_email_classifications", "jeff_action_proposals", "jeff_email_rules"],
+    "supabase_functions": ["apply_email_rules", "create_proposal_from_classification"]
+  }
+}
