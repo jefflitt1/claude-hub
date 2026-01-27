@@ -1,10 +1,24 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 15)
+**Last Updated:** 2026-01-27 (Session 16)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 16 - 2026-01-27 (Pi Docker Cleanup + Supabase Backup + 4TB Drive + Tunnel Consolidation)
+- Removed 16 Docker containers from Pi (13 Supabase + ES + Kibana), then Weaviate + Metabase
+- Pi: 24→7 containers, swap 100%→7%, RAM 6GB→2.5GB
+- Cleaned 3 stale Pi cron entries, audited remaining services (Redis keep, Beszel keep)
+- Removed dead Cloudflare tunnel routes + DNS records (supabase, metabase, claude-api, ollama)
+- Set up nightly Supabase cloud backup on Mac Studio (dual-location: SSD 30-day + 4TB 90-day)
+- Fixed backup script issues (line endings, zshrc sourcing, --workdir flag)
+- Extracted Supabase access token from macOS keychain, deployed to Mac Studio
+- Recreated 13 Uptime Kuma monitors after accidental wipe
+- Set up 4TB external drive: backups + 28GB Ollama model archive
+- Activated n8n Critical Workflow Monitor (2h) + Daily Health Report (8 AM)
+- Consolidated Mac Studio Cloudflare tunnels from 2→1 (7 routes)
+- Cleaned Metabase remnants (tunnel route, DNS, Kuma monitor)
 
 ### Session 15 - 2026-01-27 (10-Category Email Classification System)
 - Implemented 10-category email classification (was 5): spam, marketing, orders, intel_cre, intel_markets, intel_general, local, fyi, needs_response, urgent
