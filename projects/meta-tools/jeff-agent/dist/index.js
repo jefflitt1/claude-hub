@@ -2733,7 +2733,7 @@ server.tool("jeff_quick", "Get only urgent/critical items for quick review", {},
 // EMAIL CLASSIFICATION & ACTION PROPOSAL TOOLS
 // ============================================================================
 // Ollama endpoint for local LLM inference (Mac Studio via Tailscale)
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://mac-studio.tail8e9f4b.ts.net:11434';
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://100.67.99.120:11434';
 server.tool("jeff_classify_email", "Classify an email using local LLM (DeepSeek R1) or rule-based matching. Returns classification, confidence, and suggested action.", {
     thread_id: z.string().optional().describe('Existing jeff_email_threads UUID to re-classify'),
     gmail_thread_id: z.string().optional().describe('Gmail thread ID (creates new thread if needed)'),

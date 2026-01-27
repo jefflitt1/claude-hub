@@ -3255,7 +3255,7 @@ server.tool(
 // ============================================================================
 
 // Ollama endpoint for local LLM inference (Mac Studio via Tailscale)
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://mac-studio.tail8e9f4b.ts.net:11434';
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://100.67.99.120:11434';
 
 server.tool(
   "jeff_classify_email",
