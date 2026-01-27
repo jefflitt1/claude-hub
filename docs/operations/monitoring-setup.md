@@ -257,6 +257,30 @@ curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, acti
 - **Default:** Applied to all monitors
 - **Test:** Verified working 2026-01-27
 
+## Dashboard Integration
+
+### Supabase Tables
+| Table | Purpose | Sync Source |
+|-------|---------|-------------|
+| `beszel_systems` | Server hardware metrics (CPU, RAM, disk) | Beszel Hub API |
+| `uptime_kuma_monitors` | HTTP endpoint uptime and latency | Kuma Status Page API |
+
+**SQL Migration:** `docs/operations/monitoring-tables.sql`
+**Run in:** Supabase SQL Editor
+
+### n8n Sync Workflow
+- **Name:** `Monitoring Sync (Beszel + Kuma → Supabase)`
+- **Interval:** Every 5 minutes
+- **Import from:** `workflows/monitoring-sync.json`
+- **Flow:** Schedule → Fetch Beszel API + Kuma public API → Transform → Upsert to Supabase
+- **Beszel auth:** localhost:8090 (same Pi as n8n)
+- **Kuma API:** localhost:3001 (same Pi as n8n) — public status page endpoints, no auth needed
+
+### Dashboard Component
+- **Lovable Prompt:** `prompts/lovable-monitoring-section.md`
+- **Component:** `src/components/sections/MonitoringSection.tsx` (to be created)
+- **Data:** React Query polling `beszel_systems` and `uptime_kuma_monitors` every 30s
+
 ## Alerting Flow
 
 1. **Beszel** → Telegram (system metrics: CPU, RAM, disk threshold alerts)
