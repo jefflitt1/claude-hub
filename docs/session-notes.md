@@ -16,6 +16,8 @@
 - Ran both migrations in Supabase (3 fix iterations for column name mismatches)
 - Updated n8n workflow db50ZNo16dTNcfAY via API (200 OK)
 - Published Google Cloud OAuth app (N8N1 project) + authenticated L7 Gmail (jeff@jglcap.com)
+- Committed jgl.ts types to l7partners-rewrite repo (syncs to Lovable)
+- Activated n8n Email Classification Pipeline (now running on 5-min schedule)
 
 ### Session 14 - 2026-01-27 (Pi Infrastructure Cleanup + Supabase Backup)
 - Removed 16 Docker containers from Pi: 13 Supabase + Elasticsearch + Kibana + Weaviate
