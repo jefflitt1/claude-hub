@@ -1,10 +1,21 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 14)
+**Last Updated:** 2026-01-27 (Session 15)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 15 - 2026-01-27 (10-Category Email Classification System)
+- Implemented 10-category email classification (was 5): spam, marketing, orders, intel_cre, intel_markets, intel_general, local, fyi, needs_response, urgent
+- Rewrote migration 004 with updated CHECK constraints, priority mappings, 3 Supabase functions
+- Created migration 005: added classification columns to jeff_email_rules + seeded 130+ sender rules from Gmail filter analysis
+- Updated jeff-agent index.ts: new LLM prompt, valid arrays, rule-based fast path
+- Updated n8n workflow (all code nodes, prompt, rule parsing) + fixed urgent bug in "Needs Action?" node
+- Updated frontend TypeScript types for 10 categories
+- Ran both migrations in Supabase (3 fix iterations for column name mismatches)
+- Updated n8n workflow db50ZNo16dTNcfAY via API (200 OK)
+- Published Google Cloud OAuth app (N8N1 project) + authenticated L7 Gmail (jeff@jglcap.com)
 
 ### Session 14 - 2026-01-27 (Pi Infrastructure Cleanup + Supabase Backup)
 - Removed 16 Docker containers from Pi: 13 Supabase + Elasticsearch + Kibana + Weaviate
