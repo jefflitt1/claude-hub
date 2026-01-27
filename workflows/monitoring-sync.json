@@ -1,0 +1,515 @@
+{
+  "name": "Monitoring Sync (Beszel + Kuma \u2192 Supabase)",
+  "nodes": [
+    {
+      "id": "schedule-trigger",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "webhook-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        500
+      ],
+      "webhookId": "monitoring-sync",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "monitoring-sync",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "beszel-auth",
+      "name": "Beszel Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        250,
+        200
+      ],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "POST",
+        "url": "http://beszel:8090/api/collections/users/auth-with-password",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"identity\":\"jglittell@gmail.com\",\"password\":\"hiRdif-2kitti-baddyn\"}"
+      }
+    },
+    {
+      "id": "beszel-systems",
+      "name": "Get Beszel Systems",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        200
+      ],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "GET",
+        "url": "http://beszel:8090/api/collections/systems/records",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "kuma-status",
+      "name": "Get Kuma Status Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        250,
+        400
+      ],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "GET",
+        "url": "http://uptime-kuma:3001/api/status-page/l7",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "kuma-heartbeat",
+      "name": "Get Kuma Heartbeats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        250,
+        550
+      ],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "GET",
+        "url": "http://uptime-kuma:3001/api/status-page/heartbeat/l7",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "merge-kuma",
+      "name": "Merge Kuma Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        500,
+        475
+      ],
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "transform-beszel",
+      "name": "Transform Beszel Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        750,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst items = response.items || [];\n\nif (!items.length) {\n  // Beszel auth or fetch failed\n  return [{ json: { error: 'No Beszel data', skipped: true } }];\n}\n\nreturn items.map(system => {\n  const info = system.info || {};\n  return {\n    json: {\n      id: system.id,\n      name: system.name,\n      host: system.host,\n      port: system.port,\n      status: system.status,\n      cpu_percent: info.cpu || 0,\n      memory_percent: info.mp || 0,\n      disk_percent: info.dp || 0,\n      cpu_threads: info.t || 0,\n      uptime_seconds: info.u || 0,\n      agent_version: info.v || 'unknown',\n      info: info,\n      beszel_created_at: system.created,\n      beszel_updated_at: system.updated,\n      updated_at: new Date().toISOString()\n    }\n  };\n});"
+      }
+    },
+    {
+      "id": "transform-kuma",
+      "name": "Transform Kuma Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        750,
+        475
+      ],
+      "parameters": {
+        "jsCode": "// Both Kuma requests arrive via Merge node\n// Input 0 = status page, Input 1 = heartbeats\nconst allItems = $input.all();\n\n// Find which item has publicGroupList (status page) vs heartbeatList (heartbeats)\nlet statusPageData = null;\nlet heartbeatData = null;\n\nfor (const item of allItems) {\n  const json = item.json;\n  if (json.publicGroupList) statusPageData = json;\n  if (json.heartbeatList) heartbeatData = json;\n}\n\nif (!statusPageData) {\n  return [{ json: { error: 'No Kuma status page data', skipped: true } }];\n}\n\nconst monitors = [];\nconst groups = statusPageData.publicGroupList || [];\n\nfor (const group of groups) {\n  for (const monitor of (group.monitorList || [])) {\n    const monitorId = monitor.id;\n    const heartbeats = heartbeatData ? (heartbeatData.heartbeatList || {})[monitorId] || [] : [];\n    const latestHb = heartbeats.length > 0 ? heartbeats[heartbeats.length - 1] : {};\n    \n    const uptime24h = heartbeatData ? (heartbeatData.uptimeList || {})[monitorId + '_24'] : null;\n    \n    monitors.push({\n      json: {\n        id: monitorId,\n        name: monitor.name,\n        type: monitor.type || 'http',\n        group_name: group.name,\n        status: latestHb.status || 0,\n        ping_ms: latestHb.ping || null,\n        uptime_24h: uptime24h != null ? uptime24h : null,\n        last_message: latestHb.msg || null,\n        last_heartbeat_at: latestHb.time ? new Date(latestHb.time + 'Z').toISOString() : null,\n        is_paused: false,\n        updated_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nif (monitors.length === 0) {\n  return [{ json: { error: 'No monitors found', skipped: true } }];\n}\n\nreturn monitors;"
+      }
+    },
+    {
+      "id": "check-beszel-skip",
+      "name": "Check Beszel Skip",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "beszel-skip",
+              "leftValue": "={{ $json.skipped }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notTrue"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "check-kuma-skip",
+      "name": "Check Kuma Skip",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        475
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "kuma-skip",
+              "leftValue": "={{ $json.skipped }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notTrue"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "upsert-beszel",
+      "name": "Upsert Beszel Systems",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        175
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/beszel_systems",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_secret_ZXJmD3Qb0RqaoXgit5yURw_sxfj16r4"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_secret_ZXJmD3Qb0RqaoXgit5yURw_sxfj16r4"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "upsert-kuma",
+      "name": "Upsert Kuma Monitors",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        450
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/uptime_kuma_monitors",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_secret_ZXJmD3Qb0RqaoXgit5yURw_sxfj16r4"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_secret_ZXJmD3Qb0RqaoXgit5yURw_sxfj16r4"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "summary",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        350
+      ],
+      "parameters": {
+        "jsCode": "const now = new Date().toISOString();\nreturn [{\n  json: {\n    status: 'success',\n    timestamp: now,\n    message: 'Monitoring sync completed'\n  }\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Beszel Auth",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kuma Status Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kuma Heartbeats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Beszel Auth",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kuma Status Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Kuma Heartbeats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Beszel Auth": {
+      "main": [
+        [
+          {
+            "node": "Get Beszel Systems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Beszel Systems": {
+      "main": [
+        [
+          {
+            "node": "Transform Beszel Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kuma Status Page": {
+      "main": [
+        [
+          {
+            "node": "Merge Kuma Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Kuma Heartbeats": {
+      "main": [
+        [
+          {
+            "node": "Merge Kuma Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Kuma Data": {
+      "main": [
+        [
+          {
+            "node": "Transform Kuma Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Beszel Data": {
+      "main": [
+        [
+          {
+            "node": "Check Beszel Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Kuma Data": {
+      "main": [
+        [
+          {
+            "node": "Check Kuma Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Beszel Skip": {
+      "main": [
+        [
+          {
+            "node": "Upsert Beszel Systems",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Kuma Skip": {
+      "main": [
+        [
+          {
+            "node": "Upsert Kuma Monitors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Beszel Systems": {
+      "main": [
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Kuma Monitors": {
+      "main": [
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "OSKEDUq7HqOKiwWw",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "id": "NqHmc1tdkBW2SKn7",
+  "active": false,
+  "versionId": "d3a7f5c5-fe3c-4f29-860b-73eed77b22c4"
+}
