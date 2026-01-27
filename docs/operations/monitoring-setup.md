@@ -15,34 +15,39 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 - **Container:** `uptime-kuma`
 - **Data:** `/opt/uptime-kuma/data`
 
-### Initial Setup
+### Credentials
+- **Username:** `jeff`
+- **Password:** `L7monitors!`
+
+### Initial Setup (Completed 2026-01-27)
 1. Access https://kuma.l7-partners.com
-2. Create admin account (first-time setup)
-3. Configure notifications:
-   - Settings → Notifications → Add Telegram
+2. Login with credentials above
+3. Telegram notifications configured:
    - Bot Token: `8169830247:AAF_BStYa7AqKPbHCeErAl2oij17d7cJhyI`
    - Chat ID: `7938188628`
-4. Run monitor setup script:
-   ```bash
-   ~/Documents/Claude\ Code/claude-agents/scripts/setup-kuma-monitors.sh "YOUR_API_KEY"
-   ```
+   - Default enabled on all monitors
+4. 15 monitors configured (see subdomain table below)
 
-### Subdomains to Monitor
-| Subdomain | Backend | Type |
-|-----------|---------|------|
-| n8n.l7-partners.com | Pi (tunnel) | HTTP |
-| metabase.l7-partners.com | Pi (tunnel) | HTTP |
-| supabase.l7-partners.com | Pi (tunnel) | HTTP |
-| webhooks.l7-partners.com | Pi (tunnel) | HTTP |
-| kuma.l7-partners.com | Pi (tunnel) | HTTP |
-| claude-api.l7-partners.com | Mac Studio (tunnel) | HTTP |
-| chat.l7-partners.com | Mac Studio (tunnel) | HTTP |
-| ollama.l7-partners.com | Mac Studio (tunnel) | HTTP |
-| l7-partners.com | Netlify | HTTP |
-| claude.l7-partners.com | Netlify | HTTP |
-| jglcap.l7-partners.com | Netlify | HTTP |
-| admin.l7-partners.com | Netlify | HTTP |
-| 191.l7-partners.com | Netlify | HTTP |
+### Monitored Subdomains (15 monitors active)
+| Subdomain | Backend | Type | Status (2026-01-27) |
+|-----------|---------|------|---------------------|
+| n8n.l7-partners.com | Pi (tunnel) | HTTP | UP |
+| metabase.l7-partners.com | Pi (tunnel) | HTTP | UP |
+| supabase.l7-partners.com | Pi (tunnel) | HTTP | DOWN (502 - not deployed) |
+| webhooks.l7-partners.com | Pi (tunnel) | HTTP | UP |
+| kuma.l7-partners.com | Pi (tunnel) | HTTP | UP |
+| claude-api.l7-partners.com | Mac Studio (tunnel) | HTTP | DOWN (401 - Cloudflare Access) |
+| chat.l7-partners.com | Mac Studio (tunnel) | HTTP | UP |
+| ollama.l7-partners.com | Mac Studio (tunnel) | HTTP | UP |
+| l7-partners.com | Netlify | HTTP | UP |
+| claude.l7-partners.com | Netlify | HTTP | UP |
+| jglcap.l7-partners.com | Netlify | HTTP | UP |
+| admin.l7-partners.com | Netlify | HTTP | UP |
+| 191.l7-partners.com | Netlify | HTTP | UP |
+
+**Known expected-down monitors:**
+- `supabase.l7-partners.com` - DNS record created, tunnel ingress added (port 8081), but Supabase Studio not yet deployed on Pi
+- `claude-api.l7-partners.com` - Returns 401 due to Cloudflare Access policy (working as intended)
 
 ## Beszel Setup
 
@@ -54,24 +59,52 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 
 **Access URL:** `http://100.77.124.12:8090` (Tailscale)
 
+### Credentials
+- **Email:** `jglittell@gmail.com`
+- **Password:** `hiRdif-2kitti-baddyn`
+- **Auth endpoint:** `/api/collections/users/auth-with-password` (NOT `/api/admins/`)
+
+### SSH Key
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMqXC1HMNdYSJJBVhZm2wLg6GD3tlISuz4g3KDkDAW1r
+```
+
 ### Agents
-| Host | IP | Port | Container |
-|------|-----|------|-----------|
-| Pi (jeffn8nhost) | 100.77.124.12 | 45876 | beszel-agent |
-| Mac Studio | 100.67.99.120 | 45876 | beszel-agent |
+| Host | IP | Port | Container | Network | Docker Run |
+|------|-----|------|-----------|---------|------------|
+| Pi (jeffn8nhost) | 100.77.124.12 | 45876 | beszel-agent | `beszel_default` | `-p 45876:45876` |
+| Mac Studio | 100.67.99.120 | 45876 | beszel-agent | bridge | `-p 45876:45876` |
 
-### Initial Setup
+### System Records
+| System | ID | Host (in Beszel) | Status (2026-01-27) |
+|--------|-----|-------------------|---------------------|
+| jeffn8nhost (Pi) | q25yktxjvxgyhhv | `beszel-agent` (Docker DNS) | UP - CPU ~31%, Mem ~12% |
+| mac-studio | f76lb0zqd68qkpi | `100.67.99.120` | UP - CPU ~0.2%, Mem ~32% |
 
-1. Access Beszel UI: `http://100.77.124.12:8090`
-2. Create admin account (first-time setup)
-3. Click "Add System" → Copy the public key
-4. Run setup script:
-   ```bash
-   ~/Documents/Claude\ Code/claude-agents/scripts/setup-beszel-agents.sh "YOUR_KEY"
-   ```
-5. Add systems in UI:
-   - Pi: `100.77.124.12:45876` (name: jeffn8nhost)
-   - Mac Studio: `100.67.99.120:45876` (name: mac-studio)
+### Docker Networking Notes
+
+**Mac Studio:** Docker Desktop for Mac runs containers in a LinuxKit VM. `--network host` does NOT expose ports to the macOS host. Must use `-p 45876:45876` port mapping.
+
+**Pi:** Beszel hub runs on `beszel_default` bridge network. The agent must be on the same Docker network for the hub to reach it. The Pi agent uses Docker DNS hostname `beszel-agent` instead of Tailscale IP.
+
+### Agent Docker Run Commands
+```bash
+# Pi agent (on beszel_default network)
+docker run -d --name beszel-agent --restart unless-stopped \
+  --network beszel_default -p 45876:45876 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -e PORT=45876 \
+  -e 'KEY=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMqXC1HMNdYSJJBVhZm2wLg6GD3tlISuz4g3KDkDAW1r' \
+  henrygd/beszel-agent:latest
+
+# Mac Studio agent (port mapping, no host network)
+docker run -d --name beszel-agent --restart unless-stopped \
+  -p 45876:45876 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -e PORT=45876 \
+  -e 'KEY=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMqXC1HMNdYSJJBVhZm2wLg6GD3tlISuz4g3KDkDAW1r' \
+  henrygd/beszel-agent:latest
+```
 
 ### Restart Agents (if needed)
 ```bash
@@ -80,6 +113,9 @@ ssh root@100.77.124.12 "docker restart beszel-agent"
 
 # Mac Studio
 ssh jgl@100.67.99.120 "source ~/.zshrc; docker restart beszel-agent"
+
+# If Pi agent shows "down", restart the hub too
+ssh root@100.77.124.12 "docker restart beszel"
 ```
 
 ## n8n Monitoring Workflows
@@ -112,29 +148,58 @@ ssh jgl@100.67.99.120 "launchctl load ~/Library/LaunchAgents/com.claude.health-c
 ssh jgl@100.67.99.120 "launchctl list | grep claude"
 ```
 
+## Cloudflare Tunnels
+
+### Pi Tunnel (`c5935af7-7aba-453a-888e-73059ac1489d`)
+| Hostname | Service |
+|----------|---------|
+| n8n.l7-partners.com | `http://localhost:5678` |
+| webhooks.l7-partners.com | `http://localhost:5678` |
+| metabase.l7-partners.com | `http://127.0.0.1:3000` |
+| supabase.l7-partners.com | `http://localhost:8081` |
+| ssh.l7-partners.com | `ssh://localhost:22` |
+| kuma.l7-partners.com | `http://localhost:3001` |
+
+### Mac Studio Tunnel (`01ac78e0-43fc-4c6a-896c-60167a00b893`)
+| Hostname | Service |
+|----------|---------|
+| claude-api.l7-partners.com | Claude HTTP Server |
+| chat.l7-partners.com | Open WebUI |
+| ollama.l7-partners.com | Ollama API |
+
+### DNS Records Added (2026-01-27)
+- `supabase.l7-partners.com` → Pi tunnel CNAME
+- `claude-api.l7-partners.com` → Mac Studio tunnel CNAME
+- `ollama.l7-partners.com` → Mac Studio tunnel CNAME
+
 ## Network Topology
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Tailscale Mesh                        │
-│                                                          │
-│  MacBook Pro          Raspberry Pi        Mac Studio     │
-│  (jeff-probis)        (jeffn8nhost)       (jgl)         │
-│                       100.77.124.12       100.67.99.120  │
-│                            │                   │         │
-│                       ┌────┴────┐         ┌────┴────┐   │
-│                       │ Beszel  │         │ Beszel  │   │
-│                       │  Hub    │◄────────│ Agent   │   │
-│                       │ :8090   │         │ :45876  │   │
-│                       │         │         └─────────┘   │
-│                       │ Beszel  │                        │
-│                       │ Agent   │                        │
-│                       │ :45876  │                        │
-│                       └─────────┘                        │
-│                                                          │
-│                       n8n :5678                          │
-│                       (health workflows)                 │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      Tailscale Mesh                           │
+│                                                               │
+│  MacBook Pro           Raspberry Pi          Mac Studio       │
+│  (jeff-probis)         (jeffn8nhost)         (jgl)           │
+│                        100.77.124.12         100.67.99.120    │
+│                             │                     │           │
+│                        ┌────┴─────┐          ┌────┴─────┐    │
+│                        │ Beszel   │          │ Beszel   │    │
+│                        │  Hub     │◄─────────│ Agent    │    │
+│                        │ :8090    │ Tailscale│ :45876   │    │
+│                        │          │          └──────────┘    │
+│                        │ Beszel   │                           │
+│                        │ Agent    │ (Docker DNS:              │
+│                        │ :45876   │  beszel-agent)            │
+│                        ├──────────┤                           │
+│                        │ Kuma     │                           │
+│                        │ :3001    │                           │
+│                        ├──────────┤                           │
+│                        │ n8n      │                           │
+│                        │ :5678    │                           │
+│                        └──────────┘                           │
+│                                                               │
+│  CF Tunnel (Pi): c5935af7    CF Tunnel (Studio): 01ac78e0    │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Commands
@@ -154,11 +219,32 @@ curl http://100.67.99.120:3847/health
 curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, active}'
 ```
 
+## Alert Thresholds
+
+### Beszel System Alerts
+| Metric | Threshold | Systems |
+|--------|-----------|---------|
+| CPU | > 80% sustained | Mac Studio, Pi |
+| Memory | > 90% | Mac Studio, Pi |
+| Disk | > 85% | Mac Studio, Pi |
+
+### Beszel Notifications (Configured 2026-01-27)
+- **Channel:** Telegram via Shoutrrr
+- **Shoutrrr URL:** `telegram://8169830247:AAF_BStYa7AqKPbHCeErAl2oij17d7cJhyI@telegram?chats=7938188628`
+- **Scope:** All alerts on all systems auto-notify to Telegram
+- **Duration:** 10 minutes sustained before triggering
+
+### Uptime Kuma Notifications
+- **Channel:** Telegram (same bot/chat as Beszel)
+- **Default:** Applied to all monitors
+- **Test:** Verified working 2026-01-27
+
 ## Alerting Flow
 
-1. **Beszel** → Telegram (system metrics alerts)
-2. **n8n Self-Healing Monitor** → Telegram (Claude Server status)
-3. **n8n Unified System Monitor** → Telegram (service health)
+1. **Beszel** → Telegram (system metrics: CPU, RAM, disk threshold alerts)
+2. **Uptime Kuma** → Telegram (HTTP endpoint down/up transitions)
+3. **n8n Self-Healing Monitor** → Telegram (Claude Server status, 15 min interval)
+4. **n8n Unified System Monitor** → Telegram (multi-service health)
 
 ## Troubleshooting
 
