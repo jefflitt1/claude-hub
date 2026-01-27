@@ -220,6 +220,6 @@ INSERT INTO jeff_email_rules (rule_name, sender_pattern, classification, suggest
 -- ============================================================================
 SELECT classification, count(*) as rule_count
 FROM jeff_email_rules
-WHERE is_active = true
+WHERE active = true
 GROUP BY classification
 ORDER BY rule_count DESC;

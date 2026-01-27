@@ -3317,7 +3317,7 @@ server.tool(
         const { data: rules } = await supabase
           .from('jeff_email_rules')
           .select('*')
-          .eq('is_active', true)
+          .eq('active', true)
           .order('priority', { ascending: true });
 
         if (rules) {
@@ -3791,7 +3791,7 @@ server.tool(
         // Check VIP status
         const { data: vip } = await supabase.from('jeff_vip_senders')
           .select('*')
-          .eq('is_active', true);
+          .eq('active', true);
         const isVip = (vip || []).some((v: any) =>
           thread.from_email && thread.from_email.toLowerCase().includes(v.pattern?.toLowerCase() || '')
         );

@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS jeff_email_rules (
 
   -- Metadata
   source TEXT DEFAULT 'gmail_filter', -- 'gmail_filter', 'manual', 'learned'
-  is_active BOOLEAN DEFAULT true,
+  active BOOLEAN DEFAULT true,
   priority INT DEFAULT 100, -- Lower = evaluated first (for ordering)
 
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -143,11 +143,11 @@ CREATE TABLE IF NOT EXISTS jeff_email_rules (
 
 CREATE INDEX IF NOT EXISTS idx_email_rules_active
 ON jeff_email_rules(priority ASC)
-WHERE is_active = true;
+WHERE active = true;
 
 CREATE INDEX IF NOT EXISTS idx_email_rules_sender
 ON jeff_email_rules(sender_pattern)
-WHERE sender_pattern IS NOT NULL AND is_active = true;
+WHERE sender_pattern IS NOT NULL AND active = true;
 
 -- ============================================================================
 -- 5. FUNCTION: Classify and Update Thread
@@ -355,7 +355,7 @@ BEGIN
   -- Find first matching rule (ordered by priority)
   SELECT * INTO v_rule
   FROM jeff_email_rules
-  WHERE is_active = true
+  WHERE active = true
     AND (sender_pattern IS NULL OR p_sender_email ILIKE sender_pattern)
     AND (subject_pattern IS NULL OR p_subject ILIKE subject_pattern)
     AND (account IS NULL OR account = p_account)

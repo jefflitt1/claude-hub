@@ -2785,7 +2785,7 @@ server.tool("jeff_classify_email", "Classify an email using local LLM (DeepSeek 
             const { data: rules } = await supabase
                 .from('jeff_email_rules')
                 .select('*')
-                .eq('is_active', true)
+                .eq('active', true)
                 .order('priority', { ascending: true });
             if (rules) {
                 for (const rule of rules) {
@@ -3205,7 +3205,7 @@ server.tool("jeff_get_email_context", "Get full context for an email thread: thr
             // Check VIP status
             const { data: vip } = await supabase.from('jeff_vip_senders')
                 .select('*')
-                .eq('is_active', true);
+                .eq('active', true);
             const isVip = (vip || []).some((v) => thread.from_email && thread.from_email.toLowerCase().includes(v.pattern?.toLowerCase() || ''));
             result.isVipSender = isVip;
         }
