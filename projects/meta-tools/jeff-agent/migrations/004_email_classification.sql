@@ -368,20 +368,32 @@ BEGIN
     RETURN jsonb_build_object('matched', false);
   END IF;
 
-  -- Apply the rule via classify_email_thread
-  v_result := classify_email_thread(
-    p_thread_id,
-    v_rule.classification,
-    v_rule.confidence,
-    v_rule.suggested_action,
-    'rule-based',
-    'Matched rule: ' || v_rule.rule_name
-  );
+  -- If we have a thread_id, apply via classify_email_thread (updates the thread)
+  IF p_thread_id IS NOT NULL THEN
+    v_result := classify_email_thread(
+      p_thread_id,
+      v_rule.classification,
+      v_rule.confidence,
+      v_rule.suggested_action,
+      'rule-based',
+      'Matched rule: ' || v_rule.rule_name
+    );
 
-  RETURN v_result || jsonb_build_object(
+    RETURN v_result || jsonb_build_object(
+      'matched', true,
+      'rule_id', v_rule.id,
+      'rule_name', v_rule.rule_name
+    );
+  END IF;
+
+  -- No thread_id: just return the rule match without updating anything
+  RETURN jsonb_build_object(
     'matched', true,
     'rule_id', v_rule.id,
-    'rule_name', v_rule.rule_name
+    'rule_name', v_rule.rule_name,
+    'classification', v_rule.classification,
+    'confidence', v_rule.confidence,
+    'action', v_rule.suggested_action
   );
 END;
 $$ LANGUAGE plpgsql;
