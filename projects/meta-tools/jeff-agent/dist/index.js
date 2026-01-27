@@ -2729,12 +2729,486 @@ server.tool("jeff_quick", "Get only urgent/critical items for quick review", {},
         return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
     }
 });
+// ============================================================================
+// EMAIL CLASSIFICATION & ACTION PROPOSAL TOOLS
+// ============================================================================
+// Ollama endpoint for local LLM inference (Mac Studio via Tailscale)
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://mac-studio.tail8e9f4b.ts.net:11434';
+server.tool("jeff_classify_email", "Classify an email using local LLM (DeepSeek R1) or rule-based matching. Returns classification, confidence, and suggested action.", {
+    thread_id: z.string().optional().describe('Existing jeff_email_threads UUID to re-classify'),
+    gmail_thread_id: z.string().optional().describe('Gmail thread ID (creates new thread if needed)'),
+    account: z.enum(['personal', 'l7']).optional().default('personal'),
+    subject: z.string().optional().describe('Email subject'),
+    from_email: z.string().optional().describe('Sender email'),
+    from_name: z.string().optional().describe('Sender name'),
+    snippet: z.string().optional().describe('Email body preview (first ~500 chars)'),
+    use_llm: z.boolean().optional().default(true).describe('Use Ollama LLM (false = rule-based only)')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { thread_id, gmail_thread_id, account, subject, from_email, from_name, snippet, use_llm } = args;
+        // Get existing thread if thread_id provided
+        let thread = null;
+        if (thread_id) {
+            const { data } = await supabase.from('jeff_email_threads').select('*').eq('id', thread_id).single();
+            thread = data;
+        }
+        const emailSubject = subject || thread?.subject || '(no subject)';
+        const emailFrom = from_email || thread?.from_email || 'unknown';
+        const emailName = from_name || thread?.from_name || '';
+        const emailSnippet = snippet || thread?.snippet || '';
+        // Step 1: Try rule-based classification first
+        let classification = null;
+        let confidence = 0;
+        let suggestedAction = 'read';
+        let reasoning = '';
+        let model = 'rule-based';
+        const { data: ruleMatches } = await supabase.rpc('apply_email_rules', {
+            p_sender: emailFrom,
+            p_subject: emailSubject,
+            p_body: emailSnippet,
+            p_account: account || 'personal'
+        });
+        if (ruleMatches && ruleMatches.length > 0) {
+            const topRule = ruleMatches[0];
+            const ruleToClassification = {
+                'auto_archive': 'spam', 'auto_low_priority': 'marketing',
+                'auto_urgent': 'urgent', 'auto_high': 'needs_response',
+                'skip_inbox': 'spam', 'suggest_unsubscribe': 'marketing',
+                'auto_categorize': 'fyi'
+            };
+            const ruleToAction = {
+                'auto_archive': 'archive', 'auto_low_priority': 'read',
+                'auto_urgent': 'reply', 'auto_high': 'reply',
+                'skip_inbox': 'archive', 'suggest_unsubscribe': 'archive',
+                'auto_categorize': 'read'
+            };
+            classification = ruleToClassification[topRule.action] || 'fyi';
+            confidence = 0.95;
+            suggestedAction = ruleToAction[topRule.action] || 'read';
+            reasoning = `Matched rule: ${topRule.rule_name}`;
+        }
+        // Step 2: Use LLM if no rule match and use_llm is true
+        if (!classification && use_llm) {
+            try {
+                const prompt = `Analyze this email and classify it. Output ONLY valid JSON, no other text.
+
+From: ${emailName} <${emailFrom}>
+Subject: ${emailSubject}
+Body preview: ${emailSnippet}
+
+Respond with this exact JSON structure:
+{"classification":"spam|marketing|fyi|needs_response|urgent","confidence":0.0,"suggested_action":"archive|read|reply|create_task|escalate","reasoning":"brief explanation"}`;
+                const startTime = Date.now();
+                const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'deepseek-r1:14b',
+                        prompt,
+                        stream: false,
+                        options: { temperature: 0.1, num_predict: 200 }
+                    })
+                });
+                const ollamaResult = await response.json();
+                const inferenceTime = Date.now() - startTime;
+                model = 'deepseek-r1:14b';
+                // Parse JSON from response
+                const jsonMatch = (ollamaResult.response || '').match(/\{[\s\S]*?"classification"[\s\S]*?\}/);
+                if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    const validClassifications = ['spam', 'marketing', 'fyi', 'needs_response', 'urgent'];
+                    const validActions = ['archive', 'read', 'reply', 'create_task', 'escalate'];
+                    classification = validClassifications.includes(parsed.classification) ? parsed.classification : 'fyi';
+                    confidence = typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0.5;
+                    suggestedAction = validActions.includes(parsed.suggested_action) ? parsed.suggested_action : 'read';
+                    reasoning = parsed.reasoning || '';
+                }
+                // Store classification record
+                await supabase.from('jeff_email_classifications').insert({
+                    email_thread_id: thread?.id || null,
+                    classification,
+                    confidence,
+                    suggested_action: suggestedAction,
+                    model,
+                    reasoning,
+                    inference_time_ms: inferenceTime,
+                    input_sender: emailFrom,
+                    input_subject: emailSubject,
+                    input_snippet: emailSnippet
+                });
+            }
+            catch (llmError) {
+                // Fallback on LLM failure
+                classification = 'fyi';
+                confidence = 0.3;
+                suggestedAction = 'read';
+                reasoning = `LLM error: ${llmError instanceof Error ? llmError.message : 'Unknown'}`;
+                model = 'fallback';
+            }
+        }
+        // Default if nothing matched
+        if (!classification) {
+            classification = 'fyi';
+            confidence = 0.5;
+            suggestedAction = 'read';
+            reasoning = 'No rule match, LLM disabled';
+        }
+        // Step 3: Update or create thread with classification
+        let resultThread = thread;
+        if (thread_id && thread) {
+            const { data } = await supabase.from('jeff_email_threads')
+                .update({
+                classification, classification_confidence: confidence,
+                suggested_action: suggestedAction, classified_by: model,
+                classified_at: new Date().toISOString(),
+                needs_response: ['needs_response', 'urgent'].includes(classification)
+            })
+                .eq('id', thread_id).select().single();
+            resultThread = data;
+        }
+        else if (gmail_thread_id) {
+            const { data } = await supabase.from('jeff_email_threads')
+                .upsert({
+                gmail_thread_id, account: account || 'personal',
+                subject: emailSubject, from_email: emailFrom, from_name: emailName,
+                snippet: emailSnippet, classification,
+                classification_confidence: confidence,
+                suggested_action: suggestedAction, classified_by: model,
+                classified_at: new Date().toISOString(),
+                needs_response: ['needs_response', 'urgent'].includes(classification),
+                status: 'active', last_message_at: new Date().toISOString()
+            }, { onConflict: 'gmail_thread_id,account' })
+                .select().single();
+            resultThread = data;
+        }
+        return formatResponse({
+            action: 'email_classified',
+            classification,
+            confidence,
+            suggested_action: suggestedAction,
+            reasoning,
+            model,
+            thread: resultThread
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_propose_action", "Generate an AI action proposal for a task or email thread. Creates a proposal with optional draft content.", {
+    source_type: z.enum(['task', 'email_thread']).describe('Type of entity to propose action for'),
+    source_id: z.string().describe('UUID of the task or email thread'),
+    action_type: z.enum(['complete_task', 'reply_email', 'followup', 'review', 'create_task', 'escalate']).optional(),
+    generate_draft: z.boolean().optional().default(false).describe('Generate a draft email reply using LLM'),
+    priority: z.enum(['urgent', 'high', 'medium', 'low']).optional().default('medium')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { source_type, source_id, action_type, generate_draft, priority } = args;
+        // Fetch source entity for context
+        let sourceContext = {};
+        let inferredAction = action_type;
+        if (source_type === 'email_thread') {
+            const { data: thread } = await supabase.from('jeff_email_threads')
+                .select('*').eq('id', source_id).single();
+            if (!thread)
+                return formatResponse('Email thread not found', true);
+            sourceContext = thread;
+            if (!inferredAction) {
+                inferredAction = thread.needs_response ? 'reply_email' : 'review';
+            }
+        }
+        else {
+            const { data: task } = await supabase.from('jeff_tasks')
+                .select('*').eq('id', source_id).single();
+            if (!task)
+                return formatResponse('Task not found', true);
+            sourceContext = task;
+            if (!inferredAction) {
+                inferredAction = task.status === 'in_progress' ? 'complete_task' : 'review';
+            }
+        }
+        // Generate draft if requested and source is email
+        let draftContent = null;
+        if (generate_draft && source_type === 'email_thread' && sourceContext) {
+            try {
+                const prompt = `Draft a brief, professional email reply.
+
+Original email:
+From: ${sourceContext.from_name || ''} <${sourceContext.from_email || ''}>
+Subject: ${sourceContext.subject || ''}
+Body: ${sourceContext.snippet || sourceContext.ai_summary || ''}
+
+Write ONLY the reply body (no subject, no greeting, no signature - those are added automatically). Keep it concise (2-4 sentences). Be professional but not overly formal. Jeff's tone is direct and friendly.`;
+                const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'deepseek-r1:32b',
+                        prompt,
+                        stream: false,
+                        options: { temperature: 0.7, num_predict: 300 }
+                    })
+                });
+                const result = await response.json();
+                if (result.response) {
+                    draftContent = {
+                        subject: `Re: ${sourceContext.subject || ''}`,
+                        body: result.response.trim(),
+                        tone: 'professional'
+                    };
+                }
+            }
+            catch (draftError) {
+                // Draft generation failed, continue without draft
+                draftContent = null;
+            }
+        }
+        // Create proposal
+        const { data: proposal, error } = await supabase.from('jeff_action_proposals')
+            .insert({
+            source_type,
+            source_id,
+            action_type: inferredAction,
+            priority,
+            draft_content: draftContent,
+            confidence: draftContent ? 0.7 : 0.5,
+            model_used: generate_draft ? 'deepseek-r1:32b' : 'manual',
+            reasoning: `Proposed ${inferredAction} for ${source_type} based on current state`
+        })
+            .select().single();
+        if (error) {
+            return formatResponse(`Proposal creation error: ${error.message}`, true);
+        }
+        // Also store draft in jeff_draft_responses if email
+        if (draftContent && source_type === 'email_thread') {
+            await supabase.from('jeff_draft_responses').insert({
+                email_thread_id: source_id,
+                proposal_id: proposal.id,
+                subject: draftContent.subject,
+                body: draftContent.body,
+                tone: draftContent.tone
+            });
+        }
+        return formatResponse({
+            action: 'proposal_created',
+            proposal,
+            draft: draftContent,
+            source: {
+                type: source_type,
+                subject: sourceContext.subject || sourceContext.title,
+                from: sourceContext.from_email
+            }
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_execute_action", "Execute an action proposal: accept, dismiss, snooze, or modify. For email replies, returns send instructions for unified-comms.", {
+    proposal_id: z.string().describe('Action proposal UUID'),
+    action: z.enum(['accept', 'dismiss', 'snooze', 'modify']).describe('What to do with the proposal'),
+    snooze_hours: z.number().optional().default(4).describe('Hours to snooze (if action=snooze)'),
+    modifications: z.record(z.any()).optional().describe('Modified draft content (if action=modify)')
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { proposal_id, action, snooze_hours, modifications } = args;
+        // Get proposal
+        const { data: proposal, error: fetchError } = await supabase.from('jeff_action_proposals')
+            .select('*').eq('id', proposal_id).single();
+        if (fetchError || !proposal) {
+            return formatResponse(`Proposal not found: ${fetchError?.message}`, true);
+        }
+        if (action === 'dismiss') {
+            await supabase.rpc('record_action_taken', {
+                p_proposal_id: proposal_id,
+                p_action_type: 'dismissed',
+                p_was_accepted: false
+            });
+            return formatResponse({ action: 'proposal_dismissed', proposal_id });
+        }
+        if (action === 'snooze') {
+            await supabase.rpc('snooze_proposal', {
+                p_proposal_id: proposal_id,
+                p_snooze_hours: snooze_hours
+            });
+            return formatResponse({
+                action: 'proposal_snoozed',
+                proposal_id,
+                snoozed_until: new Date(Date.now() + snooze_hours * 3600000).toISOString()
+            });
+        }
+        if (action === 'modify' && modifications) {
+            // Update draft content
+            const updatedDraft = { ...proposal.draft_content, ...modifications };
+            await supabase.from('jeff_action_proposals')
+                .update({ draft_content: updatedDraft })
+                .eq('id', proposal_id);
+            // Update draft response if exists
+            if (proposal.source_type === 'email_thread') {
+                await supabase.from('jeff_draft_responses')
+                    .update({
+                    body: modifications.body || updatedDraft.body,
+                    subject: modifications.subject || updatedDraft.subject,
+                    is_edited: true,
+                    edit_count: 1
+                })
+                    .eq('proposal_id', proposal_id);
+            }
+            return formatResponse({
+                action: 'proposal_modified',
+                proposal_id,
+                updated_draft: updatedDraft
+            });
+        }
+        if (action === 'accept') {
+            // Record acceptance
+            await supabase.rpc('record_action_taken', {
+                p_proposal_id: proposal_id,
+                p_action_type: proposal.action_type,
+                p_was_accepted: true
+            });
+            // Handle based on action type
+            if (proposal.action_type === 'reply_email' && proposal.source_type === 'email_thread') {
+                // Get thread for send instructions
+                const { data: thread } = await supabase.from('jeff_email_threads')
+                    .select('*').eq('id', proposal.source_id).single();
+                if (thread) {
+                    // Update thread status
+                    await supabase.from('jeff_email_threads')
+                        .update({ needs_response: false, status: 'waiting' })
+                        .eq('id', proposal.source_id);
+                    return formatResponse({
+                        action: 'proposal_accepted',
+                        proposal_id,
+                        nextStep: 'send_email',
+                        sendInstructions: {
+                            tool: 'mcp__unified-comms__message_reply',
+                            params: {
+                                messageId: thread.gmail_thread_id,
+                                body: proposal.draft_content?.body,
+                                account: thread.account
+                            }
+                        },
+                        draft: proposal.draft_content,
+                        thread: { id: thread.id, subject: thread.subject, account: thread.account }
+                    });
+                }
+            }
+            if (proposal.action_type === 'complete_task' && proposal.source_type === 'task') {
+                await supabase.from('jeff_tasks')
+                    .update({ status: 'completed', completed_at: new Date().toISOString() })
+                    .eq('id', proposal.source_id);
+                return formatResponse({
+                    action: 'proposal_accepted',
+                    proposal_id,
+                    taskCompleted: true,
+                    source_id: proposal.source_id
+                });
+            }
+            // Generic acceptance
+            return formatResponse({
+                action: 'proposal_accepted',
+                proposal_id,
+                action_type: proposal.action_type
+            });
+        }
+        return formatResponse('Invalid action', true);
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
+server.tool("jeff_get_email_context", "Get full context for an email thread: thread data, sender history, related tasks, associations, and classification analytics.", {
+    thread_id: z.string().describe('Jeff email thread UUID'),
+    include_sender_history: z.boolean().optional().default(true),
+    include_classifications: z.boolean().optional().default(false)
+}, async (args) => {
+    if (!supabase) {
+        return formatResponse('Supabase not configured', true);
+    }
+    try {
+        const { thread_id, include_sender_history, include_classifications } = args;
+        // Get thread
+        const { data: thread, error } = await supabase.from('jeff_email_threads')
+            .select('*').eq('id', thread_id).single();
+        if (error || !thread) {
+            return formatResponse(`Thread not found: ${error?.message}`, true);
+        }
+        const result = { thread };
+        // Get related tasks
+        const { data: tasks } = await supabase.from('jeff_tasks')
+            .select('id, title, status, priority, due_date')
+            .eq('source_id', thread.gmail_thread_id);
+        result.relatedTasks = tasks || [];
+        // Get associations
+        const { data: associations } = await supabase.from('jeff_associations')
+            .select('*')
+            .or(`entity_id.eq.${thread.id},related_id.eq.${thread.id}`);
+        result.associations = associations || [];
+        // Get active proposals for this thread
+        const { data: proposals } = await supabase.from('jeff_action_proposals')
+            .select('*')
+            .eq('source_type', 'email_thread')
+            .eq('source_id', thread.id)
+            .eq('is_dismissed', false)
+            .gt('expires_at', new Date().toISOString());
+        result.activeProposals = proposals || [];
+        // Get draft responses
+        const { data: drafts } = await supabase.from('jeff_draft_responses')
+            .select('*')
+            .eq('email_thread_id', thread.id)
+            .eq('is_sent', false);
+        result.pendingDrafts = drafts || [];
+        // Sender history
+        if (include_sender_history && thread.from_email) {
+            const { data: contact } = await supabase.from('jeff_contacts')
+                .select('*').eq('email', thread.from_email).single();
+            result.senderContact = contact || null;
+            // Count threads from this sender
+            const { count } = await supabase.from('jeff_email_threads')
+                .select('id', { count: 'exact', head: true })
+                .eq('from_email', thread.from_email);
+            result.senderThreadCount = count || 0;
+            // Check VIP status
+            const { data: vip } = await supabase.from('jeff_vip_senders')
+                .select('*')
+                .eq('is_active', true);
+            const isVip = (vip || []).some((v) => thread.from_email && thread.from_email.toLowerCase().includes(v.pattern?.toLowerCase() || ''));
+            result.isVipSender = isVip;
+        }
+        // Classification history
+        if (include_classifications) {
+            const { data: classifications } = await supabase.from('jeff_email_classifications')
+                .select('*')
+                .eq('email_thread_id', thread.id)
+                .order('created_at', { ascending: false })
+                .limit(5);
+            result.classificationHistory = classifications || [];
+        }
+        return formatResponse({
+            action: 'email_context_retrieved',
+            ...result
+        });
+    }
+    catch (error) {
+        return formatResponse(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, true);
+    }
+});
 // Update jeff_info to include new tools
 server.tool("jeff_info", "Get information about Jeff Agent status and configuration", {}, async () => {
     return formatResponse({
         name: 'jeff-agent',
-        version: '2.0.0',
-        description: 'Personal assistant for email management, task tracking, project oversight, family calendar, wellbeing, and habits',
+        version: '3.0.0',
+        description: 'Personal assistant for email management, task tracking, project oversight, family calendar, wellbeing, habits, and AI-powered email classification with action proposals',
         configured: !!supabase,
         supabaseUrl: SUPABASE_URL,
         projectDomains: PROJECT_DOMAINS,
@@ -2752,8 +3226,13 @@ server.tool("jeff_info", "Get information about Jeff Agent status and configurat
             'jeff_habits - Habit tracking with streaks',
             'jeff_habit_logs - Daily habit completions',
             'jeff_calendar_cache - Calendar event cache',
-            'jeff_project_activity - Project momentum tracking'
+            'jeff_project_activity - Project momentum tracking',
+            'jeff_email_classifications - LLM classification results & feedback',
+            'jeff_action_proposals - AI-generated action suggestions',
+            'jeff_draft_responses - Email draft storage with editing',
+            'jeff_email_templates - Reusable email response templates'
         ],
+        ollamaEndpoint: OLLAMA_URL,
         tools: {
             // Tasks
             tasks: [
@@ -2763,7 +3242,11 @@ server.tool("jeff_info", "Get information about Jeff Agent status and configurat
             email: [
                 'jeff_triage_inbox', 'jeff_track_email_thread', 'jeff_get_thread', 'jeff_draft_response',
                 'jeff_add_email_rule', 'jeff_list_email_rules', 'jeff_apply_email_rules', 'jeff_delete_email_rule',
-                'jeff_summarize_thread'
+                'jeff_summarize_thread', 'jeff_classify_email', 'jeff_get_email_context'
+            ],
+            // Action Proposals
+            proposals: [
+                'jeff_propose_action', 'jeff_execute_action'
             ],
             // Calendar
             calendar: [
@@ -2796,11 +3279,13 @@ server.tool("jeff_info", "Get information about Jeff Agent status and configurat
         modelHints: {
             haiku: [
                 'jeff_log_habit', 'jeff_habit_status', 'jeff_quick', 'jeff_list_tasks',
-                'jeff_list_email_rules', 'jeff_list_family', 'jeff_list_upcoming'
+                'jeff_list_email_rules', 'jeff_list_family', 'jeff_list_upcoming',
+                'jeff_execute_action'
             ],
             sonnet: [
                 'jeff_perma_trends', 'jeff_analyze_conflicts', 'jeff_summarize_thread',
-                'jeff_draft_response', 'jeff_project_context', 'jeff_generate_digest_payload'
+                'jeff_draft_response', 'jeff_project_context', 'jeff_generate_digest_payload',
+                'jeff_classify_email', 'jeff_propose_action', 'jeff_get_email_context'
             ]
         }
     });
