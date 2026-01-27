@@ -270,7 +270,7 @@ curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, acti
 
 ### n8n Sync Workflow
 - **Name:** `Monitoring Sync (Beszel + Kuma → Supabase)`
-- **Interval:** Every 5 minutes
+- **Interval:** Every 15 minutes
 - **Import from:** `workflows/monitoring-sync.json`
 - **Flow:** Schedule → Fetch Beszel API + Kuma public API → Transform → Upsert to Supabase
 - **Beszel auth:** localhost:8090 (same Pi as n8n)
