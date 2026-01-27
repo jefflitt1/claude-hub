@@ -28,26 +28,32 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
    - Default enabled on all monitors
 4. 15 monitors configured (see subdomain table below)
 
-### Monitored Subdomains (15 monitors active)
-| Subdomain | Backend | Type | Status (2026-01-27) |
-|-----------|---------|------|---------------------|
-| n8n.l7-partners.com | Pi (tunnel) | HTTP | UP |
-| metabase.l7-partners.com | Pi (tunnel) | HTTP | UP |
-| supabase.l7-partners.com | Pi (tunnel) | HTTP | DOWN (502 - not deployed) |
-| webhooks.l7-partners.com | Pi (tunnel) | HTTP | UP |
-| kuma.l7-partners.com | Pi (tunnel) | HTTP | UP |
-| claude-api.l7-partners.com | Mac Studio (tunnel) | HTTP | DOWN (401 - Cloudflare Access) |
-| chat.l7-partners.com | Mac Studio (tunnel) | HTTP | UP |
-| ollama.l7-partners.com | Mac Studio (tunnel) | HTTP | UP |
-| l7-partners.com | Netlify | HTTP | UP |
-| claude.l7-partners.com | Netlify | HTTP | UP |
-| jglcap.l7-partners.com | Netlify | HTTP | UP |
-| admin.l7-partners.com | Netlify | HTTP | UP |
-| 191.l7-partners.com | Netlify | HTTP | UP |
+### Monitored Endpoints
+**Public (via Cloudflare):**
+| Subdomain | Backend | Status (2026-01-27) |
+|-----------|---------|---------------------|
+| n8n.l7-partners.com | Pi (tunnel) | UP |
+| metabase.l7-partners.com | Pi (tunnel) | UP |
+| webhooks.l7-partners.com | Pi (tunnel) | UP |
+| kuma.l7-partners.com | Pi (tunnel) | UP |
+| chat.l7-partners.com | Mac Studio (tunnel) | UP |
+| l7-partners.com | Netlify | UP |
+| claude.l7-partners.com | Netlify | UP |
+| jglcap.l7-partners.com | Netlify | UP |
+| admin.l7-partners.com | Netlify | UP |
+| 191.l7-partners.com | Netlify | UP |
 
-**Known expected-down monitors:**
-- `supabase.l7-partners.com` - DNS record created, tunnel ingress added (port 8081), but Supabase Studio not yet deployed on Pi
-- `claude-api.l7-partners.com` - Returns 401 due to Cloudflare Access policy (working as intended)
+**Internal (via Tailscale):**
+| Service | URL | Status (2026-01-27) |
+|---------|-----|---------------------|
+| Beszel Hub | http://100.77.124.12:8090 | UP |
+| Claude HTTP Server | http://100.67.99.120:3847/health | UP |
+| Ollama API | http://100.67.99.120:11434/api/tags | UP |
+
+**Removed (internal-only, no public DNS needed):**
+- `supabase.l7-partners.com` - Supabase Studio not deployed; using Supabase cloud
+- `claude-api.l7-partners.com` - Behind Cloudflare Access; internal monitor covers it
+- `ollama.l7-partners.com` - Internal service; internal monitor covers it
 
 ## Beszel Setup
 
@@ -156,21 +162,16 @@ ssh jgl@100.67.99.120 "launchctl list | grep claude"
 | n8n.l7-partners.com | `http://localhost:5678` |
 | webhooks.l7-partners.com | `http://localhost:5678` |
 | metabase.l7-partners.com | `http://127.0.0.1:3000` |
-| supabase.l7-partners.com | `http://localhost:8081` |
 | ssh.l7-partners.com | `ssh://localhost:22` |
 | kuma.l7-partners.com | `http://localhost:3001` |
 
 ### Mac Studio Tunnel (`01ac78e0-43fc-4c6a-896c-60167a00b893`)
 | Hostname | Service |
 |----------|---------|
-| claude-api.l7-partners.com | Claude HTTP Server |
+| claude-api.l7-partners.com | Claude HTTP Server (behind Cloudflare Access) |
 | chat.l7-partners.com | Open WebUI |
-| ollama.l7-partners.com | Ollama API |
 
-### DNS Records Added (2026-01-27)
-- `supabase.l7-partners.com` → Pi tunnel CNAME
-- `claude-api.l7-partners.com` → Mac Studio tunnel CNAME
-- `ollama.l7-partners.com` → Mac Studio tunnel CNAME
+**Note:** `ollama.l7-partners.com` and `supabase.l7-partners.com` DNS records removed - these are internal-only services monitored via Tailscale.
 
 ## Network Topology
 
@@ -222,11 +223,12 @@ curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, acti
 ## Alert Thresholds
 
 ### Beszel System Alerts
-| Metric | Threshold | Systems |
-|--------|-----------|---------|
-| CPU | > 80% sustained | Mac Studio, Pi |
-| Memory | > 90% | Mac Studio, Pi |
-| Disk | > 85% | Mac Studio, Pi |
+| Metric | Threshold | Duration | Systems |
+|--------|-----------|----------|---------|
+| Status | Up/Down toggle | Immediate | Mac Studio, Pi |
+| CPU | > 80% | 10 min sustained | Mac Studio, Pi |
+| Memory | > 90% | 10 min sustained | Mac Studio, Pi |
+| Disk | > 85% | 10 min sustained | Mac Studio, Pi |
 
 ### Beszel Notifications (Configured 2026-01-27)
 - **Channel:** Telegram via Shoutrrr
