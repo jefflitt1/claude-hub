@@ -38,7 +38,6 @@
 | **context7** | Documentation indexing & retrieval | - |
 | **apple-notes** | Apple Notes read/write/search/update (semantic) | - |
 | **memory** | Knowledge graph (entities, relations, observations) | MCP_DOCKER |
-| **tavily** | Deep research with citations (login: GitHub) | Brave search |
 | **desktop-commander** | File ops, streaming search, PDF, processes | - |
 | **deepwiki** | GitHub repo Q&A | - |
 | **gemini-cli** | Google Gemini via OAuth (uses Gemini Advanced sub) | - |
@@ -249,11 +248,8 @@ Located in `~/.claude/scripts/`:
 ## API Credentials (MCP Docker Secrets)
 | Service | Key Location | Login Method |
 |---------|--------------|--------------|
-| **Tavily** | `docker mcp secret` / MCP URL | GitHub OAuth |
 | **Gemini CLI** | OAuth token | Google account (Gemini Advanced) |
 | **Codex CLI** | OAuth token | ChatGPT account (Plus/Pro) |
-
-**Tavily MCP URL:** `https://mcp.tavily.com/mcp/?tavilyApiKey=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`
 
 **Re-authenticate CLIs if needed:**
 - Gemini: `gemini` (opens browser)
