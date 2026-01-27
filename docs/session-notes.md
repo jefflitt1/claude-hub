@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 17)
+**Last Updated:** 2026-01-27 (Session 18)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 18 - 2026-01-27 (Telegram Bot Short-Term Memory + Infrastructure Fixes)
+- Added short-term memory to all 5 Telegram bots via `claude-http-server.js` (fetches last 6 messages from Supabase, injects as XML conversation history)
+- Messages truncated at 500 chars, history capped at 3 exchanges to prevent Pi OOM
+- Updated n8n Master Telegram Bot Conversations workflow (all 5 HTTP request nodes + cleaned up 5 dead Load History nodes)
+- Fixed server binding (`127.0.0.1` → `0.0.0.0`) for LAN/Tailscale access
+- Added `/health` endpoint (no auth) to fix "Claude Server Unhealthy" alerts
+- Updated Mac Studio launchd plist with Supabase env vars
+- Made server paths portable (`os.homedir()`) for cross-machine compatibility
+- Restarted n8n on Pi after task runner crash
 
 ### Session 17 - 2026-01-27 (Monitoring Dashboard Integration — Beszel + Kuma → Supabase → Claude Hub)
 - Created Supabase tables `beszel_systems` and `uptime_kuma_monitors` with RLS policies
