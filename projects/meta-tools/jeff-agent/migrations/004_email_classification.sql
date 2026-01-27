@@ -179,7 +179,7 @@ BEGIN
   SELECT EXISTS(
     SELECT 1 FROM jeff_vip_senders
     WHERE v_thread.from_email ILIKE pattern
-      AND is_active = true
+      AND active = true
   ) INTO v_is_vip;
 
   -- Map classification to priority (10 categories)
@@ -300,7 +300,7 @@ BEGIN
     SELECT EXISTS(
       SELECT 1 FROM jeff_vip_senders
       WHERE v_thread.from_email ILIKE pattern
-        AND is_active = true
+        AND active = true
     ) INTO v_is_vip;
 
     IF NOT v_is_vip THEN
