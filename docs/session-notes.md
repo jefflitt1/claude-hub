@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-26 (Session 11)
+**Last Updated:** 2026-01-26 (Session 12)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 12 - 2026-01-26 (n8n Gmail Attribution Audit)
+- Audited all 37 active n8n workflows for Gmail nodes with "sent from n8n" attribution tag
+- Identified 4 Gmail nodes across 3 workflows with appendAttribution enabled (default=true when null)
+- Fixed: Daily Agent Status Digest (2 nodes), ROI Calculator trigger (1 node), ROI Calculator Notification (1 node)
+- Verified all 9 Gmail nodes across active workflows now have appendAttribution: false
+- Used n8n REST API directly via curl since MCP l7_get_workflow only returns node type summaries
 
 ### Session 11 - 2026-01-26 (MCP Cross-Machine Sync)
 - SSH'd to Mac Studio and added MCP env vars to `~/.zshrc`
