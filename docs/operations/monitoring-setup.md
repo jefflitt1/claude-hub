@@ -4,8 +4,45 @@
 
 Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 - **Beszel** - System metrics (CPU, RAM, disk, Docker containers)
+- **Uptime Kuma** - HTTP endpoint uptime monitoring
 - **n8n workflows** - Service health checks and alerting
-- **Uptime Kuma** (optional) - HTTP endpoint monitoring
+
+## Uptime Kuma Setup
+
+### Access
+- **Public URL:** https://kuma.l7-partners.com
+- **Internal URL:** http://100.77.124.12:3001 (Tailscale)
+- **Container:** `uptime-kuma`
+- **Data:** `/opt/uptime-kuma/data`
+
+### Initial Setup
+1. Access https://kuma.l7-partners.com
+2. Create admin account (first-time setup)
+3. Configure notifications:
+   - Settings → Notifications → Add Telegram
+   - Bot Token: `8169830247:AAF_BStYa7AqKPbHCeErAl2oij17d7cJhyI`
+   - Chat ID: `7938188628`
+4. Run monitor setup script:
+   ```bash
+   ~/Documents/Claude\ Code/claude-agents/scripts/setup-kuma-monitors.sh "YOUR_API_KEY"
+   ```
+
+### Subdomains to Monitor
+| Subdomain | Backend | Type |
+|-----------|---------|------|
+| n8n.l7-partners.com | Pi (tunnel) | HTTP |
+| metabase.l7-partners.com | Pi (tunnel) | HTTP |
+| supabase.l7-partners.com | Pi (tunnel) | HTTP |
+| webhooks.l7-partners.com | Pi (tunnel) | HTTP |
+| kuma.l7-partners.com | Pi (tunnel) | HTTP |
+| claude-api.l7-partners.com | Mac Studio (tunnel) | HTTP |
+| chat.l7-partners.com | Mac Studio (tunnel) | HTTP |
+| ollama.l7-partners.com | Mac Studio (tunnel) | HTTP |
+| l7-partners.com | Netlify | HTTP |
+| claude.l7-partners.com | Netlify | HTTP |
+| jglcap.l7-partners.com | Netlify | HTTP |
+| admin.l7-partners.com | Netlify | HTTP |
+| 191.l7-partners.com | Netlify | HTTP |
 
 ## Beszel Setup
 
@@ -57,14 +94,23 @@ ssh jgl@100.67.99.120 "source ~/.zshrc; docker restart beszel-agent"
 
 ## LaunchAgents (Mac Studio)
 
-| Service | Status | Notes |
-|---------|--------|-------|
-| com.claude.http-server | ✅ Active | Claude HTTP Server (port 3847) |
-| com.l7.system-monitor | 🔴 Disabled | Was spamming orchart alerts |
-| com.claude.health-check | 🔴 Disabled | Script missing |
-| com.claude.market-scan | 🔴 Disabled | Script missing |
-| com.claude.inbox-triage | 🔴 Disabled | Script missing |
-| com.claude.morning-digest | 🔴 Disabled | Broken |
+| Service | Status | Script | Notes |
+|---------|--------|--------|-------|
+| com.claude.http-server | ✅ Active | N/A | Claude HTTP Server (port 3847) |
+| com.claude.health-check | ✅ Fixed | `~/.claude/scripts/health-check.sh` | Hourly health check |
+| com.claude.market-scan | ✅ Fixed | `~/.claude/scripts/market-scan.sh` | Market overview |
+| com.claude.inbox-triage | ✅ Fixed | `~/.claude/scripts/inbox-triage.sh` | Email prioritization |
+| com.claude.morning-digest | ✅ Fixed | `~/.claude/scripts/morning-digest.sh` | 6:30am Feedly digest |
+| com.l7.system-monitor | 🔴 Disabled | central_collector.py | Was spamming orchart alerts |
+
+### Re-enable LaunchAgents
+```bash
+# Load individual agent
+ssh jgl@100.67.99.120 "launchctl load ~/Library/LaunchAgents/com.claude.health-check.plist"
+
+# Check status
+ssh jgl@100.67.99.120 "launchctl list | grep claude"
+```
 
 ## Network Topology
 
@@ -130,3 +176,48 @@ curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, acti
 - Check launchd: `launchctl list | grep claude`
 - Check port: `lsof -i :3847`
 - Restart: `launchctl kickstart -k gui/$(id -u)/com.claude.http-server`
+
+---
+
+## Local LLM Configuration (Mac Studio)
+
+### Ollama Models with Extended Context
+
+Default Ollama context is 4096 tokens. Extended models created for larger context windows:
+
+| Model | Context | Memory Impact |
+|-------|---------|---------------|
+| `deepseek-r1:32b` | 4K (default) | 19GB base |
+| `deepseek-r1:32b-ext` | 32K (8x) | ~23GB |
+| `deepseek-r1:14b` | 4K (default) | 9GB base |
+| `deepseek-r1:14b-ext` | 64K (16x) | ~11GB |
+
+### Usage
+```bash
+# Use extended context model
+ollama run deepseek-r1:32b-ext
+
+# Or set context at runtime
+ollama run deepseek-r1:32b
+>>> /set parameter num_ctx 32768
+```
+
+### Modelfiles Location
+`~/.ollama/modelfiles/` on Mac Studio
+
+### Create Custom Extended Model
+```bash
+# Create Modelfile
+cat > ~/.ollama/modelfiles/my-model-extended << 'EOF'
+FROM llama3.2:1b
+PARAMETER num_ctx 16384
+EOF
+
+# Build model
+ollama create llama3.2:1b-ext -f ~/.ollama/modelfiles/my-model-extended
+```
+
+### Memory/Performance Trade-offs
+- Each 4K increase in context ≈ 1GB additional VRAM
+- Larger context = slower inference
+- Mac Studio (32GB) can handle up to ~64K context on 14B models
