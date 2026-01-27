@@ -2759,36 +2759,48 @@ server.tool("jeff_classify_email", "Classify an email using local LLM (DeepSeek 
         const emailFrom = from_email || thread?.from_email || 'unknown';
         const emailName = from_name || thread?.from_name || '';
         const emailSnippet = snippet || thread?.snippet || '';
-        // Step 1: Try rule-based classification first
+        // Step 1: Try rule-based classification first (jeff_email_rules table)
         let classification = null;
         let confidence = 0;
         let suggestedAction = 'read';
         let reasoning = '';
         let model = 'rule-based';
-        const { data: ruleMatches } = await supabase.rpc('apply_email_rules', {
-            p_sender: emailFrom,
-            p_subject: emailSubject,
-            p_body: emailSnippet,
-            p_account: account || 'personal'
-        });
-        if (ruleMatches && ruleMatches.length > 0) {
-            const topRule = ruleMatches[0];
-            const ruleToClassification = {
-                'auto_archive': 'spam', 'auto_low_priority': 'marketing',
-                'auto_urgent': 'urgent', 'auto_high': 'needs_response',
-                'skip_inbox': 'spam', 'suggest_unsubscribe': 'marketing',
-                'auto_categorize': 'fyi'
-            };
-            const ruleToAction = {
-                'auto_archive': 'archive', 'auto_low_priority': 'read',
-                'auto_urgent': 'reply', 'auto_high': 'reply',
-                'skip_inbox': 'archive', 'suggest_unsubscribe': 'archive',
-                'auto_categorize': 'read'
-            };
-            classification = ruleToClassification[topRule.action] || 'fyi';
-            confidence = 0.95;
-            suggestedAction = ruleToAction[topRule.action] || 'read';
-            reasoning = `Matched rule: ${topRule.rule_name}`;
+        // If we have a thread_id, use the DB function which handles the full update
+        if (thread_id) {
+            const { data: ruleResult } = await supabase.rpc('apply_email_rules', {
+                p_thread_id: thread_id,
+                p_sender_email: emailFrom,
+                p_subject: emailSubject,
+                p_account: account || 'personal'
+            });
+            if (ruleResult && ruleResult.matched) {
+                classification = ruleResult.classification;
+                confidence = ruleResult.confidence || 0.95;
+                suggestedAction = ruleResult.action;
+                reasoning = `Matched rule: ${ruleResult.rule_name}`;
+            }
+        }
+        else {
+            // No thread_id: query rules table directly for a match
+            const { data: rules } = await supabase
+                .from('jeff_email_rules')
+                .select('*')
+                .eq('is_active', true)
+                .order('priority', { ascending: true });
+            if (rules) {
+                for (const rule of rules) {
+                    const senderMatch = !rule.sender_pattern || emailFrom.toLowerCase().includes(rule.sender_pattern.replace(/%/g, '').toLowerCase());
+                    const subjectMatch = !rule.subject_pattern || emailSubject.toLowerCase().includes(rule.subject_pattern.replace(/%/g, '').toLowerCase());
+                    const accountMatch = !rule.account || rule.account === (account || 'personal');
+                    if ((rule.sender_pattern || rule.subject_pattern) && senderMatch && subjectMatch && accountMatch) {
+                        classification = rule.classification;
+                        confidence = rule.confidence || 0.95;
+                        suggestedAction = rule.suggested_action;
+                        reasoning = `Matched rule: ${rule.rule_name}`;
+                        break;
+                    }
+                }
+            }
         }
         // Step 2: Use LLM if no rule match and use_llm is true
         if (!classification && use_llm) {
@@ -2799,8 +2811,20 @@ From: ${emailName} <${emailFrom}>
 Subject: ${emailSubject}
 Body preview: ${emailSnippet}
 
+Categories:
+- spam: Unsolicited junk, phishing
+- marketing: Promotions, sales, newsletters (non-intel)
+- orders: Purchase confirmations, shipping, receipts (Amazon, retailers, TradeStation confirms)
+- intel_cre: Commercial real estate news, deal alerts, market reports (CoStar, Bisnow, GlobeSt)
+- intel_markets: Financial/trading news, market analysis (Bloomberg, WSJ Markets, Morning Brew)
+- intel_general: Tech, business, general knowledge newsletters (HBR, Stratechery, TLDR)
+- local: Community, schools, sports, church, local news (Darien-specific)
+- fyi: Informational but not intel - internal updates, notifications, service alerts
+- needs_response: Requires a reply from me (personal email, question, request)
+- urgent: Time-sensitive, requires immediate attention (deadlines, emergencies)
+
 Respond with this exact JSON structure:
-{"classification":"spam|marketing|fyi|needs_response|urgent","confidence":0.0,"suggested_action":"archive|read|reply|create_task|escalate","reasoning":"brief explanation"}`;
+{"classification":"<one of above>","confidence":0.0,"suggested_action":"auto_delete|auto_archive|archive_and_index|tag_status|read|reply|create_task|create_proposal|suggest_draft|notify|escalate","reasoning":"brief explanation"}`;
                 const startTime = Date.now();
                 const response = await fetch(`${OLLAMA_URL}/api/generate`, {
                     method: 'POST',
@@ -2819,8 +2843,8 @@ Respond with this exact JSON structure:
                 const jsonMatch = (ollamaResult.response || '').match(/\{[\s\S]*?"classification"[\s\S]*?\}/);
                 if (jsonMatch) {
                     const parsed = JSON.parse(jsonMatch[0]);
-                    const validClassifications = ['spam', 'marketing', 'fyi', 'needs_response', 'urgent'];
-                    const validActions = ['archive', 'read', 'reply', 'create_task', 'escalate'];
+                    const validClassifications = ['spam', 'marketing', 'orders', 'intel_cre', 'intel_markets', 'intel_general', 'local', 'fyi', 'needs_response', 'urgent'];
+                    const validActions = ['auto_delete', 'auto_archive', 'archive_and_index', 'tag_status', 'read', 'reply', 'create_task', 'create_proposal', 'suggest_draft', 'notify', 'escalate'];
                     classification = validClassifications.includes(parsed.classification) ? parsed.classification : 'fyi';
                     confidence = typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0.5;
                     suggestedAction = validActions.includes(parsed.suggested_action) ? parsed.suggested_action : 'read';
