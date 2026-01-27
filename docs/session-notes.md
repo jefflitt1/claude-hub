@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 16)
+**Last Updated:** 2026-01-27 (Session 17)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 17 - 2026-01-27 (Monitoring Dashboard Integration — Beszel + Kuma → Supabase → Claude Hub)
+- Created Supabase tables `beszel_systems` and `uptime_kuma_monitors` with RLS policies
+- Built n8n workflow "Monitoring Sync" (NqHmc1tdkBW2SKn7) — 15-min sync from Beszel + Kuma APIs to Supabase
+- Fixed workflow: localhost → Docker container names, added Merge node for race condition, removed broken IF skip nodes
+- Made Docker network connections permanent (beszel + uptime-kuma compose files → n8n-stack_appnet)
+- Wrote Lovable prompt for MonitoringSection.tsx; Lovable built and deployed 502-line component
+- Component integrated into ClaudeCatalog.tsx home view with stat cards, system health bars, endpoint status, quick links
+- Verified end-to-end: 2 Beszel systems + 9 Kuma monitors flowing through Supabase to dashboard
+- Updated monitoring-setup.md with Dashboard Integration section
 
 ### Session 16 - 2026-01-27 (Pi Docker Cleanup + Supabase Backup + 4TB Drive + Tunnel Consolidation)
 - Removed 16 Docker containers from Pi (13 Supabase + ES + Kibana), then Weaviate + Metabase
