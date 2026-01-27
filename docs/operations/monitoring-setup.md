@@ -50,10 +50,21 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 | Claude HTTP Server | http://100.67.99.120:3847/health | UP |
 | Ollama API | http://100.67.99.120:11434/api/tags | UP |
 
-**Removed (internal-only, no public DNS needed):**
+**Paused (known issues):**
+- Claude HTTP Server - Server binds to `127.0.0.1:3847` only; needs config change to `0.0.0.0`
+- Metabase - Not deployed on Pi (no container/image)
+- Supabase (Cloud) - Monitor URL returns 404 at root; needs correct health endpoint
+
+**Removed DNS (internal-only, no public DNS needed):**
 - `supabase.l7-partners.com` - Supabase Studio not deployed; using Supabase cloud
 - `claude-api.l7-partners.com` - Behind Cloudflare Access; internal monitor covers it
 - `ollama.l7-partners.com` - Internal service; internal monitor covers it
+
+### Public Status Page
+- **URL:** https://status.l7-partners.com (or http://100.77.124.12:3001/status/l7)
+- **Slug:** `l7`
+- **Monitors shown:** 10 public-facing services
+- Shows "Partially Degraded Service" when any monitor is down
 
 ## Beszel Setup
 
@@ -170,6 +181,11 @@ ssh jgl@100.67.99.120 "launchctl list | grep claude"
 |----------|---------|
 | claude-api.l7-partners.com | Claude HTTP Server (behind Cloudflare Access) |
 | chat.l7-partners.com | Open WebUI |
+
+### Public Access via Cloudflare Access
+| Subdomain | Access Policy | Session |
+|-----------|---------------|---------|
+| beszel.l7-partners.com | Jeff only (jglittell@gmail.com) | 7 days |
 
 **Note:** `ollama.l7-partners.com` and `supabase.l7-partners.com` DNS records removed - these are internal-only services monitored via Tailscale.
 
