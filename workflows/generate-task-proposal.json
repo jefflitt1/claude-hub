@@ -1,0 +1,219 @@
+{
+  "name": "Generate Task Proposal",
+  "description": "Generate AI-powered next-action proposals for tasks using Ollama deepseek-r1:14b on Mac Studio. Triggered by sparkles button on dashboard.",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "generate-task-proposal",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-task-proposal",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "validate-secret",
+      "name": "Validate Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "secret-check",
+              "leftValue": "={{ $json.headers['x-webhook-secret'] }}",
+              "rightValue": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "reject-unauthorized",
+      "name": "Reject Unauthorized",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 500],
+      "parameters": {
+        "jsCode": "return [{ json: { error: 'Unauthorized', status: 401 } }];"
+      }
+    },
+    {
+      "id": "extract-task",
+      "name": "Extract Task Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst task_id = body.task_id;\n\nif (!task_id) {\n  throw new Error('Missing required field: task_id');\n}\n\nreturn [{ json: { task_id } }];"
+      }
+    },
+    {
+      "id": "fetch-task",
+      "name": "Fetch Task Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_tasks?id=eq.{{ $json.task_id }}&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "build-prompt",
+      "name": "Build Ollama Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "parameters": {
+        "jsCode": "const task = Array.isArray($json) ? $json[0] : $json;\n\nif (!task || !task.id) {\n  throw new Error('Task not found');\n}\n\nconst prompt = `Analyze this task and suggest the next best action.\nTask: ${task.title} | Category: ${(task.tags || []).join(', ')} | Priority: ${task.priority_score || 5}/10\nDescription: ${task.description || 'None'} | Due: ${task.due_date || 'No due date'}\n\nRespond ONLY as JSON (no markdown, no code fences): { \"next_action\": \"...\", \"reasoning\": \"...\", \"action_type\": \"review|followup|complete_task\" }`;\n\nreturn [{ json: { task_id: task.id, task_title: task.title, prompt } }];"
+      }
+    },
+    {
+      "id": "call-ollama",
+      "name": "Call Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://100.67.99.120:11434/api/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'deepseek-r1:14b', prompt: $json.prompt, stream: false, options: { temperature: 0.3 } }) }}",
+        "options": { "timeout": 30000 }
+      }
+    },
+    {
+      "id": "parse-response",
+      "name": "Parse Ollama Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 300],
+      "parameters": {
+        "jsCode": "const response = $json.response || '';\nconst taskData = $('Build Ollama Prompt').item.json;\n\n// Extract JSON from response - handle possible markdown fences or think tags\nlet parsed;\ntry {\n  // Try direct parse first\n  parsed = JSON.parse(response);\n} catch (e) {\n  // Try extracting JSON from response text\n  const jsonMatch = response.match(/\\{[\\s\\S]*?\"next_action\"[\\s\\S]*?\\}/)\n  if (jsonMatch) {\n    try {\n      parsed = JSON.parse(jsonMatch[0]);\n    } catch (e2) {\n      parsed = {\n        next_action: 'Review task and determine next steps',\n        reasoning: 'Could not parse AI response - manual review recommended',\n        action_type: 'review'\n      };\n    }\n  } else {\n    parsed = {\n      next_action: response.substring(0, 200),\n      reasoning: 'Raw AI response (JSON parsing failed)',\n      action_type: 'review'\n    };\n  }\n}\n\nreturn [{\n  json: {\n    task_id: taskData.task_id,\n    task_title: taskData.task_title,\n    next_action: parsed.next_action,\n    reasoning: parsed.reasoning,\n    action_type: parsed.action_type || 'review'\n  }\n}];"
+      }
+    },
+    {
+      "id": "insert-proposal",
+      "name": "Insert Proposal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_action_proposals",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ task_id: $json.task_id, proposed_action: $json.next_action, reasoning: $json.reasoning, action_type: $json.action_type, source: 'ollama-deepseek-r1-14b', status: 'pending' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 300],
+      "parameters": {
+        "jsCode": "const proposal = Array.isArray($json) ? $json[0] : $json;\nconst taskData = $('Parse Ollama Response').item.json;\n\nreturn [{\n  json: {\n    success: true,\n    proposal_id: proposal.id,\n    task_title: taskData.task_title,\n    next_action: taskData.next_action,\n    action_type: taskData.action_type\n  }\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Validate Secret", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate Secret": {
+      "main": [
+        [{ "node": "Extract Task Data", "type": "main", "index": 0 }],
+        [{ "node": "Reject Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Task Data": {
+      "main": [
+        [{ "node": "Fetch Task Details", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Task Details": {
+      "main": [
+        [{ "node": "Build Ollama Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Ollama Prompt": {
+      "main": [
+        [{ "node": "Call Ollama", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Ollama": {
+      "main": [
+        [{ "node": "Parse Ollama Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Ollama Response": {
+      "main": [
+        [{ "node": "Insert Proposal", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert Proposal": {
+      "main": [
+        [{ "node": "Success Response", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveDataSuccessExecution": "all",
+    "timezone": "America/New_York"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

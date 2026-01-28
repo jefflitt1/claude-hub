@@ -1,0 +1,368 @@
+{
+  "name": "Google Tasks Import",
+  "description": "Import Google Tasks into jeff_tasks with deduplication via jeff_google_tasks_sync. Triggered by dashboard Import button.",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "google-tasks-import",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "google-tasks-import",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "validate-secret",
+      "name": "Validate Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "secret-check",
+              "leftValue": "={{ $json.headers['x-webhook-secret'] }}",
+              "rightValue": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "reject-unauthorized",
+      "name": "Reject Unauthorized",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 500],
+      "parameters": {
+        "jsCode": "return [{ json: { error: 'Unauthorized', status: 401 } }];"
+      }
+    },
+    {
+      "id": "list-mapping",
+      "name": "Define List Mapping",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "jsCode": "const LIST_MAP = {\n  'L7 PARTNERS': { account: 'l7', tags: ['l7'] },\n  'JGL': { account: 'jgl', tags: ['jgl'] },\n  'IT': { account: 'personal', tags: ['tech'] },\n  'Home': { account: 'personal', tags: ['household'] },\n  'Magic': { account: 'personal', tags: ['magic'] },\n  'Family': { account: 'personal', tags: ['family'] },\n  'Professional': { account: 'personal', tags: ['professional'] },\n  'Investing': { account: 'jgl', tags: ['jgl', 'investing'] },\n  'Revisit': { account: 'personal', tags: ['revisit'] }\n};\n\nreturn [{ json: { listMap: LIST_MAP } }];"
+      }
+    },
+    {
+      "id": "fetch-google-lists",
+      "name": "Fetch Google Tasks Lists",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "https://tasks.googleapis.com/tasks/v1/users/@me/lists",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleTasksOAuth2Api",
+        "options": {}
+      },
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "GOOGLE_TASKS_CREDENTIAL_ID",
+          "name": "Google Tasks (jglittell@gmail.com)"
+        }
+      }
+    },
+    {
+      "id": "filter-and-iterate",
+      "name": "Filter Lists & Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "parameters": {
+        "jsCode": "const listMap = $('Define List Mapping').item.json.listMap;\nconst lists = $json.items || [];\nconst SKIP_LISTS = ['Wishlist', 'My Tasks'];\n\nconst mappedLists = lists\n  .filter(l => !SKIP_LISTS.includes(l.title) && listMap[l.title])\n  .map(l => ({\n    listId: l.id,\n    listTitle: l.title,\n    account: listMap[l.title].account,\n    tags: listMap[l.title].tags\n  }));\n\nreturn mappedLists.map(l => ({ json: l }));"
+      }
+    },
+    {
+      "id": "fetch-tasks-per-list",
+      "name": "Fetch Tasks Per List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://tasks.googleapis.com/tasks/v1/lists/{{ $json.listId }}/tasks?maxResults=100&showCompleted=false",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleTasksOAuth2Api",
+        "options": { "timeout": 15000 }
+      },
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "GOOGLE_TASKS_CREDENTIAL_ID",
+          "name": "Google Tasks (jglittell@gmail.com)"
+        }
+      }
+    },
+    {
+      "id": "flatten-tasks",
+      "name": "Flatten Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 300],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst allTasks = [];\n\nfor (const item of items) {\n  const tasks = item.json.items || [];\n  // Carry forward list metadata from previous node\n  const listId = item.json.listId || $('Filter Lists & Prepare').item?.json?.listId;\n  const listTitle = item.json.listTitle || $('Filter Lists & Prepare').item?.json?.listTitle;\n  const account = item.json.account || $('Filter Lists & Prepare').item?.json?.account;\n  const tags = item.json.tags || $('Filter Lists & Prepare').item?.json?.tags;\n\n  for (const task of tasks) {\n    if (task.status === 'needsAction') {\n      allTasks.push({\n        json: {\n          google_task_id: task.id,\n          google_list_id: listId,\n          google_list_name: listTitle,\n          title: task.title,\n          description: task.notes || null,\n          due_date: task.due || null,\n          account: account,\n          tags: tags\n        }\n      });\n    }\n  }\n}\n\nreturn allTasks.length > 0 ? allTasks : [{ json: { _empty: true } }];"
+      }
+    },
+    {
+      "id": "check-empty",
+      "name": "Has Tasks?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1540, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "empty-check",
+              "leftValue": "={{ $json._empty }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "no-tasks-response",
+      "name": "No Tasks Found",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 500],
+      "parameters": {
+        "jsCode": "return [{ json: { imported_count: 0, skipped_count: 0, message: 'No active tasks found' } }];"
+      }
+    },
+    {
+      "id": "check-existing-sync",
+      "name": "Check Existing Sync",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 300],
+      "continueOnFail": true,
+      "parameters": {
+        "method": "GET",
+        "url": "=https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_google_tasks_sync?google_task_id=eq.{{ $json.google_task_id }}&select=id",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "is-new-task",
+      "name": "Is New Task?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 300],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const syncResult = item.json;\n  // If the Supabase query returned an empty array, it's a new task\n  const isNew = Array.isArray(syncResult) ? syncResult.length === 0 : true;\n  // Carry forward task data from Flatten Tasks node\n  const taskData = $('Flatten Tasks').item.json;\n  results.push({\n    json: {\n      ...taskData,\n      is_new: isNew\n    }\n  });\n}\n\nreturn results;"
+      }
+    },
+    {
+      "id": "filter-new-only",
+      "name": "Filter New Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2200, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "new-check",
+              "leftValue": "={{ $json.is_new }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "insert-jeff-task",
+      "name": "Insert jeff_tasks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_tasks",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: $json.title, description: $json.description, status: 'pending', kanban_column: 'inbox', kanban_position: 0, priority_score: 5, due_date: $json.due_date, account: $json.account, tags: $json.tags, google_task_id: $json.google_task_id, source_type: 'google_tasks' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "insert-sync-record",
+      "name": "Insert Sync Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_google_tasks_sync",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ google_task_id: $('Filter New Only').item.json.google_task_id, google_list_id: $('Filter New Only').item.json.google_list_id, google_list_name: $('Filter New Only').item.json.google_list_name, jeff_task_id: $json[0].id, sync_direction: 'google_to_jeff', sync_status: 'synced', last_synced_at: new Date().toISOString() }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 300],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst imported_count = items.length;\n\nreturn [{\n  json: {\n    imported_count,\n    skipped_count: 0,\n    message: `Successfully imported ${imported_count} tasks from Google Tasks`\n  }\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Validate Secret", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate Secret": {
+      "main": [
+        [{ "node": "Define List Mapping", "type": "main", "index": 0 }],
+        [{ "node": "Reject Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "Define List Mapping": {
+      "main": [
+        [{ "node": "Fetch Google Tasks Lists", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Google Tasks Lists": {
+      "main": [
+        [{ "node": "Filter Lists & Prepare", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter Lists & Prepare": {
+      "main": [
+        [{ "node": "Fetch Tasks Per List", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Tasks Per List": {
+      "main": [
+        [{ "node": "Flatten Tasks", "type": "main", "index": 0 }]
+      ]
+    },
+    "Flatten Tasks": {
+      "main": [
+        [{ "node": "Has Tasks?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has Tasks?": {
+      "main": [
+        [{ "node": "Check Existing Sync", "type": "main", "index": 0 }],
+        [{ "node": "No Tasks Found", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Existing Sync": {
+      "main": [
+        [{ "node": "Is New Task?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is New Task?": {
+      "main": [
+        [{ "node": "Filter New Only", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter New Only": {
+      "main": [
+        [{ "node": "Insert jeff_tasks", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Insert jeff_tasks": {
+      "main": [
+        [{ "node": "Insert Sync Record", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert Sync Record": {
+      "main": [
+        [{ "node": "Aggregate Results", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveDataSuccessExecution": "all",
+    "timezone": "America/New_York"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

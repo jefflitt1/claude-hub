@@ -1,0 +1,256 @@
+{
+  "name": "Google Tasks Completion Sync",
+  "description": "When a task is completed in JGL Dashboard, mark it complete in Google Tasks. Triggered via webhook when task moves to Done column.",
+  "active": false,
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "webhookId": "google-tasks-complete",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "google-tasks-complete",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "validate-secret",
+      "name": "Validate Secret",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "secret-check",
+              "leftValue": "={{ $json.headers['x-webhook-secret'] }}",
+              "rightValue": "={{ $env.N8N_WEBHOOK_SECRET }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "reject-unauthorized",
+      "name": "Reject Unauthorized",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 500],
+      "parameters": {
+        "jsCode": "return [{ json: { error: 'Unauthorized', status: 401 } }];"
+      }
+    },
+    {
+      "id": "extract-payload",
+      "name": "Extract Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst task_id = body.task_id;\nconst google_task_id = body.google_task_id;\n\nif (!task_id || !google_task_id) {\n  throw new Error('Missing required fields: task_id and google_task_id');\n}\n\nreturn [{ json: { task_id, google_task_id } }];"
+      }
+    },
+    {
+      "id": "lookup-sync-record",
+      "name": "Lookup Sync Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_google_tasks_sync?google_task_id=eq.{{ $json.google_task_id }}&select=id,google_list_id,google_task_id",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "has-sync-record",
+      "name": "Has Sync Record?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "sync-exists",
+              "leftValue": "={{ Array.isArray($json) && $json.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "no-sync-record",
+      "name": "No Sync Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 500],
+      "parameters": {
+        "jsCode": "return [{ json: { success: false, error: 'No Google Tasks sync record found for this task' } }];"
+      }
+    },
+    {
+      "id": "prepare-complete",
+      "name": "Prepare Complete Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 300],
+      "parameters": {
+        "jsCode": "const syncRecord = $json[0];\nconst google_task_id = syncRecord.google_task_id;\nconst google_list_id = syncRecord.google_list_id;\nconst sync_id = syncRecord.id;\n\nreturn [{ json: { google_task_id, google_list_id, sync_id } }];"
+      }
+    },
+    {
+      "id": "mark-complete-google",
+      "name": "Mark Complete in Google",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 300],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://tasks.googleapis.com/tasks/v1/lists/{{ $json.google_list_id }}/tasks/{{ $json.google_task_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleTasksOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'completed' }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "GOOGLE_TASKS_CREDENTIAL_ID",
+          "name": "Google Tasks (jglittell@gmail.com)"
+        }
+      }
+    },
+    {
+      "id": "update-sync-record",
+      "name": "Update Sync Record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 300],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://donnmhbwhpjlmpnwgdqr.supabase.co/rest/v1/jeff_google_tasks_sync?id=eq.{{ $('Prepare Complete Request').item.json.sync_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ last_synced_at: new Date().toISOString(), sync_status: 'completed' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 300],
+      "parameters": {
+        "jsCode": "return [{ json: { success: true, message: 'Task marked as completed in Google Tasks and sync record updated' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Validate Secret", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate Secret": {
+      "main": [
+        [{ "node": "Extract Payload", "type": "main", "index": 0 }],
+        [{ "node": "Reject Unauthorized", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract Payload": {
+      "main": [
+        [{ "node": "Lookup Sync Record", "type": "main", "index": 0 }]
+      ]
+    },
+    "Lookup Sync Record": {
+      "main": [
+        [{ "node": "Has Sync Record?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has Sync Record?": {
+      "main": [
+        [{ "node": "Prepare Complete Request", "type": "main", "index": 0 }],
+        [{ "node": "No Sync Record", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Complete Request": {
+      "main": [
+        [{ "node": "Mark Complete in Google", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mark Complete in Google": {
+      "main": [
+        [{ "node": "Update Sync Record", "type": "main", "index": 0 }]
+      ]
+    },
+    "Update Sync Record": {
+      "main": [
+        [{ "node": "Success Response", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveDataSuccessExecution": "all",
+    "timezone": "America/New_York"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

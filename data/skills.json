@@ -122,5 +122,58 @@
     "project": "l7-partners",
     "domain": "operations",
     "status": "planned"
+  },
+  {
+    "id": "built-sme",
+    "name": "Built SME",
+    "description": "Subject matter expert on construction debt, real estate financing, lending products, and construction loan lifecycle",
+    "trigger": "/built-sme",
+    "location": "~/.claude/skills/built-sme/SKILL.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/built-sme", "description": "Start interactive SME session" },
+      { "command": "/built-sme term [term]", "description": "Explain a construction lending term" },
+      { "command": "/built-sme loan-type [type]", "description": "Deep dive on a loan product" },
+      { "command": "/built-sme objection [topic]", "description": "Technical response to client concern" }
+    ],
+    "project": "built",
+    "domain": "construction-finance",
+    "status": "active"
+  },
+  {
+    "id": "built-sales",
+    "name": "Built Sales Coach",
+    "description": "Chris Voss-style enterprise SaaS sales coaching for Built Technologies with Challenger Sale and MEDDPICC frameworks",
+    "trigger": "/built-sales",
+    "location": "~/.claude/skills/built-sales/SKILL.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/built-sales", "description": "Start interactive sales coaching" },
+      { "command": "/built-sales prep [account]", "description": "Pre-call preparation for a specific account" },
+      { "command": "/built-sales objection [objection]", "description": "Handle objection with Voss tactics" },
+      { "command": "/built-sales disco [persona]", "description": "Discovery questions for a buyer persona" },
+      { "command": "/built-sales close [scenario]", "description": "Closing strategy for a deal scenario" }
+    ],
+    "project": "built",
+    "domain": "enterprise-sales",
+    "status": "active"
+  },
+  {
+    "id": "built-admin",
+    "name": "Built Admin",
+    "description": "Communication and administrative tool for Built Technologies sales role - emails, meeting prep, CRM, follow-ups",
+    "trigger": "/built-admin",
+    "location": "~/.claude/skills/built-admin/SKILL.md",
+    "scope": "personal",
+    "commands": [
+      { "command": "/built-admin", "description": "Start interactive admin session" },
+      { "command": "/built-admin email [type]", "description": "Draft a sales email (intro, follow-up, breakup, etc.)" },
+      { "command": "/built-admin notes [context]", "description": "Process meeting notes into action items" },
+      { "command": "/built-admin prep [meeting]", "description": "Prepare meeting agenda and materials" },
+      { "command": "/built-admin update [deal]", "description": "Draft CRM/pipeline update" }
+    ],
+    "project": "built",
+    "domain": "sales-operations",
+    "status": "active"
   }
 ]
