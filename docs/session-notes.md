@@ -1,10 +1,43 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-28 (Session 28)
+**Last Updated:** 2026-01-28 (Session 31)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 31 - 2026-01-28 (n8n Documentation Review & Knowledge Extraction)
+- Reviewed all n8n documentation in ~/Desktop/N8n folder (12 files)
+- Extracted knowledge from PDFs: server setup, MCP integration, error handling, pricing strategies
+- Analyzed workflow JSONs: Gmail AI Email Manager, Knowledge DB (RAG system)
+- Created Apple Note "n8n Automation Knowledge Base" with all patterns and templates
+- Exported session context to memory system
+- Marked "Audit and consolidate n8n workflows" task as complete
+- Created 3 follow-up tasks: prior-history email detection, error handling pattern, consulting evaluation
+- Decision: Gmail AI Manager's prior-history detection pattern is valuable for jeff-agent enhancement
+
+### Session 30 - 2026-01-28 (Pi VNC Setup Complete)
+- Set up second Raspberry Pi (raspberrypi) with full remote access stack
+- Enabled SSH on Pi, installed/configured Tailscale (IP: 100.95.8.67)
+- Disabled Tailscale key expiry for both Pis
+- Security hardening: disabled root SSH, installed fail2ban, enabled Tailscale SSH
+- Switched Pi from Wayland to X11 for better VNC compatibility
+- Installed x11vnc on both Pis with auto-start systemd services
+- Configured VNC on n8n Pi (jeffn8nhost, 100.77.124.12:5900)
+- Configured VNC on secondary Pi (raspberrypi, 100.95.8.67:5900)
+- Updated IT infrastructure documentation with both Pi configs
+- Added to CLAUDE.md: Tailscale network table with all device IPs
+
+### Session 29 - 2026-01-28 (Secondary Pi Remote Access)
+- Set up second Raspberry Pi (jglit@raspberrypi) for remote access
+- Enabled SSH on Pi (was disabled by default)
+- Installed and configured Tailscale on Pi (IP: 100.95.8.67)
+- Disabled key expiry in Tailscale admin
+- Installed xrdp for Jump Desktop remote access
+- Security hardening: disabled root SSH login
+- Installed fail2ban for SSH brute-force protection
+- Disabled unnecessary services (cups, ModemManager, bluetooth)
+- Cleaned up old kernel packages (~500MB freed)
 
 ### Session 28 - 2026-01-28 (IT Agent Audit + Windows VM Licensing)
 - Confirmed all IT agent documentation complete (skill, agent, tech-stack-inventory, Pi handoff doc, Apple Note mirror)
