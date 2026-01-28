@@ -332,16 +332,87 @@ launchctl load ~/Library/LaunchAgents/com.claude.http-server.plist
 
 ## Network Reference
 
-| Host | IP | Purpose |
-|------|-----|---------|
-| MacBook | (DHCP) | Development, thin client |
-| Mac Studio | 192.168.4.XXX | Primary Claude Code server |
-| Pi 5 | 192.168.4.YYY | n8n, AI HAT |
-| n8n.l7-partners.com | Cloudflare | n8n automation |
-| studio-ssh.l7-partners.com | Cloudflare | Mac Studio SSH |
-| claude-api.l7-partners.com | Cloudflare | Claude HTTP API |
+### Local Network
+| Host | Local IP | Tailscale IP | Purpose |
+|------|----------|--------------|---------|
+| MacBook Pro | (DHCP) | 100.85.201.111 | Development, thin client |
+| Mac Studio | 192.168.5.38 | 100.67.99.120 | Primary Claude Code server, Ollama |
+| Pi 5 (jeffn8nhost) | - | 100.77.124.12 | n8n automation, AI HAT |
+| Pi 5 (raspberrypi) | 192.168.4.194 | 100.95.8.67 | Secondary Pi, general use |
+| Windows VM 1 | - | 100.95.217.59 | TradeStation |
+| Windows VM 2 | - | 100.117.154.92 | TradeStation (often offline) |
+| iPhone | - | 100.102.117.40 | Mobile |
+
+### Public Endpoints
+| Domain | Service |
+|--------|---------|
+| n8n.l7-partners.com | n8n automation |
+| studio-ssh.l7-partners.com | Mac Studio SSH |
+| claude-api.l7-partners.com | Claude HTTP API |
+
+### n8n Pi (jeffn8nhost) - Updated 2026-01-28
+
+**Purpose:** Always-on automation server (n8n workflows, webhooks, monitoring)
+
+| Setting | Value |
+|---------|-------|
+| Hostname | jeffn8nhost |
+| User | jeffn8n |
+| Password | 0924 |
+| Tailscale IP | 100.77.124.12 |
+| SSH | `ssh jeffn8n@100.77.124.12` |
+| VNC | `100.77.124.12:5900` (x11vnc, auto-starts) |
+| Key expiry | Disabled |
+
+**Installed Services:**
+- Tailscale
+- n8n (Docker)
+- x11vnc (auto-starts on boot)
+
+---
+
+### Secondary Pi (raspberrypi) - Added 2026-01-28
+
+**Purpose:** Son's computer, general use (NOT part of automation system)
+
+| Setting | Value |
+|---------|-------|
+| Hostname | raspberrypi |
+| User | jglit |
+| Password | pi1234 |
+| Local IP | 192.168.4.194 |
+| Tailscale IP | 100.95.8.67 |
+| SSH | `ssh jglit@100.95.8.67` (Tailscale SSH, passwordless) |
+| VNC | `100.95.8.67:5900` (x11vnc, auto-starts) |
+| Key expiry | Disabled |
+
+**Installed Services:**
+- Tailscale (with Tailscale SSH enabled)
+- x11vnc (auto-starts on boot, for Jump Desktop)
+- fail2ban (SSH brute-force protection)
+
+**Disabled Services (for performance):**
+- cups, cups-browsed (printing)
+- ModemManager
+- bluetooth
+- xrdp (replaced with x11vnc)
+
+**Security Hardening:**
+- Root SSH login disabled
+- fail2ban installed
+- Tailscale SSH for passwordless auth
+
+---
+
+### Jump Desktop Quick Reference
+
+| Device | Protocol | Address | Password |
+|--------|----------|---------|----------|
+| Pi (jeffn8nhost) | VNC | `100.77.124.12:5900` | 0924 |
+| Pi (raspberrypi) | VNC | `100.95.8.67:5900` | pi1234 |
+| Mac Studio | Fluid | `100.67.99.120` | (macOS login) |
 
 ---
 
 *Last updated: 2026-01-28*
-*Session: Cross-monitoring resilience + IT agent updates*
+*Session: VNC setup on both Pis with auto-start*
