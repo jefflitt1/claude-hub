@@ -297,6 +297,19 @@ Two physical Windows PCs currently running TradeStation need to be audited befor
 
 ---
 
+## Long-Term To-Do List
+
+### Windows VM Licensing
+- [ ] **Check Microsoft account for digital Pro licenses** - May have upgraded licenses linked to Microsoft account from old PCs. On VMs: Settings → System → Activation → Troubleshoot → "I changed hardware on this device recently". Could avoid buying new Pro keys (~$60 savings).
+
+### Infrastructure Improvements
+- [ ] **Frigate NVR setup on Pi 5** - Security camera AI with Hailo NPU
+- [ ] **Configure TradeStation credentials** - Need real API creds for MCP
+- [ ] **Network diagram (visual)** - Create 1-page visual topology
+- [ ] **IT admin handoff checklist** - Runbook format for secretary/IT handoff
+
+---
+
 ## Decisions Finalized (2026-01-21)
 
 1. ✅ **Mac Studio username**: `jgl` (different from MacBook)
@@ -330,5 +343,5 @@ launchctl load ~/Library/LaunchAgents/com.claude.http-server.plist
 
 ---
 
-*Last updated: 2026-01-21*
-*Session: Mac Studio migration preparation*
+*Last updated: 2026-01-28*
+*Session: Cross-monitoring resilience + IT agent updates*
