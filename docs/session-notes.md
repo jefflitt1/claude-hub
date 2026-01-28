@@ -1,10 +1,21 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 18)
+**Last Updated:** 2026-01-27 (Session 19)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 19 - 2026-01-27 (Cloudflare Access: Tailscale IP Bypass for All Apps)
+- Audited all 14 Cloudflare Access apps for IP bypass policy coverage
+- Added Tailscale IP Bypass policy to Beszel and N8N (were the only two missing)
+- All apps now have consistent Tailscale IP bypass (100.85.201.111, 100.67.99.120, 100.102.117.40, 100.77.124.12 + public IP + IPv6)
+- Investigated Cloudflare WARP as alternative — decided against it (iOS only allows one VPN, conflicts with Tailscale)
+- Decision: Stick with Tailscale for phone access — stable IPs across wifi/cellular, no WARP needed
+- Attempted to extend session durations to 30 days via MCP — blocked by `update_access_app` bug (missing app type field)
+- Open: Update session durations to 30 days manually in Zero Trust dashboard
+- Open: Verify iPhone Tailscale IP is in the bypass list
+- Can uninstall 1.1.1.1/WARP apps from devices (not needed)
 
 ### Session 18 - 2026-01-27 (Telegram Bot Short-Term Memory + Infrastructure Fixes)
 - Added short-term memory to all 5 Telegram bots via `claude-http-server.js` (fetches last 6 messages from Supabase, injects as XML conversation history)
