@@ -1,10 +1,47 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-28 (Session 23)
+**Last Updated:** 2026-01-28 (Session 28)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 28 - 2026-01-28 (IT Agent Audit + Windows VM Licensing)
+- Confirmed all IT agent documentation complete (skill, agent, tech-stack-inventory, Pi handoff doc, Apple Note mirror)
+- Documented Windows PC status and IPs (192.168.4.46 and 192.168.4.45)
+- Identified Windows licenses showing as Home (not Pro) when activated on VMs - no RDP support
+- Provided troubleshooting steps to check Microsoft account for linked digital Pro licenses
+- Added Windows Pro license check to IT agent long-term to-do list
+- Decision: Check Microsoft account for digital Pro upgrades before buying new keys (~$60 savings)
+
+### Session 27 - 2026-01-28 (UTM VM Boot Fixes)
+- Fixed UTM VM boot issue - removed empty CD/DVD drives from Windows 1.utm and Windows 2.utm config.plist
+- Both Windows VMs now boot directly to disk without requiring manual boot device selection
+- Identified orplat.exe startup error (Oracle VirtualBox leftover) - needs in-VM registry cleanup
+- Open: Remove orplat.exe from Windows startup via registry
+
+### Session 26 - 2026-01-28 (Tailscale + n8n Workflow Fixes)
+- Investigated Tailscale authentication popup issue - confirmed 30-day GitHub OAuth IdP session expiry (non-configurable)
+- Disabled admin console inactivity timeout
+- Disabled Raspberry Pi physical power button via systemd-logind config
+- Disabled 3 failing n8n workflows (PDF Vector, GitHub Sync, Email Classification - missing env vars)
+- Decision: No Tailscale MCP needed - 6 machines too small scale
+
+### Session 25 - 2026-01-28 (Built Technologies Project Setup)
+- Created Built Technologies company briefing document (`~/Desktop/Built_Technologies_Briefing.md`)
+- Created 3 Built agents: `/built-sme` (construction finance), `/built-sales` (Voss+Challenger+MEDDPICC), `/built-admin` (email/CRM)
+- Added Built project to Active Projects in CLAUDE.md
+- Added 3 agents and 3 skills to registry (agents.json, skills.json, projects.json)
+- Compiled sales training resources (a16z B2FI guide mentions Built as case study)
+
+### Session 24 - 2026-01-28 (Cross-Monitoring Resilience - Overnight)
+- Created `scripts/cross-watchdog.sh` - Zero-dependency bash script for cross-device health monitoring
+- Deployed watchdog to Mac Studio with LaunchAgent (`com.l7.cross-watchdog.plist`)
+- Fixed watchdog alerting: changed from cooldown-based to state-transition alerting (alerts only on up→down and down→up)
+- Fixed n8n healthcheck URL to use public endpoint (n8n binds to 127.0.0.1 only)
+- Reset and configured fresh Uptime Kuma on Mac Studio (:3001) with 14 monitors + Telegram notifications
+- Recreated Mac Studio Beszel agent with Pi hub key (was misconfigured during Pi outage)
+- Updated `docs/operations/monitoring-setup.md` with 3-layer symmetric monitoring architecture
 
 ### Session 23 - 2026-01-28 (Windows PC Deprecation - SSH & Audit Commands)
 - Provided SSH setup commands for both Windows PCs (192.168.4.46 and 192.168.4.45) — OpenSSH Server requires admin elevation
