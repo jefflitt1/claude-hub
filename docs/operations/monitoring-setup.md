@@ -27,32 +27,52 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 - Admin: jglittell@gmail.com / Beszel#Mac2026!
 - Mac Studio monitoring itself only (Pi agent unreachable)
 
-**Permanent Fix Required:**
-1. Get Pi back online (physical check: power, SD card, network)
-2. Decide hub location: keep on Pi or migrate permanently to Mac Studio
-3. If keeping Pi hub: restore Mac Studio agent KEY to original Pi hub key
-4. If migrating to Mac Studio: update docs, Kuma monitors, n8n workflow endpoints
-5. Fix MacBook → Mac Studio SSH (ed25519 key not authorized)
+**Permanent Fix: Cross-Monitoring Resilience (Implemented 2026-01-27)**
 
-**Architectural Weakness Identified:**
-The Pi is a single point of failure for ALL monitoring. If the Pi dies, we lose the ability to monitor AND alert. Consider:
-- Running Kuma on Mac Studio as primary (Pi as backup)
-- Running Beszel hub on Mac Studio (always-on compute device)
-- Keeping n8n on Pi but with webhook failover
+3-layer symmetric monitoring eliminates the single point of failure:
+
+```
+Layer 3: WATCHDOG (bash scripts, zero dependencies, last resort)
+  Pi cron ←──ping+curl──→ Mac Studio launchd
+  Each alerts via Telegram if the other is unreachable (5 min interval)
+
+Layer 2: DUAL UPTIME KUMA (HTTP endpoint monitoring)
+  Pi Kuma (:3001) monitors ALL services (existing)
+  Mac Studio Kuma (:3001) monitors ALL services (NEW)
+  Either one survives → full alerting coverage
+
+Layer 1: BESZEL (system metrics)
+  Pi Hub (primary) ← both agents report here
+  Mac Studio Hub (hot standby) ← monitors itself when Pi is down
+
+Layer 0: n8n SELF-HEALING (existing, Pi-based, no changes needed)
+```
+
+**Failure scenarios:**
+- Pi down → Studio watchdog alerts (5min), Studio Kuma alerts (1min)
+- Studio down → Pi watchdog alerts (5min), Pi Kuma alerts (1min), n8n self-healing (15min)
+- Both down → First to recover alerts about the other
 
 ---
 
-## Uptime Kuma Setup
+## Uptime Kuma Setup (Dual Instance)
 
-### Access
+### Pi Instance (Primary)
 - **Public URL:** https://kuma.l7-partners.com
 - **Internal URL:** http://100.77.124.12:3001 (Tailscale)
 - **Container:** `uptime-kuma`
 - **Data:** `/opt/uptime-kuma/data`
+- **Credentials:** `jeff` / `L7monitors!`
 
-### Credentials
-- **Username:** `jeff`
-- **Password:** `L7monitors!`
+### Mac Studio Instance (Redundant)
+- **Internal URL:** http://100.67.99.120:3001 (Tailscale)
+- **Container:** `uptime-kuma`
+- **Data:** Docker volume `uptime-kuma-data`
+- **Credentials:** `jglittell@gmail.com` (set during first-run setup)
+- **Deploy:** `docker run -d --name uptime-kuma --restart unless-stopped -p 3001:3001 -v uptime-kuma-data:/app/data louislam/uptime-kuma:1`
+- **Monitor setup:** `scripts/setup-studio-kuma.sh YOUR_API_KEY`
+
+Both instances monitor all services. Either one surviving provides full alerting coverage.
 
 ### Initial Setup (Completed 2026-01-27)
 1. Access https://kuma.l7-partners.com
