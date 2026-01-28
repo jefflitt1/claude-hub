@@ -1,10 +1,24 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 20)
+**Last Updated:** 2026-01-27 (Session 22)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 22 - 2026-01-27 (Google Tasks → Apple Notes Migration)
+- Exported Psychology tasks (66 items) from Google Tasks to Apple Notes with formatted bullet list and italicized sub-notes
+- Exported Symptom Tracking tasks (10 items) from Google Tasks to Apple Notes with formatted bullet list and italicized sub-notes
+- Marked all 66 Psychology tasks as completed in Google Tasks
+- Marked all 10 Symptom Tracking tasks as completed in Google Tasks
+
+### Session 21 - 2026-01-27 (Windows PC #2 Audit - jglit)
+- Audited second Windows PC (jglit) via PowerShell output: Windows 11 Pro, 460 GB disk, 228 GB used
+- Identified installed software: TradeStation 10, NordVPN 7.55, AnyDesk
+- User profile: 128 GB — needs folder-level breakdown before shelving
+- Windows 11 Pro RETAIL license (key: ...DRR9G) — transferable, save before shelving
+- Provided PowerShell audit commands for deeper analysis (folder sizes, full software list, SSH keys, browser data)
+- Cannot SSH directly — no SSH server on Windows; user will copy/paste output
 
 ### Session 20 - 2026-01-27 (Windows PC Audit Before Shelving for L7 VMs)
 - Full audit of Windows PC (Dell, Windows 11 Pro) — storage, software, user profile
