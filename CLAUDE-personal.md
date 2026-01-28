@@ -24,6 +24,9 @@
 | `/done` | End session (recap + commit) |
 | `/deal-analysis` | CRE deal screening |
 | `/n8n` | Manage n8n workflows |
+| `/built-sme` | Construction finance SME (loan types, draws, compliance) |
+| `/built-sales` | Chris Voss sales coaching (call prep, objections, MEDDPICC) |
+| `/built-admin` | Sales comms (emails, meeting prep, CRM updates) |
 
 ### Core MCP Servers (Consolidated)
 | Server | Purpose | Replaces |
