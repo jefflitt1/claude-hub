@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 22)
+**Last Updated:** 2026-01-28 (Session 23)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 23 - 2026-01-28 (Windows PC Deprecation - SSH & Audit Commands)
+- Provided SSH setup commands for both Windows PCs (192.168.4.46 and 192.168.4.45) — OpenSSH Server requires admin elevation
+- Generated full inventory audit PowerShell scripts: OS edition, installed software, disk usage, user folder sizes, running services, startup programs, hardware summary
+- Provided Windows license check guidance (Pro vs Home for RDP, RETAIL vs OEM for transferability)
+- Noted VirtualBox host-only adapter (192.168.56.1) on PC #2 — may have VMs to inventory
+- Both PCs planned for deprecation — awaiting audit output from user
 
 ### Session 22 - 2026-01-27 (Google Tasks → Apple Notes Migration)
 - Exported Psychology tasks (66 items) from Google Tasks to Apple Notes with formatted bullet list and italicized sub-notes
