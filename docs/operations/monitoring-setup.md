@@ -244,34 +244,77 @@ ssh jgl@100.67.99.120 "launchctl list | grep claude"
 
 **Note:** `ollama.l7-partners.com` and `supabase.l7-partners.com` DNS records removed - these are internal-only services monitored via Tailscale.
 
+## Cross-Device Watchdog
+
+Zero-dependency bash script that runs on both devices, monitoring the other via ping and HTTP checks. Alerts directly via Telegram API (no Docker, no n8n dependency).
+
+### Script
+- **Source:** `scripts/cross-watchdog.sh`
+- **Mac Studio:** `/Users/jgl/.claude/scripts/cross-watchdog.sh` (LaunchAgent, every 5 min)
+- **Pi:** `/opt/scripts/cross-watchdog.sh` (cron, every 5 min)
+
+### Mac Studio LaunchAgent
+- **Plist:** `/Users/jgl/Library/LaunchAgents/com.l7.cross-watchdog.plist`
+- **Interval:** 300 seconds (5 minutes)
+- **Env:** `WATCHDOG_DEVICE=mac-studio`
+- **Log:** `~/.claude/logs/watchdog.log`
+
+### Pi Cron
+```
+WATCHDOG_DEVICE=pi
+*/5 * * * * /bin/bash /opt/scripts/cross-watchdog.sh >> /var/log/watchdog.log 2>&1
+```
+
+### What Each Device Monitors
+
+| Mac Studio monitors (Pi) | Pi monitors (Mac Studio) |
+|---------------------------|--------------------------|
+| Pi Network (ping) | Studio Network (ping) |
+| Pi n8n (:5678/healthz) | Studio Ollama (:11434) |
+| Pi Beszel Hub (:8090) | Studio Beszel Hub (:8090) |
+| Pi Uptime Kuma (:3001) | Studio Uptime Kuma (:3001) |
+
+### Features
+- 15-minute cooldown between repeat alerts for same issue
+- Recovery notifications when service comes back
+- State persisted in `watchdog-state.json`
+- Dry run mode: `WATCHDOG_DRY_RUN=1`
+
+---
+
 ## Network Topology
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                      Tailscale Mesh                           │
-│                                                               │
-│  MacBook Pro           Raspberry Pi          Mac Studio       │
-│  (jeff-probis)         (jeffn8nhost)         (jgl)           │
-│                        100.77.124.12         100.67.99.120    │
-│                             │                     │           │
-│                        ┌────┴─────┐          ┌────┴─────┐    │
-│                        │ Beszel   │          │ Beszel   │    │
-│                        │  Hub     │◄─────────│ Agent    │    │
-│                        │ :8090    │ Tailscale│ :45876   │    │
-│                        │          │          └──────────┘    │
-│                        │ Beszel   │                           │
-│                        │ Agent    │ (Docker DNS:              │
-│                        │ :45876   │  beszel-agent)            │
-│                        ├──────────┤                           │
-│                        │ Kuma     │                           │
-│                        │ :3001    │                           │
-│                        ├──────────┤                           │
-│                        │ n8n      │                           │
-│                        │ :5678    │                           │
-│                        └──────────┘                           │
-│                                                               │
-│  CF Tunnel (Pi): c5935af7    CF Tunnel (Studio): 01ac78e0    │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Tailscale Mesh                               │
+│                                                                      │
+│  MacBook Pro            Raspberry Pi           Mac Studio            │
+│  (jeff-probis)          (jeffn8nhost)          (jgl)                │
+│                         100.77.124.12          100.67.99.120         │
+│                              │                      │                │
+│                         ┌────┴─────┐           ┌────┴─────┐         │
+│                         │ Beszel   │           │ Beszel   │         │
+│                         │  Hub     │◄──────────│ Agent    │         │
+│                         │ :8090    │ Tailscale │ :45876   │         │
+│                         │          │           ├──────────┤         │
+│                         │ Beszel   │           │ Beszel   │         │
+│                         │ Agent    │ (Docker)  │  Hub     │         │
+│                         │ :45876   │           │ :8090    │ standby │
+│                         ├──────────┤           ├──────────┤         │
+│                         │ Kuma     │◄─────────►│ Kuma     │         │
+│                         │ :3001    │ symmetric │ :3001    │         │
+│                         ├──────────┤           ├──────────┤         │
+│                         │ n8n      │           │ Ollama   │         │
+│                         │ :5678    │           │ :11434   │         │
+│                         └────┬─────┘           └────┬─────┘         │
+│                              │                      │                │
+│                         ┌────┴──────────────────────┴────┐          │
+│                         │     WATCHDOG (bash, cron/       │          │
+│                         │     launchd, Telegram alerts)   │          │
+│                         └────────────────────────────────┘          │
+│                                                                      │
+│  CF Tunnel (Pi): c5935af7     CF Tunnel (Studio): 01ac78e0         │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quick Commands

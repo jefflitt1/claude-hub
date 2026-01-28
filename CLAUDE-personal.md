@@ -8,6 +8,7 @@
 | **JGL Capital** | `~/Documents/Claude Code/claude-agents/projects/jgl-capital/` | Trading system |
 | **L7 Partners** | `~/Documents/Claude Code/claude-agents/projects/l7partners-rewrite/` | Property management |
 | **Meta-Tools** | `~/Documents/Claude Code/claude-agents/projects/meta-tools/` | Unified MCP servers |
+| **Built** | `~/Documents/Claude Code/claude-agents/projects/built/` | Construction fintech sales enablement |
 | **Magic KB** | `~/magic.md` | Magic knowledge base |
 
 ## Quick Reference

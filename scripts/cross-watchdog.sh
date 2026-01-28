@@ -17,7 +17,7 @@
 #   Mac Studio: /Users/jgl/.claude/scripts/cross-watchdog.sh (LaunchAgent, every 5 min)
 #   Pi:         /opt/scripts/cross-watchdog.sh (cron, every 5 min)
 
-set -euo pipefail
+set -eu
 
 # --- Configuration ---
 TELEGRAM_BOT_TOKEN="8169830247:AAF_BStYa7AqKPbHCeErAl2oij17d7cJhyI"
