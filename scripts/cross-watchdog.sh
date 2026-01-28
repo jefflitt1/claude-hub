@@ -148,7 +148,7 @@ if [ "$WATCHDOG_DEVICE" = "mac-studio" ]; then
     log "Monitoring Pi ($PI_IP)..."
 
     run_check "Pi Network"     "ping" "$PI_IP"
-    run_check "Pi n8n"         "http" "http://${PI_IP}:5678/healthz"
+    run_check "Pi n8n"         "http" "https://n8n.l7-partners.com"
     run_check "Pi Beszel Hub"  "http" "http://${PI_IP}:8090"
     run_check "Pi Uptime Kuma" "http" "http://${PI_IP}:3001"
 
