@@ -7,6 +7,41 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 - **Uptime Kuma** - HTTP endpoint uptime monitoring
 - **n8n workflows** - Service health checks and alerting
 
+## Incident Log
+
+### 2026-01-27: Raspberry Pi Offline / Beszel Hub Down
+
+**Symptom:** Beszel showed down on Kuma.
+**Root Cause:** The entire Raspberry Pi (100.77.124.12) went offline. Since the Pi hosted the Beszel hub, Uptime Kuma, AND n8n, all three services went down simultaneously. The Pi is a single point of failure for monitoring and automation.
+
+**Impact:**
+- Beszel Hub (Pi :8090) — DOWN
+- Uptime Kuma (Pi :3001) — DOWN
+- n8n (Pi :5678) — DOWN
+- All Pi Cloudflare tunnels (n8n, kuma, webhooks, metabase) — DOWN
+- Mac Studio Beszel agent orphaned (reporting to dead hub)
+
+**Temporary Fix:**
+- Created a new Beszel hub on Mac Studio (:8090) with `--restart unless-stopped`
+- Recreated Mac Studio agent with new hub's SSH key
+- Admin: jglittell@gmail.com / Beszel#Mac2026!
+- Mac Studio monitoring itself only (Pi agent unreachable)
+
+**Permanent Fix Required:**
+1. Get Pi back online (physical check: power, SD card, network)
+2. Decide hub location: keep on Pi or migrate permanently to Mac Studio
+3. If keeping Pi hub: restore Mac Studio agent KEY to original Pi hub key
+4. If migrating to Mac Studio: update docs, Kuma monitors, n8n workflow endpoints
+5. Fix MacBook → Mac Studio SSH (ed25519 key not authorized)
+
+**Architectural Weakness Identified:**
+The Pi is a single point of failure for ALL monitoring. If the Pi dies, we lose the ability to monitor AND alert. Consider:
+- Running Kuma on Mac Studio as primary (Pi as backup)
+- Running Beszel hub on Mac Studio (always-on compute device)
+- Keeping n8n on Pi but with webhook failover
+
+---
+
 ## Uptime Kuma Setup
 
 ### Access
