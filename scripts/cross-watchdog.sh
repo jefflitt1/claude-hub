@@ -26,9 +26,6 @@ TELEGRAM_CHAT_ID="7938188628"
 PI_IP="100.77.124.12"
 STUDIO_IP="100.67.99.120"
 
-# Cooldown: don't re-alert for same issue within this window (seconds)
-COOLDOWN_SECONDS=900  # 15 minutes
-
 # State file location (device-specific)
 if [ "${WATCHDOG_DEVICE:-}" = "mac-studio" ]; then
     STATE_DIR="/Users/jgl/.claude/logs"
@@ -72,57 +69,31 @@ check_http() {
     [ "$http_code" -ge 200 ] && [ "$http_code" -lt 500 ] 2>/dev/null
 }
 
-# Read last alert time for a given check key from state file
-get_last_alert_time() {
+# Get the stored state for a check key ("up", "down", or "" if unknown)
+get_state() {
     local key="$1"
     if [ -f "$STATE_FILE" ]; then
-        grep "^${key}=" "$STATE_FILE" 2>/dev/null | cut -d= -f2 || echo "0"
+        grep "^${key}=" "$STATE_FILE" 2>/dev/null | cut -d= -f2 || echo ""
     else
-        echo "0"
+        echo ""
     fi
 }
 
-# Write alert time for a given check key to state file
-set_last_alert_time() {
+# Store the state for a check key
+set_state() {
     local key="$1"
-    local timestamp="$2"
+    local state="$2"
     mkdir -p "$(dirname "$STATE_FILE")"
     if [ -f "$STATE_FILE" ]; then
-        # Remove old entry, add new
         grep -v "^${key}=" "$STATE_FILE" > "${STATE_FILE}.tmp" 2>/dev/null || true
-        echo "${key}=${timestamp}" >> "${STATE_FILE}.tmp"
+        echo "${key}=${state}" >> "${STATE_FILE}.tmp"
         mv "${STATE_FILE}.tmp" "$STATE_FILE"
     else
-        echo "${key}=${timestamp}" > "$STATE_FILE"
+        echo "${key}=${state}" > "$STATE_FILE"
     fi
 }
 
-# Check if we should alert (respects cooldown)
-should_alert() {
-    local key="$1"
-    local now
-    now=$(date +%s)
-    local last
-    last=$(get_last_alert_time "$key")
-    local diff=$((now - last))
-    [ "$diff" -ge "$COOLDOWN_SECONDS" ]
-}
-
-# Clear alert state (for recovery notifications)
-clear_alert() {
-    local key="$1"
-    set_last_alert_time "$key" "0"
-}
-
-# Check if a service was previously down (last alert time > 0)
-was_down() {
-    local key="$1"
-    local last
-    last=$(get_last_alert_time "$key")
-    [ "$last" -gt 0 ] 2>/dev/null
-}
-
-# Run a check, alert on failure, notify on recovery
+# Run a check, alert only on state TRANSITIONS (up->down or down->up)
 run_check() {
     local name="$1"
     local check_type="$2"  # "ping" or "http"
@@ -137,27 +108,34 @@ run_check() {
         check_http "$target" && success=true
     fi
 
+    local prev_state
+    prev_state=$(get_state "$key")
+
     if [ "$success" = true ]; then
         # Service is UP
-        if was_down "$key"; then
+        if [ "$prev_state" = "down" ]; then
             log "RECOVERED: $name"
-            send_telegram "$(printf '\xe2\x9c\x85') <b>RECOVERED:</b> $name is back online"
-            clear_alert "$key"
+            send_telegram "$(printf '\xe2\x9c\x85') <b>RECOVERED:</b> $name is back online
+Source: ${WATCHDOG_DEVICE}
+Time: $(date '+%Y-%m-%d %H:%M:%S')"
         else
             log "OK: $name"
         fi
+        set_state "$key" "up"
     else
         # Service is DOWN
-        log "DOWN: $name ($target)"
-        if should_alert "$key"; then
+        if [ "$prev_state" != "down" ]; then
+            # State transition: was up (or unknown) -> now down. Alert once.
+            log "DOWN: $name ($target) -- ALERTING"
             send_telegram "$(printf '\xf0\x9f\x94\xb4') <b>DOWN:</b> $name unreachable
 Target: <code>$target</code>
 Source: ${WATCHDOG_DEVICE}
 Time: $(date '+%Y-%m-%d %H:%M:%S')"
-            set_last_alert_time "$key" "$(date +%s)"
         else
-            log "  (cooldown active, skipping alert)"
+            # Already known to be down, stay silent
+            log "DOWN: $name ($target) (still down, no re-alert)"
         fi
+        set_state "$key" "down"
     fi
 }
 
