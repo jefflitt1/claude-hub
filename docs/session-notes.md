@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-27 (Session 19)
+**Last Updated:** 2026-01-27 (Session 20)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 20 - 2026-01-27 (Windows PC Audit Before Shelving for L7 VMs)
+- Full audit of Windows PC (Dell, Windows 11 Pro) — storage, software, user profile
+- Storage: C: 190.72GB used (87% full), D: 486.5GB used, user profile 67GB
+- Generated PowerShell commands for deep audit: software inventory, credential scan, DB scan, browser data
+- Created migration checklist: SSH keys, browser data, license keys, VPN configs, certificates
+- Flagged D: drive (486GB) as highest priority for data review before shelving
+- Open: Run full audit commands on Windows PC and review output
+- Open: Export Windows 11 Pro license key
+- Open: Check D: drive contents and migrate valuable data
 
 ### Session 19 - 2026-01-27 (Cloudflare Access: Tailscale IP Bypass for All Apps)
 - Audited all 14 Cloudflare Access apps for IP bypass policy coverage
