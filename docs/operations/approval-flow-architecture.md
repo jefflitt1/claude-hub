@@ -196,7 +196,7 @@ export APPROVAL_TIMEOUT='60'  # Optional: seconds to wait before falling back to
 |-------|----------|
 | Message appears in Telegram | ~1-2 seconds after permission request |
 | Polling interval | 1 second |
-| Default timeout | 60 seconds |
+| Default timeout | 180 seconds (increased 2026-01-28) |
 | Message self-destruct on timeout | Immediate (calls cleanup webhook) |
 | Message self-destruct on terminal approval | After timeout (currently no early detection) |
 
