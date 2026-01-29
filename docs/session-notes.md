@@ -1,10 +1,18 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-28 (Session 31)
+**Last Updated:** 2026-01-28 (Session 32)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 32 - 2026-01-28 (Telegram Approval Cross-Device Fix)
+- Diagnosed Telegram approval timeout issue - 60s timeout too short for mobile responses (~4 min typical)
+- Increased approval-handler.py timeout from 60s to 180s
+- Added terminal-notifier alert when approval times out (prompts user to respond in terminal)
+- Moved approval-handler.py to git repo (scripts/approval-handler.py) for cross-device sync
+- Created symlinks on both MacBook and Mac Studio to git-managed script
+- Documented approval flow architecture: Terminal → n8n → Telegram → Supabase → Terminal polls
 
 ### Session 31 - 2026-01-28 (n8n Documentation Review & Knowledge Extraction)
 - Reviewed all n8n documentation in ~/Desktop/N8n folder (12 files)
