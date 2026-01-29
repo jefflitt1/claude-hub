@@ -24,7 +24,10 @@ This system enables approving Claude Code permission requests from your phone vi
 
 ## Components
 
-### 1. approval-handler.py (`~/.claude/approval-handler.py`)
+### 1. approval-handler.py
+
+**Location:** `~/Documents/Claude Code/claude-agents/scripts/approval-handler.py`
+**Symlink:** `~/.claude/approval-handler.py` → git-managed script
 
 Python script invoked by Claude Code's PermissionRequest hook.
 
@@ -187,7 +190,7 @@ export SUPABASE_URL='https://donnmhbwhpjlmpnwgdqr.supabase.co'
 export SUPABASE_KEY='your_service_role_key'
 export TELEGRAM_BOT_TOKEN='your_bot_token'
 export TELEGRAM_CHAT_ID='your_chat_id'
-export APPROVAL_TIMEOUT='60'  # Optional: seconds to wait before falling back to terminal
+export APPROVAL_TIMEOUT='180'  # Optional: seconds to wait before falling back to terminal (default: 180)
 ```
 
 ## Timing
@@ -218,18 +221,49 @@ export APPROVAL_TIMEOUT='60'  # Optional: seconds to wait before falling back to
 1. Verify `N8N_CLEANUP_WEBHOOK` is correct
 2. Check n8n cleanup webhook is active
 
+### Timeout expired but I responded on Telegram
+The handler has a 180-second timeout. If you took longer:
+1. Terminal falls back to local prompt
+2. Telegram message marked as "expired"
+3. The Telegram response is ignored (handler already exited)
+
+**Fix:** Respond within 180 seconds, or increase `APPROVAL_TIMEOUT` env var.
+
+### "Always" not working for a tool
+Check if pattern exists in `claude_always_approvals`:
+```sql
+SELECT * FROM claude_always_approvals WHERE pattern_key LIKE 'bash:%';
+```
+
+Pattern format: `bash:git`, `write:ts`, `edit:json`
+
 ### Debug Logging
 The handler writes debug info to stderr:
 ```bash
 python3 ~/.claude/approval-handler.py < test-input.json 2>&1
 ```
 
+## Cross-Device Sync
+
+The approval-handler.py script is managed in the git repo for automatic sync between machines:
+
+```
+~/Documents/Claude Code/claude-agents/scripts/approval-handler.py  (source of truth)
+    ↓ symlink
+~/.claude/approval-handler.py  (on both MacBook and Mac Studio)
+```
+
+**Setup on new machine:**
+```bash
+ln -sf ~/Documents/Claude\ Code/claude-agents/scripts/approval-handler.py ~/.claude/approval-handler.py
+```
+
+**Sync:** `git pull` on either machine updates both via symlink.
+
 ## Why Supabase (Not Redis)?
 
-The n8n instance runs on a VPS behind Cloudflare, while Redis runs on the local Raspberry Pi at `192.168.4.147`. The VPS cannot reach the Pi's private IP.
-
-Supabase provides:
-- Cloud-accessible from both n8n (VPS) and Mac
+The n8n instance runs on a Raspberry Pi behind Cloudflare tunnel, while the terminal runs on Mac. Supabase provides:
+- Cloud-accessible from both n8n (Pi) and Mac
 - REST API with no special client libraries needed
 - Built-in authentication via API key
 - Audit trail with timestamps
