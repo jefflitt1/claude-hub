@@ -1,10 +1,21 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 36)
+**Last Updated:** 2026-01-30 (Session 37)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 37 - 2026-01-30 (Google Tasks Bidirectional Sync)
+- Wired real Google Tasks OAuth credential (`eslbS4vLRH5FXzuN`) into import and completion workflow JSONs
+- Rewrote all Supabase HTTP Request nodes to native `n8n-nodes-base.supabase` nodes — fixes `$env` blocked by external task runner
+- Deployed Google Tasks Import workflow (`FG5BHxNtd7EpiIQy`) — tested successfully
+- Deployed Google Tasks Completion Sync workflow (`6Bmnyc4KubPGUujA`) — DB→Google direction
+- Built and deployed Google Tasks Status Sync workflow (`suOxWBLe645wsvrG`) — hourly poll for completions/deletions in Google
+- Verified `completed_at` column exists on `jeff_tasks` table
+- Key finding: n8n external task runner does NOT have access to container env vars — must use saved credentials
+- Key finding: n8n public API blocked by Cloudflare (error 1010) — route through Pi localhost
+- Decision: Hourly poll (not 15 min) for status sync — sufficient for completion/deletion detection
 
 ### Session 36 - 2026-01-30 (VM Decommission & UTM Removal)
 - Deactivated Windows product keys on both VMs (slmgr /upk + /cpky)
