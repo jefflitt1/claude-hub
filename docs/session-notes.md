@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 44)
+**Last Updated:** 2026-01-30 (Session 45)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 45 - 2026-01-30 (n8n Self-Healing Monitor Fix — fetch + Docker networking)
+- Fixed Self-Healing Monitor workflow (`JaTL7b6ka9mH4MuJ`) — was failing every 15 min with 3 bugs
+- Replaced `fetch()` with `this.helpers.httpRequest()` (n8n sandbox doesn't support fetch)
+- Removed Docker API health check (Mac Docker uses Unix socket, not TCP port 2375) — 9 → 8 services
+- Connected n8n to `beszel_default` Docker network for Beszel health checks via Docker DNS (`http://beszel:8090`)
+- Created `compose.override.networks.yml` on Pi for permanent cross-network fix
+- All 8/8 services now healthy, workflow completes in ~2.5s
+- Updated `docs/operations/monitoring-setup.md` with incident log, corrected service list, and Docker networking notes
+- Clarified IT infrastructure: Scrypted & Node-RED are home automation (Mac Studio), separate from business stack
 
 ### Session 44 - 2026-01-30 (Telegram Mark-as-Read for Approval Timeouts)
 - Installed Telethon (`pip3 install telethon`) for Telegram User API mark-as-read support

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.npm/
+.yarn/
+
+# Build outputs
+dist/
+build/
+.next/
+.vite/
+
+# Lock files
+package-lock.json
+yarn.lock
+bun.lockb
+
+# Minified/generated
+*.min.js
+*.min.css
+*.map
+
+# Git internals
+.git/
+
+# Large data files
+*.sqlite
+*.db
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Backtest result data (large)
+projects/jgl-capital/backtests/results/
+
+# n8n workflow exports (machine-generated JSON)
+n8n-workflows/
+workflows/

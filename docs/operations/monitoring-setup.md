@@ -28,6 +28,34 @@ Unified monitoring infrastructure for Mac Studio and Raspberry Pi using:
 - Mac Studio monitoring itself only (Pi agent unreachable)
 
 **Permanent Fix: Cross-Monitoring Resilience (Implemented 2026-01-27)**
+(see below)
+
+### 2026-01-30: Self-Healing Monitor Broken (fetch + Docker networking)
+
+**Symptom:** Self-Healing Monitor workflow (`JaTL7b6ka9mH4MuJ`) failing every 15 minutes with "Bad request - please check your parameters" on "Alert Unhealthy" Telegram node.
+
+**Root Causes (3 issues):**
+1. **`fetch is not defined`** — "Check All Services" Code node used browser `fetch()` API, which doesn't exist in n8n's JavaScript sandbox. All 9 services reported unhealthy with this error.
+2. **Docker API check invalid** — Checked `http://192.168.5.38:2375/version` but Docker Desktop for Mac uses Unix sockets, not TCP port 2375. This check can never pass.
+3. **Beszel Hub unreachable from n8n container** — n8n runs on `n8n-stack_appnet` Docker network, Beszel runs on `beszel_default`. Neither localhost, LAN IP, nor Tailscale IP worked from inside the n8n container.
+
+**Fixes Applied:**
+1. Replaced `fetch()` with `this.helpers.httpRequest()` (n8n's built-in HTTP helper)
+2. Removed Docker API health check (Docker health covered by Beszel). Service count: 9 → 8.
+3. Connected n8n container to `beszel_default` network: `docker network connect beszel_default n8n-stack-n8n-1`. Changed Beszel URL to `http://beszel:8090` (Docker DNS).
+4. Made network connection permanent via `compose.override.networks.yml` (see Docker Networking Notes below).
+
+**Result:** 8/8 services healthy. Workflow completes in ~2.5s (was failing or timing out at 13s+).
+
+**ACTION REQUIRED — Pi Stack Restart:**
+The `docker network connect` command is temporary and won't survive a container restart.
+The permanent fix is in `/home/jeffn8n/n8n-stack/compose.override.networks.yml` but needs to be
+included in the next `docker compose up -d` invocation:
+```bash
+cd /home/jeffn8n/n8n-stack
+docker compose -f full-compose.yml -f compose.override.networks.yml up -d
+```
+Schedule this during the next Pi maintenance window (1st Saturday of month per maintenance-awareness.md).
 
 3-layer symmetric monitoring eliminates the single point of failure:
 
@@ -157,9 +185,16 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMqXC1HMNdYSJJBVhZm2wLg6GD3tlISuz4g3KDkDAW1r
 
 ### Docker Networking Notes
 
-**Mac Studio:** Docker Desktop for Mac runs containers in a LinuxKit VM. `--network host` does NOT expose ports to the macOS host. Must use `-p 45876:45876` port mapping.
+**Mac Studio:** Docker Desktop for Mac runs containers in a LinuxKit VM. `--network host` does NOT expose ports to the macOS host. Must use `-p 45876:45876` port mapping. Docker TCP API (port 2375) is NOT exposed — Mac uses Unix socket only.
 
 **Pi:** Beszel hub runs on `beszel_default` bridge network. The agent must be on the same Docker network for the hub to reach it. The Pi agent uses Docker DNS hostname `beszel-agent` instead of Tailscale IP.
+
+**Pi n8n ↔ Beszel cross-network access (Added 2026-01-30):**
+n8n runs on `n8n-stack_appnet`, Beszel runs on `beszel_default`. To allow n8n health checks to reach Beszel:
+- **Runtime fix:** `docker network connect beszel_default n8n-stack-n8n-1`
+- **Permanent fix:** `/home/jeffn8n/n8n-stack/compose.override.networks.yml` adds `beszel_default` as external network to the n8n service
+- **Restart command:** `cd /home/jeffn8n/n8n-stack && docker compose -f full-compose.yml -f compose.override.networks.yml up -d`
+- **Note:** The runtime fix does NOT survive container restarts. The compose override must be included in the next `docker compose up`. Schedule during monthly Pi maintenance (1st Saturday).
 
 ### Agent Docker Run Commands
 ```bash
@@ -203,16 +238,20 @@ ssh root@100.77.124.12 "docker restart beszel"
 **Location:** n8n.l7-partners.com
 
 ### Self-Healing Monitor (Updated 2026-01-30)
-Checks **9 services** in parallel every 15 minutes:
-- Claude HTTP Server (`http://192.168.5.38:3847/health`)
+Checks **8 services** sequentially every 15 minutes using `this.helpers.httpRequest()`:
+- Claude HTTP Server (`http://192.168.5.38:3847/health`) — checks `status === 'ok'`
 - iMessage Bridge (`http://192.168.5.38:3848/health`)
 - Ollama (`http://192.168.5.38:11434/api/tags`)
 - Open WebUI (`https://chat.l7-partners.com`)
 - Studio Kuma (`http://192.168.5.38:3001`)
 - n8n (`https://n8n.l7-partners.com/healthz`)
-- Beszel Hub (`http://100.77.124.12:8090`)
+- Beszel Hub (`http://beszel:8090`) — Docker DNS via `beszel_default` network
 - Cloudflare Tunnel (`https://kuma.l7-partners.com`)
-- Docker API (`http://192.168.5.38:2375/version`)
+
+**Removed:** Docker API (`192.168.5.38:2375`) — Docker Desktop for Mac uses Unix sockets, not TCP.
+
+**IMPORTANT:** n8n must be connected to the `beszel_default` Docker network for the Beszel check to work.
+See `compose.override.networks.yml` and the 2026-01-30 incident log entry above.
 
 Unhealthy services trigger Telegram alert. All results logged to `system_health_checks` table.
 
