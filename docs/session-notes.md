@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-28 (Session 32)
+**Last Updated:** 2026-01-29 (Session 33)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 33 - 2026-01-29 (n8n Error Handler & Email Pipeline Fixes)
+- Fixed Email Classification Pipeline crash — "Fetch Classified Threads" HTTP Request node missing `nodeCredentialType` field, crashing every 5 min
+- Fixed corrupted JavaScript in "Filter Already Classified" node (`\!` escaping from workflow re-upload)
+- Fixed Telegram bot routing — Unified Error Handler was sending to @N8Njeffnewbot via extra nodes; removed, then switched escalation nodes to native Telegram nodes with correct credential (claude_terminal_bot / @N8Njeffnewbot)
+- Reduced notification noise — UEH now only alerts when auto-fix fails; added 30-min cooldown to suppress duplicate errors
+- Audited all 29 Supabase HTTP Request nodes across active n8n workflows — all properly configured
+- Created Google Tasks reminders for PC1 and PC2 BIOS "Power On after AC loss" settings
+- Decision: @N8Njeffnewbot (claude_terminal_bot) is the correct bot for Claude terminal comms
+- Decision: 30-minute cooldown window for recurring workflow errors
 
 ### Session 32 - 2026-01-28 (Telegram Approval Cross-Device Fix)
 - Diagnosed Telegram approval timeout issue - 60s timeout too short for mobile responses (~4 min typical)
