@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 41)
+**Last Updated:** 2026-01-30 (Session 42)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 42 - 2026-01-30 (JLDesktop2 PC2 Provisioning + IT Cleanup)
+- Fully provisioned JLDesktop2 (PC2) as second trading workstation (ITadmin auto-login, jglit SSH, Tailscale 100.68.163.47, TradeStation auto-start)
+- Removed NordVPN from both PC1 and PC2 (was interfering with Tailscale)
+- Removed TeamViewer from PC2
+- Disabled Windows notifications on both PCs
+- Fixed SSH key auth for PC1 from MacBook (ITadmin account)
+- VM Windows license keys deactivated before deletion
+- Created JLDesktop2-PC2-verified-config.md, updated CLAUDE.md and PC1 docs
 
 ### Session 41 - 2026-01-30 (JGL Visualization & Optimization Modules + Repo Cleanup + Doc Audit)
 - Built visualization module (4 files): ChartBuilder (Plotly candlesticks, trade markers, stop/target lines, shading), IndicatorOverlay (strategy-agnostic), themes

@@ -136,6 +136,11 @@ C:\ProgramData\ssh\administrators_authorized_keys
 2. Check Windows Event Viewer for startup errors
 3. Manually launch: `C:\Program Files\TradeStation\TradeStation.exe`
 
+## Removed Software (2026-01-30)
+- NordVPN: Uninstalled
+- NordUpdater: Uninstalled
+- Notifications: Disabled for claudeadmin (ITadmin) user
+
 ## Migration Notes
 This PC replaces the following deprecated systems:
 - ❌ Windows VM 1 (Tailscale IP: 100.95.217.59) - Decommissioned
