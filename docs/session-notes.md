@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 39)
+**Last Updated:** 2026-01-30 (Session 40)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 40 - 2026-01-30 (JLDesktop PC1 User Migration & Cleanup)
+- Full IT health check on JLDesktop (PC1) — all services confirmed working
+- Corrected hardware docs: Dell XPS 8940 (not HP OMEN), C: 235GB + D: 1TB
+- Migrated jglit profile to ITadmin: TradeStation data (18.2GB), Downloads, Pictures, Desktop
+- Recreated 4 TradeStation backup tasks under ITadmin, deleted 9 junk tasks
+- Deleted jglit user account and profile — reclaimed ~63GB on C: drive
+- Fixed SSH permissions, confirmed `ssh ITadmin@100.69.59.111` works
+- Updated all IT agent docs (CLAUDE.md, PC1 config, tech-stack-inventory, decommissioned-devices)
+- Shut down PC for physical relocation — auto-start sequence confirmed
 
 ### Session 39 - 2026-01-30 (Self-Sustaining Monitoring System)
 - Implemented full 6-phase Self-Sustaining Monitoring System — Jeff only hears about things that can't be auto-fixed
