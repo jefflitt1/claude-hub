@@ -1,10 +1,23 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-29 (Session 33)
+**Last Updated:** 2026-01-30 (Session 34)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 34 - 2026-01-30 (JLDesktop1 Jump Desktop Connect & Headless Access Fix)
+- Diagnosed Jump Desktop RDP error "Connection closed by server" (Code: 0x5) on JLDesktop1
+- Root cause: Windows 11 Pro session arbitration — console session (ITadmin/TradeStation) always wins over RDP
+- Applied registry fixes (`fSingleSessionPerUser=0`, `Shadow=2`) — didn't solve core Win Pro limitation
+- Verified Cloudflare tunnel `trading-pc1.l7-partners.com` doesn't exist — removed stale reference from CLAUDE.md
+- Downloaded and installed Jump Desktop Connect on PC1 via SSH (scheduled task workaround for UAC)
+- Jeff connected monitor to complete JDC account pairing — Fluid protocol confirmed working
+- Updated PC1 verified config doc with full resolution and updated remote access priority
+- Updated PC2 migration gameplan with Phase 2.5 (install JDC before going headless) and lessons learned
+- Updated CLAUDE.md: Fluid as primary access, removed stale Cloudflare tunnel reference
+- Decision: Jump Desktop Connect (Fluid) is primary headless access — RDP is fallback only
+- Decision: No Cloudflare tunnel needed for PC remote desktop — Tailscale + Fluid sufficient
 
 ### Session 33 - 2026-01-29 (n8n Error Handler & Email Pipeline Fixes)
 - Fixed Email Classification Pipeline crash — "Fetch Classified Threads" HTTP Request node missing `nodeCredentialType` field, crashing every 5 min
