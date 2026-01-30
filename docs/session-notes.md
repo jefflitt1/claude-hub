@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 37)
+**Last Updated:** 2026-01-30 (Session 38)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 38 - 2026-01-30 (Email Pipeline & Bulk $env Credential Fix)
+- Fixed Email Classification Pipeline — 4 bugs: timestamp conversion, $env→saved credential (3 HTTP nodes), Code node credential access (new Fetch Classified Threads node), upsert on_conflict param
+- Audited all 51 active n8n workflows for `$env` usage — found 8 affected
+- Fixed 7 additional workflows: Kuma Auto-Heal, Daily Execution Stats Sync, Daily Memory Graph Backup, Weekly Backup, Google Tasks Import x2, Google Tasks Completion Sync
+- Updated Google Tasks Import list mapping: 'Investing' → 'JGL CAP' (renamed list)
+- Added $env credential risk monitoring to Unified Error Handler — watchlist of 4 at-risk workflows with auth error pattern detection
+- Key finding: n8n task runner blocks `$env` for long JWTs but allows simpler tokens
+- Key finding: Code nodes can't access credentials directly — use preceding HTTP Request node + `$('NodeName')` reference
 
 ### Session 37 - 2026-01-30 (Google Tasks Bidirectional Sync)
 - Wired real Google Tasks OAuth credential (`eslbS4vLRH5FXzuN`) into import and completion workflow JSONs
