@@ -189,6 +189,48 @@
     "skills": []
   },
   {
+    "id": "jgl-psychology",
+    "name": "JGL Psychology - Behavioral Discipline Coach",
+    "description": "Trading psychology coach for JGL Capital - behavioral discipline, journal analysis, mindset checks, emotional pattern recognition",
+    "type": "consultant",
+    "status": "active",
+    "trigger": "context-aware",
+    "domain": "trading-psychology",
+    "capabilities": [
+      "Trading journal analysis and pattern recognition",
+      "Mindset and discipline checks",
+      "Emotional state assessment before trading",
+      "Behavioral bias identification",
+      "Post-trade psychological review",
+      "Stress and tilt management"
+    ],
+    "project": "jgl-capital",
+    "skills": [],
+    "persona": "Trading psychologist specializing in systematic trader discipline, emotional regulation, and performance optimization.",
+    "agentFile": "projects/jgl-capital/.claude/agents/psychology.md"
+  },
+  {
+    "id": "jgl-secretary",
+    "name": "JGL Secretary - Documentation & Progress",
+    "description": "Documentation and progress tracking agent for JGL Capital - recaps, updates, meeting notes, reference lookups",
+    "type": "operations",
+    "status": "active",
+    "trigger": "context-aware",
+    "domain": "documentation",
+    "capabilities": [
+      "Session recaps and progress tracking",
+      "Meeting notes and action items",
+      "Documentation updates across all project files",
+      "Reference lookups in project knowledge base",
+      "Cross-agent coordination documentation",
+      "Strategic decision log maintenance"
+    ],
+    "project": "jgl-capital",
+    "skills": [],
+    "persona": "Meticulous operations coordinator who maintains comprehensive records of all JGL Capital decisions, progress, and documentation.",
+    "agentFile": "projects/jgl-capital/.claude/agents/secretary.md"
+  },
+  {
     "id": "built-sme-agent",
     "name": "Built SME - Construction Finance Expert",
     "description": "Subject matter expert on construction debt, real estate financing, lending products, and construction loan lifecycle for Built Technologies sales enablement",
