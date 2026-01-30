@@ -1,10 +1,20 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 40)
+**Last Updated:** 2026-01-30 (Session 41)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 41 - 2026-01-30 (JGL Visualization & Optimization Modules + Repo Cleanup)
+- Built visualization module (4 files): ChartBuilder (Plotly candlesticks, trade markers, stop/target lines, shading), IndicatorOverlay (strategy-agnostic), themes
+- Built optimization module (4 files): ParameterSweep (parallel grid search), ResultComparator (heatmaps, equity curves), OptimizationReport (HTML dashboard)
+- Added plot protocol to SignalBase (`get_plot_config()`, `compute_plot_data()`) — implemented in MomentumBreakout
+- Added `result.plot()` to BacktestResult + date range in chart titles
+- Created jgl-capital as independent GitHub repo (jefflitt1/jgl-capital) — 40 files, 4848 lines
+- Removed empty `supabase-mcp-server` from claude-hub
+- Pulled 6 Lovable commits into l7partners-rewrite
+- Verified git sync: all 3 repos (claude-hub, jgl-capital, l7partners-rewrite) at 0 behind/0 ahead
 
 ### Session 40 - 2026-01-30 (JLDesktop PC1 User Migration & Cleanup)
 - Full IT health check on JLDesktop (PC1) — all services confirmed working
