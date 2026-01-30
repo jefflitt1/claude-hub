@@ -106,9 +106,11 @@ Both instances monitor all services. Either one surviving provides full alerting
 | Ollama API | http://100.67.99.120:11434/api/tags | UP |
 
 **Paused (known issues):**
-- Claude HTTP Server - Server binds to `127.0.0.1:3847` only; needs config change to `0.0.0.0`
 - Metabase - Not deployed on Pi (no container/image)
 - Supabase (Cloud) - Monitor URL returns 404 at root; needs correct health endpoint
+
+**Recently Unpaused (2026-01-30):**
+- Claude HTTP Server - Unpaused after confirming it binds to `0.0.0.0:3847`. Auto-heal enabled.
 
 **Removed DNS (internal-only, no public DNS needed):**
 - `supabase.l7-partners.com` - Supabase Studio not deployed; using Supabase cloud
@@ -192,13 +194,47 @@ ssh root@100.77.124.12 "docker restart beszel"
 
 ## n8n Monitoring Workflows
 
-| Workflow | Purpose | Interval |
-|----------|---------|----------|
-| Self-Healing Monitor | Claude Server health | 15 min |
-| Unified System Monitor | Multi-service health | - |
-| System Health Check | General health | - |
+| Workflow | ID | Purpose | Trigger |
+|----------|----|---------|---------|
+| Self-Healing Monitor | `JaTL7b6ka9mH4MuJ` | 9-service health sweep | Every 15 min + webhook |
+| Kuma Auto-Heal | `erMLnL303h0f9y1V` | Event-driven auto-remediation | Kuma DOWN webhook |
+| Unified Error Handler | `U68p4Rbpu1BSznNc` | Catch all workflow errors | Error trigger |
 
 **Location:** n8n.l7-partners.com
+
+### Self-Healing Monitor (Updated 2026-01-30)
+Checks **9 services** in parallel every 15 minutes:
+- Claude HTTP Server (`http://192.168.5.38:3847/health`)
+- iMessage Bridge (`http://192.168.5.38:3848/health`)
+- Ollama (`http://192.168.5.38:11434/api/tags`)
+- Open WebUI (`https://chat.l7-partners.com`)
+- Studio Kuma (`http://192.168.5.38:3001`)
+- n8n (`https://n8n.l7-partners.com/healthz`)
+- Beszel Hub (`http://100.77.124.12:8090`)
+- Cloudflare Tunnel (`https://kuma.l7-partners.com`)
+- Docker API (`http://192.168.5.38:2375/version`)
+
+Unhealthy services trigger Telegram alert. All results logged to `system_health_checks` table.
+
+### Kuma Auto-Heal Workflow (Added 2026-01-30)
+Event-driven auto-remediation triggered by Uptime Kuma DOWN webhooks.
+
+**Webhook:** `https://webhooks.l7-partners.com/webhook/kuma-auto-heal`
+
+**Flow:**
+```
+Kuma DOWN event → Parse → Cooldown check (30min) → Fetch runbooks →
+  Match by regex → Execute fix via Claude HTTP Server →
+  Wait 30s → Re-check → Log to Supabase →
+  If recovered: silent (Jeff never knows)
+  If failed: Telegram alert with diagnosis
+```
+
+**Runbooks (12 patterns in `self_healing_runbooks` table):**
+- Service restarts: Ollama, Claude HTTP, Open WebUI, iMessage Bridge, Kuma, n8n, Beszel, Cloudflare
+- System issues: disk full, high memory, connection refused
+
+**Cooldown:** 30 minutes between attempts per service (tracked in `self_healing_attempts`).
 
 ## LaunchAgents (Mac Studio)
 
@@ -275,10 +311,20 @@ WATCHDOG_DEVICE=pi
 | Pi Uptime Kuma (:3001) | Studio Uptime Kuma (:3001) |
 
 ### Features
-- 15-minute cooldown between repeat alerts for same issue
+- **Auto-fix before alerting** (added 2026-01-30): On first DOWN detection, attempts SSH restart of the service, waits 30s, re-checks. Jeff only gets alerted if the fix fails.
 - Recovery notifications when service comes back
 - State persisted in `watchdog-state.json`
 - Dry run mode: `WATCHDOG_DRY_RUN=1`
+
+### Auto-Fix Commands (Cross-Watchdog)
+| Check Key | Fix Command |
+|-----------|-------------|
+| `pi_n8n` | `ssh root@PI_IP 'docker restart n8n'` |
+| `pi_beszel_hub` | `ssh root@PI_IP 'docker restart beszel'` |
+| `pi_uptime_kuma` | `ssh root@PI_IP 'docker restart uptime-kuma'` |
+| `studio_ollama` | `ssh jgl@STUDIO_IP 'brew services restart ollama'` |
+| `studio_beszel_hub` | `ssh jgl@STUDIO_IP 'docker restart beszel'` |
+| `studio_uptime_kuma` | `ssh jgl@STUDIO_IP 'docker restart uptime-kuma'` |
 
 ---
 
@@ -379,12 +425,44 @@ curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, acti
 - **Component:** `src/components/sections/MonitoringSection.tsx` (to be created)
 - **Data:** React Query polling `beszel_systems` and `uptime_kuma_monitors` every 30s
 
-## Alerting Flow
+## Alerting Flow (Updated 2026-01-30)
 
+Jeff only hears about things that **can't be auto-fixed**. Every outage goes through auto-remediation first.
+
+### Monitoring Layers
+```
+Layer 0: Cross-Watchdog (bash/cron, 5min)     ← Zero-dependency fallback + auto-fix
+Layer 1: Uptime Kuma x2 (Pi + Studio, 60s)    ← Detection + webhook trigger
+Layer 2: Self-Healing Monitor (n8n, 15min)     ← Comprehensive 9-service sweep
+Layer 3: Kuma Auto-Heal (n8n, event-driven)    ← Instant runbook remediation
+Layer 4: Claude HTTP Server (AI brain)         ← Intelligent diagnosis + execution
+Layer 5: Unified Error Handler (n8n)           ← Catches workflow failures
+```
+
+### When Jeff Gets Alerted
+| Scenario | Auto-Fix? | Jeff Hears? | Delay |
+|----------|-----------|-------------|-------|
+| Service down, runbook fixes it | Yes | No | ~1 min |
+| Service down, AI fixes it | Yes | No | ~3 min |
+| Service down, fix fails | Yes (tried) | Yes + context | ~5 min |
+| n8n down (Pi issue) | Watchdog SSH | Yes if fails | ~5 min |
+| Both devices down | N/A | N/A | N/A |
+
+### Notification Channels
 1. **Beszel** → Telegram (system metrics: CPU, RAM, disk threshold alerts)
-2. **Uptime Kuma** → Telegram (HTTP endpoint down/up transitions)
-3. **n8n Self-Healing Monitor** → Telegram (Claude Server status, 15 min interval)
-4. **n8n Unified System Monitor** → Telegram (multi-service health)
+2. **Uptime Kuma** → Webhook (Auto-Heal) + Telegram (3 retries delay)
+3. **n8n Self-Healing Monitor** → Telegram (9-service sweep, 15 min)
+4. **n8n Kuma Auto-Heal** → Telegram (only on failed remediation)
+5. **n8n Unified Error Handler** → Telegram + Email (workflow errors)
+6. **Cross-Watchdog** → Telegram (only after auto-fix fails)
+
+### Kuma Notification Setup
+| Channel | Type | Behavior |
+|---------|------|----------|
+| Telegram | Default | Fires after 3 retries (~3 min delay) |
+| Auto-Heal Webhook | Webhook | Fires immediately on first DOWN, triggers n8n auto-remediation |
+
+Both channels applied to all monitors. The webhook gives auto-heal a head start before Telegram notifies Jeff.
 
 ## Troubleshooting
 
@@ -396,7 +474,7 @@ curl -s https://n8n.l7-partners.com/api/v1/workflows | jq '.data[] | {name, acti
 ### n8n alerts not working
 - Check workflow is active
 - Verify Telegram bot token
-- Check error workflow: OSKEDUq7HqOKiwWw
+- Check error workflow: U68p4Rbpu1BSznNc (Unified Error Handler)
 
 ### Claude HTTP Server unreachable
 - Check launchd: `launchctl list | grep claude`

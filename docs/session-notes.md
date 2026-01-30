@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 35)
+**Last Updated:** 2026-01-30 (Session 36)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 36 - 2026-01-30 (VM Decommission & UTM Removal)
+- Deactivated Windows product keys on both VMs (slmgr /upk + /cpky)
+- Deleted UTM app from Mac Studio
+- Cleaned all UTM preferences, caches, and saved state
+- Rebooted Mac Studio — verified all services healthy (Ollama, Claude HTTP, iMsg bridge)
+- VM disk images fully removed (only 104KB inert SIP-protected stubs remain)
+- UTM approach fully retired — JLDesktop (PC1) is now sole Windows/TradeStation machine
+- Confirmed Windows product key already applied to JLDesktop
 
 ### Session 35 - 2026-01-30 (Mac Studio Remote Access, SSH Fixes & Infrastructure Cleanup)
 - Traced orchart Telegram alert source to `central_collector.py` on Mac Studio — disabled permanently
