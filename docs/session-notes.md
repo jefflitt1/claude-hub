@@ -1,10 +1,22 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 38)
+**Last Updated:** 2026-01-30 (Session 39)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 39 - 2026-01-30 (Self-Sustaining Monitoring System)
+- Implemented full 6-phase Self-Sustaining Monitoring System — Jeff only hears about things that can't be auto-fixed
+- Phase 1: Unpaused Claude HTTP Server monitor (#23) in Kuma, updated description
+- Phase 2: Created Kuma Auto-Heal workflow (`erMLnL303h0f9y1V`) — event-driven auto-remediation via webhook
+- Phase 3: Populated 12 runbooks in `self_healing_runbooks` table (service restarts + system issue patterns)
+- Phase 4: Added Auto-Heal Webhook notification to all Kuma monitors, set retries=3
+- Phase 5: Expanded Self-Healing Monitor to check 9 services in parallel (was 3)
+- Phase 6: Enhanced cross-watchdog.sh with auto-fix before alerting (SSH restart + 30s re-check)
+- Updated `docs/operations/monitoring-setup.md` with 5-layer monitoring architecture
+- Key finding: n8n webhook registration requires `webhookId` field on webhook nodes
+- Key finding: Cloudflare blocks n8n API PUT requests — use SSH tunnel to bypass
 
 ### Session 38 - 2026-01-30 (Email Pipeline & Bulk $env Credential Fix)
 - Fixed Email Classification Pipeline — 4 bugs: timestamp conversion, $env→saved credential (3 HTTP nodes), Code node credential access (new Fetch Classified Threads node), upsert on_conflict param

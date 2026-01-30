@@ -3,16 +3,16 @@
 **Status:** Production Ready
 
 ## Overview
-Primary TradeStation workstation - HP OMEN desktop configured for headless 24/7 trading operations.
+Primary TradeStation workstation - Dell XPS 8940 desktop configured for headless 24/7 trading operations.
 
 ## Hardware Specifications
 | Component | Specification |
 |-----------|--------------|
-| Model | HP OMEN Desktop |
+| Model | Dell XPS 8940 |
 | CPU | Intel i5-10400 (6 cores, 12 threads) |
 | RAM | 16GB |
 | GPU | NVIDIA GTX 1660 Ti |
-| Storage | ~450GB SSD |
+| Storage | C: 235GB SSD + D: 1TB HDD |
 | OS | Windows 11 Pro |
 
 ## Network Configuration
@@ -26,14 +26,15 @@ Primary TradeStation workstation - HP OMEN desktop configured for headless 24/7 
 ## User Accounts
 | Username | Password | Type | Purpose |
 |----------|----------|------|---------|
-| **claudeadmin** | Trading2026 | Local | Auto-login, primary RDP access |
+| **ITadmin** | Trading2026 | Local | Auto-login, SSH, primary access (profile: claudeadmin) |
 | **Administrator** | Trading2026 | Local | UAC prompts, system tasks |
-| **jglit** | 0924 | Microsoft | SSH access (key auth only) |
+
+> **Note:** `jglit` account was deleted 2026-01-30. All data migrated to ITadmin profile.
 
 ### Authentication Details
-- **RDP:** Uses claudeadmin with password
-- **SSH:** Uses jglit with SSH key authentication (password disabled)
-- **Auto-login:** claudeadmin account logs in automatically on boot
+- **RDP:** Uses ITadmin with password
+- **SSH:** Uses ITadmin with SSH key authentication (`C:\ProgramData\ssh\administrators_authorized_keys`)
+- **Auto-login:** ITadmin account logs in automatically on boot
 
 ## Auto-Start Sequence (TESTED & WORKING)
 ```
@@ -90,7 +91,7 @@ Password: Trading2026
 ### 2. SSH (Key Authentication)
 ```bash
 # From Mac/Linux
-ssh jglit@100.69.59.111
+ssh ITadmin@100.69.59.111
 
 # SSH key location (on client)
 ~/.ssh/id_ed25519
@@ -99,7 +100,7 @@ ssh jglit@100.69.59.111
 C:\ProgramData\ssh\administrators_authorized_keys
 ```
 
-**Note:** SSH password authentication is disabled for security. Only key-based auth works.
+**Note:** SSH key auth works for any account in the Administrators group. ITadmin is the primary SSH user.
 
 ### 3. Tailscale (Network Layer)
 - Automatically connects on boot
@@ -191,10 +192,10 @@ This PC replaces the following deprecated systems:
 ### From Mac/Linux:
 ```bash
 # SSH into PC
-ssh jglit@100.69.59.111
+ssh ITadmin@100.69.59.111
 
 # RDP via Jump Desktop
-# Host: 100.69.59.111, User: claudeadmin, Pass: Trading2026
+# Host: 100.69.59.111, User: ITadmin, Pass: Trading2026
 
 # Check if online
 ping 100.69.59.111
@@ -223,9 +224,17 @@ Get-PSDrive C
 
 ---
 
-**Documentation Owner:** IT Infrastructure Agent  
-**Contact:** Jeff Littell (jglittell@gmail.com)  
+**Documentation Owner:** IT Infrastructure Agent
+**Contact:** Jeff Littell (jglittell@gmail.com)
 **Last Updated:** 2026-01-30
+
+## Changelog
+
+| Date | Change |
+|------|--------|
+| 2026-01-30 | Deleted `jglit` user account. Migrated all data to ITadmin (claudeadmin profile). TradeStation data (18GB), Downloads (1.9GB), Pictures (26MB) copied to C:\Users\claudeadmin\. Desktop (1.1GB) backed up to D:\jglit-backup\. 4 backup tasks recreated under ITadmin. 9 junk tasks removed. SSH now via ITadmin. ~63GB reclaimed on C:. Hardware corrected: Dell XPS 8940 (not HP OMEN). |
+| 2026-01-30 | Jump Desktop Connect installed (Fluid protocol). Resolves RDP session conflict with auto-logged ITadmin console. |
+| 2026-01-29 | Initial production setup. ITadmin auto-login, TradeStation auto-start, headless verified. Replaces decommissioned Windows VMs. |
 
 ---
 
@@ -263,7 +272,7 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-T
 |----------|--------|----------|---------|-------|
 | **Primary** | Jump Desktop Connect | Fluid | "My Computers" sidebar | Mirrors console, no conflict |
 | Fallback | RDP | RDP | `100.69.59.111:3389` | Only if console unoccupied |
-| CLI | SSH | SSH | `jglit@100.69.59.111` | Key auth only |
+| CLI | SSH | SSH | `ITadmin@100.69.59.111` | Key auth only |
 
 ### Cloudflare Tunnel Status
 **No Cloudflare tunnel exists for JLDesktop1.** The `trading-pc1.l7-partners.com` reference was from the old VM setup. Cloudflared is not installed. Only existing tunnels: `mac-studio` and `n8n-tunnel`.

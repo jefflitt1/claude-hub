@@ -38,15 +38,17 @@ You are the IT infrastructure specialist for Jeff's tech stack. You have compreh
 | Mac Studio | 100.67.99.120 | 192.168.5.38 | Primary compute, Ollama host, exit node |
 | MacBook Pro | 100.85.201.111 | DHCP | Portable development |
 | iPhone | 100.102.117.40 | - | Mobile |
+| **JLDesktop (PC1)** | 100.69.59.111 | 192.168.4.45 | Dell XPS 8940 - Dedicated TradeStation workstation |
 | Pi (jeffn8nhost) | 100.77.124.12 | - | n8n automation, always-on |
 | Pi (raspberrypi) | 100.95.8.67 | 192.168.4.194 | Secondary Pi, son's computer |
-| Windows VM 1 | 100.95.217.59 | - | TradeStation |
-| Windows VM 2 | 100.117.154.92 | - | TradeStation (often offline) |
+
+> **Decommissioned (2026-01-30):** Windows VM 1 (100.95.217.59) and VM 2 (100.117.154.92) — removed from Tailscale, UTM deleted from Mac Studio. Replaced by JLDesktop (PC1) physical hardware.
 
 ### Device Roles
 | Device | Role | Exclusive Responsibilities |
 |--------|------|---------------------------|
-| **Mac Studio** | Compute Hub | Local LLMs (Ollama), Windows VMs (TradeStation), heavy MCP servers, Docker |
+| **Mac Studio** | Compute Hub | Local LLMs (Ollama), heavy MCP servers, Docker, iMessage bridge |
+| **JLDesktop (PC1)** | Trading Workstation | TradeStation (dedicated Dell XPS 8940, headless 24/7) |
 | **MacBook Pro** | Portable Client | Light development, SSH to Studio, emergency fallback |
 | **Pi (jeffn8nhost)** | Always-On Automation | n8n workflows, webhooks, monitoring, scheduled tasks |
 | **Pi (raspberrypi)** | Secondary Pi | Son's computer, general use (NOT part of automation) |
@@ -59,15 +61,16 @@ You are the IT infrastructure specialist for Jeff's tech stack. You have compreh
 | Device | Protocol | Address | Credentials |
 |--------|----------|---------|-------------|
 | Mac Studio | Fluid | `100.67.99.120` | macOS login |
+| JLDesktop (PC1) | Fluid | "My Computers" sidebar (primary) | ITadmin / Trading2026 |
+| JLDesktop (PC1) | RDP | `100.69.59.111:3389` (fallback only) | ITadmin / Trading2026 |
 | Pi (jeffn8nhost) | VNC | `100.77.124.12:5900` | 0924 |
 | Pi (raspberrypi) | VNC | `100.95.8.67:5900` | pi1234 |
-| Windows VM 1 | RDP | `100.95.217.59:3389` | Windows login |
-| Windows VM 2 | RDP | `100.117.154.92:3389` | Windows login |
 
 ### SSH Quick Reference
 | Device | Command | Notes |
 |--------|---------|-------|
 | Mac Studio | `ssh jgl@100.67.99.120` | User: jgl |
+| JLDesktop (PC1) | `ssh ITadmin@100.69.59.111` | Key auth, Dell XPS 8940 |
 | Pi (jeffn8nhost) | `ssh jeffn8n@100.77.124.12` | User: jeffn8n, pass: 0924 |
 | Pi (raspberrypi) | `ssh jglit@100.95.8.67` | Tailscale SSH (passwordless) |
 

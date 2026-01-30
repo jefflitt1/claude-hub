@@ -35,32 +35,34 @@ Migration package created at: `~/Desktop/mac-studio-migration/`
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
-## Target Architecture
+## Current Architecture (Updated 2026-01-30)
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
 │                    Mac Studio "jgl" (Always-On)                     │
 ├────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ │
-│  │ Windows VM 1     │  │ Windows VM 2     │  │ macOS Host       │ │
-│  │ (VMware Fusion)  │  │ (VMware Fusion)  │  │                  │ │
-│  ├──────────────────┤  ├──────────────────┤  │ • Claude Code    │ │
-│  │ • TradeStation   │  │ • TradeStation   │  │ • Docker MCPs    │ │
-│  │ • Strategy 1     │  │ • Strategy 2     │  │ • Tailscale      │ │
-│  │ • Auto-trading   │  │ • Auto-trading   │  │ • HTTP API:3847  │ │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘ │
+│  ┌──────────────────────────────────────────────────────────────┐ │
+│  │ macOS Host                                                    │ │
+│  │ • Claude Code + HTTP API (:3847)                              │ │
+│  │ • Docker MCPs (MCP_DOCKER)                                    │ │
+│  │ • Ollama (local LLMs, :11434)                                 │ │
+│  │ • iMessage Bridge (:3848)                                     │ │
+│  │ • Tailscale (exit node)                                       │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+│  ⚠️ UTM + Windows VMs DECOMMISSIONED 2026-01-30                   │
+│    Replaced by JLDesktop (PC1) dedicated hardware                  │
 └────────────────────────────────────────────────────────────────────┘
          │
          │ Tailscale mesh + Cloudflare (public endpoints)
          ▼
-┌─────────────────┐     ┌─────────────────┐
-│   MacBook Pro   │     │  Raspberry Pi 5 │
-│  (Thin Client)  │     │   (Always-On)   │
-├─────────────────┤     ├─────────────────┤
-│ • SSH + tmux    │     │ • n8n server    │
-│ • Local dev     │     │ • Frigate NVR   │
-│ • Jump Desktop  │     │ • AI HAT 2 NPU  │
-└─────────────────┘     └─────────────────┘
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│   MacBook Pro   │  │  Raspberry Pi 5 │  │ JLDesktop (PC1) │
+│  (Thin Client)  │  │   (Always-On)   │  │  (Trading 24/7) │
+├─────────────────┤  ├─────────────────┤  ├─────────────────┤
+│ • SSH + tmux    │  │ • n8n server    │  │ • TradeStation   │
+│ • Local dev     │  │ • Uptime Kuma   │  │ • Dell XPS 8940  │
+│ • Jump Desktop  │  │ • Cloudflared   │  │ • Headless ops   │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 ## Migration Package Contents
@@ -220,52 +222,50 @@ studio
   - `studio-ssh.l7-partners.com` -> SSH
   - `claude-api.l7-partners.com` -> HTTP API (migrate after verify)
 
-## Windows VMs for Trading
+## Trading Workstation (JLDesktop PC1)
 
-### Platform: VMware Fusion Pro (Free)
-> ⚠️ Parallels has documented freezing issues with TradeStation on Mac Studio Ultra
+> **Windows VMs (UTM) on Mac Studio were DECOMMISSIONED 2026-01-30.**
+> Windows product keys deactivated (slmgr /upk + /cpky), UTM app deleted.
+> Replaced by dedicated physical hardware: JLDesktop (PC1).
 
-- **Install**: `brew install --cask vmware-fusion`
-- **Why VMware**: More stable for real-time trading, no network I/O bottlenecks
+### JLDesktop (PC1) - Dell XPS 8940
+| Property | Value |
+|----------|-------|
+| **Hardware** | Dell XPS 8940, i5-10400 (6C/12T), 16GB RAM, GTX 1660 Ti |
+| **Storage** | C: 235GB SSD + D: 1TB HDD |
+| **OS** | Windows 11 Pro (activated, key: HQN4V-HWBRB-KKM8P-YJG4D-YBHX3) |
+| **Tailscale IP** | 100.69.59.111 |
+| **Local IP** | 192.168.4.45 |
+| **SSH** | `ssh ITadmin@100.69.59.111` (key auth) |
+| **Jump Desktop** | Fluid protocol via "My Computers" (primary) |
+| **RDP** | `100.69.59.111:3389` ITadmin / Trading2026 (fallback only) |
+| **Purpose** | Dedicated TradeStation trading workstation (headless 24/7) |
 
-### Per VM Configuration:
-- Windows 11 ARM64 + Prism (x86 translation)
-- 4 CPU cores, 16 GB RAM, 128 GB disk
-- TradeStation Desktop installed
-- Auto-start on boot via LaunchAgent
-- Bridged networking for stable IPs
+**User Accounts:**
+- `ITadmin` / `Trading2026` — auto-login, SSH, primary access (profile folder: claudeadmin)
+- `Administrator` / `Trading2026` — UAC prompts
 
-### Two VMs Purpose:
-- VM 1: Trading Strategy 1 (`trading-vm1.l7-partners.com`)
-- VM 2: Trading Strategy 2 (`trading-vm2.l7-partners.com`)
-- Both connect to JGL Capital system
+**Auto-Start Sequence:** Boot → ITadmin auto-login → Tailscale → TradeStation (startup folder) → SSH available
 
-### Remote Access (Tailscale + Jump Desktop)
+**Why physical hardware over VMs:**
+- Native x86 performance (no ARM translation overhead)
+- Eliminates VM management complexity
+- More reliable for 24/7 trading operations
+- Headless operation tested and verified
 
-**Stack:** Tailscale (network) + Jump Desktop (visuals) = $53 total ($35 Mac + $18 iOS)
+**Pending:** BIOS "Power On after AC loss" (requires physical access, F10 at boot on Dell XPS)
 
-| Device | Protocol | Tailscale Hostname |
-|--------|----------|-------------------|
-| Mac Studio | Fluid | `mac-studio` |
-| Windows VM 1 | RDP | `trading-vm1` |
-| Windows VM 2 | RDP | `trading-vm2` |
-| Pi 5 | VNC | `pi5` |
+**Full docs:** `docs/it-agent/JLDesktop-PC1-verified-config.md`
 
-**Setup:**
-```bash
-# All devices
-brew install tailscale && sudo tailscale up  # Mac
-curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up  # Pi
-# Windows: Download installer from tailscale.com
-```
+### Remote Access
 
-**Access from anywhere:**
-```bash
-ssh mac-studio           # CLI access
-# Jump Desktop app → select device → instant GUI
-```
-
-**Replaces:** RealVNC, Cloudflare access tunnels, complex DNS routing
+| Device | Protocol | Address | Notes |
+|--------|----------|---------|-------|
+| Mac Studio | Fluid | `100.67.99.120` | Jump Desktop "My Computers" |
+| JLDesktop (PC1) | Fluid | "My Computers" sidebar | Primary (mirrors console) |
+| JLDesktop (PC1) | RDP | `100.69.59.111:3389` | Fallback only |
+| Pi (jeffn8nhost) | VNC | `100.77.124.12:5900` | x11vnc |
+| Pi (raspberrypi) | VNC | `100.95.8.67:5900` | x11vnc |
 
 ## Pi 5 + AI HAT 2
 
@@ -300,29 +300,18 @@ docker run -d \
 
 ## Outstanding Tasks
 
-### ⚠️ BLOCKING: Windows PC Software Audit
-**Status:** Needs IP addresses and credentials
-
-Two physical Windows PCs currently running TradeStation need to be audited before creating VM replacements:
-- **Purpose:** Identify all installed software for VM image
-- **Required info:** IP addresses + login credentials (captured earlier on 2026-01-23)
-- **Audit scope:** Installed programs, TradeStation version, EasyLanguage strategies, Windows licenses
-
-**Once IPs provided, run:**
-```bash
-# SSH or RDP into each PC and document:
-# - Installed software list
-# - TradeStation version and workspace
-# - Windows license key (for transfer attempt)
-# - Any custom scripts or automation
-```
+### JLDesktop (PC1) - Remaining Items
+- [ ] **BIOS "Power On after AC loss"** — Requires physical access, F10 at boot on Dell XPS, enable "After Power Loss → Power On"
+- [ ] Add JLDesktop to n8n Self-Healing Monitor workflow
+- [ ] Configure Windows Event Log forwarding to monitoring stack
+- [ ] Set up automated TradeStation health checks
 
 ---
 
 ## Long-Term To-Do List
 
-### Windows VM Licensing
-- [ ] **Check Microsoft account for digital Pro licenses** - May have upgraded licenses linked to Microsoft account from old PCs. On VMs: Settings → System → Activation → Troubleshoot → "I changed hardware on this device recently". Could avoid buying new Pro keys (~$60 savings).
+### Windows Licensing (Resolved)
+- [x] ~~Check Microsoft account for digital Pro licenses~~ — No longer needed. JLDesktop (PC1) activated with OEM key. VM approach abandoned in favor of dedicated hardware.
 
 ### Infrastructure Improvements
 - [ ] **Frigate NVR setup on Pi 5** - Security camera AI with Hailo NPU
@@ -332,14 +321,15 @@ Two physical Windows PCs currently running TradeStation need to be audited befor
 
 ---
 
-## Decisions Finalized (2026-01-21)
+## Decisions Finalized
 
 1. ✅ **Mac Studio username**: `jgl` (different from MacBook)
-2. ✅ **Windows VM platform**: VMware Fusion Pro (free, avoids Parallels freezing)
-3. ✅ **Pi 5 AI HAT task**: Security camera AI processing (Frigate NVR + Hailo NPU)
-4. ✅ **Docker vs Native MCPs**: Docker (single docker-compose.mcp.yml)
-5. ✅ **Windows licenses**: Try transfer first, then Kinguin keys (~$30-60 total)
-6. ✅ **Grok integration**: `grok-mcp` MCP server (not full CLI)
+2. ✅ **Trading workstation**: Dedicated physical PC (JLDesktop/Dell XPS 8940) — VMs abandoned (2026-01-29)
+3. ✅ **Windows VMs decommissioned**: UTM + both VMs deleted from Mac Studio (2026-01-30)
+4. ✅ **Pi 5 AI HAT task**: Security camera AI processing (Frigate NVR + Hailo NPU)
+5. ✅ **Docker vs Native MCPs**: Docker (single docker-compose.mcp.yml)
+6. ✅ **Windows license**: OEM key activated on JLDesktop PC1
+7. ✅ **Grok integration**: `grok-mcp` MCP server (not full CLI)
 
 ## Rollback Procedure
 
@@ -358,12 +348,13 @@ launchctl load ~/Library/LaunchAgents/com.claude.http-server.plist
 | Host | Local IP | Tailscale IP | Purpose |
 |------|----------|--------------|---------|
 | MacBook Pro | (DHCP) | 100.85.201.111 | Development, thin client |
-| Mac Studio | 192.168.5.38 | 100.67.99.120 | Primary Claude Code server, Ollama |
+| Mac Studio | 192.168.5.38 | 100.67.99.120 | Primary Claude Code server, Ollama, iMessage bridge |
+| JLDesktop (PC1) | 192.168.4.45 | 100.69.59.111 | Dedicated TradeStation workstation (Dell XPS 8940) |
 | Pi 5 (jeffn8nhost) | - | 100.77.124.12 | n8n automation, AI HAT |
 | Pi 5 (raspberrypi) | 192.168.4.194 | 100.95.8.67 | Secondary Pi, general use |
-| Windows VM 1 | - | 100.95.217.59 | TradeStation |
-| Windows VM 2 | - | 100.117.154.92 | TradeStation (often offline) |
 | iPhone | - | 100.102.117.40 | Mobile |
+
+> **Decommissioned:** Windows VM 1 (100.95.217.59) and VM 2 (100.117.154.92) — removed from Tailscale 2026-01-29, UTM deleted 2026-01-30. Replaced by JLDesktop (PC1).
 
 ### Public Endpoints
 | Domain | Service |
@@ -436,5 +427,5 @@ launchctl load ~/Library/LaunchAgents/com.claude.http-server.plist
 
 ---
 
-*Last updated: 2026-01-28*
-*Session: VNC setup on both Pis with auto-start*
+*Last updated: 2026-01-30*
+*Session: VM decommission, UTM removal, JLDesktop PC1 as sole trading workstation*

@@ -1,5 +1,44 @@
 # Tech Stack Inventory
-*Auto-generated: 2026-01-20*
+*Last updated: 2026-01-30*
+
+## Devices
+
+### JLDesktop (PC1) - Trading Workstation
+| Property | Value |
+|----------|-------|
+| **Model** | Dell XPS 8940 |
+| **CPU** | Intel i5-10400 (6C/12T) |
+| **RAM** | 16 GB |
+| **GPU** | NVIDIA GTX 1660 Ti |
+| **Storage** | C: 235GB SSD + D: 1TB HDD |
+| **OS** | Windows 11 Pro |
+| **Tailscale IP** | 100.69.59.111 |
+| **Local IP** | 192.168.4.45 |
+| **SSH** | `ssh ITadmin@100.69.59.111` (key auth) |
+| **RDP** | `100.69.59.111:3389` (ITadmin / Trading2026) |
+| **Jump Desktop** | Fluid protocol via "My Computers" (primary) |
+| **Purpose** | Dedicated TradeStation trading workstation |
+
+**User Accounts:** ITadmin (auto-login, primary), Administrator (UAC)
+> `jglit` account deleted 2026-01-30. All data migrated to ITadmin (profile folder: `claudeadmin`).
+> Desktop files backed up to `D:\jglit-backup\Desktop\`.
+
+**Auto-Start Sequence:** Boot → ITadmin auto-login → Tailscale → TradeStation (scheduled task) → SSH available
+
+**Scheduled Tasks (all run as ITadmin):**
+- TradeStation Startup (at logon)
+- TradeStation AutoStart (at logon)
+- TradeStation Watchdog (at logon, PowerShell)
+- TradeStation Backup - Weekly (Mon 12:01 AM)
+- TradeStation Backup - Weekly - CloudDrive (Fri 7:01 PM)
+- TradeStation Backup - Monthly (1st Mon 12:01 AM)
+- TradeStation Backup - Monthly - CloudDrive (1st Mon 8:01 PM)
+
+**Pending:** BIOS "Power On after AC loss" (requires physical access, F10 at boot on Dell XPS)
+
+**Full docs:** `docs/it-agent/JLDesktop-PC1-verified-config.md`
+
+---
 
 ## Infrastructure Overview
 
@@ -98,10 +137,17 @@
 | Error trigger | Error handling |
 | Master Telegram Bot Conversations | Bot orchestration |
 
+### Google Tasks Bidirectional Sync (Added 2026-01-30)
+| Workflow | ID | Purpose |
+|----------|----|---------|
+| Google Tasks Import | `FG5BHxNtd7EpiIQy` | Import tasks from Google Tasks → jeff_tasks |
+| Google Tasks Completion Sync | `6Bmnyc4KubPGUujA` | Sync completions from DB → Google Tasks |
+| Google Tasks Status Sync | `suOxWBLe645wsvrG` | Hourly poll for Google-side completions/deletions |
+
 ### By Category
 - **Claude Operations:** 8 workflows
 - **L7 Property:** 5 workflows
-- **JGL Personal:** 4 workflows
+- **JGL Personal:** 7 workflows (includes Google Tasks sync)
 - **Scraping/Data:** 6 workflows
 - **System Health:** 4 workflows
 
@@ -134,7 +180,7 @@
 | google-calendar | Calendar |
 | google-sheets | Spreadsheets |
 | telegram | Messaging |
-| n8n-mcp | Workflow management |
+| google-tasks | Google Tasks (jglittell@gmail.com) |
 
 ---
 
