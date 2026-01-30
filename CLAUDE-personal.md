@@ -17,13 +17,16 @@
 | Skill | Purpose |
 |-------|---------|
 | `/jeff` | Personal assistant (email triage, tasks, projects) |
+| `/it` | IT infrastructure (devices, credentials, MCP servers, network) |
 | `/reading` | Feedly articles by category (markets, cre, learn) |
 | `/consult` | Multi-model collaboration (Gemini, Codex second opinions) |
 | `/context` | Load session context from Memory MCP |
 | `/recap` | Save session progress |
 | `/done` | End session (recap + commit) |
+| `/jgl-team` | JGL Capital team meeting (CIO, Trader, Quant, Risk, Analyst) |
 | `/deal-analysis` | CRE deal screening |
 | `/n8n` | Manage n8n workflows |
+| `/secretary` | Distribute session accomplishments to project docs |
 | `/built-sme` | Construction finance SME (loan types, draws, compliance) |
 | `/built-sales` | Chris Voss sales coaching (call prep, objections, MEDDPICC) |
 | `/built-admin` | Sales comms (emails, meeting prep, CRM updates) |
@@ -46,24 +49,43 @@
 | **deepwiki** | GitHub repo Q&A | - |
 | **gemini-cli** | Google Gemini via OAuth (uses Gemini Advanced sub) | - |
 | **codex-cli** | OpenAI Codex/GPT-5 via OAuth (uses ChatGPT Plus sub) | - |
-| **grok-mcp** | xAI Grok 4 with real-time X/Twitter access | ✅ Active |
-| **deepseek-mcp** | DeepSeek R1/V3 (cheap reasoning, local option) | ✅ Active |
-| **cloudflare** | DNS record management (list/create/update/delete) | ✅ Active |
+| **tradestation** | Market data, quotes, trading (Auth0 v3 API) | - |
+| **elevenlabs** | TTS, voice cloning, audio processing, music (Docker MCP) | - |
+| **grok-cli** | xAI Grok 4 with real-time X/Twitter access | - |
+| **deepseek-cli** | DeepSeek R1/V3 (cheap reasoning, local option) | - |
+| **cloudflare** | DNS record management (list/create/update/delete) | - |
+| **tavily** | Deep research with citations (API key) | Primary search tool |
 
-**Redundant (keep as fallbacks):**
-- `supabase-l7` (HTTP) - fallback only, use `l7-business`
-- `n8n-mcp` (npx) - use `l7-business` for n8n ops
+**Redundant (REMOVED):**
+- ~~`supabase-l7` (HTTP)~~ - Removed 2026-01-26, use `l7-business`
+- ~~`n8n-mcp` (npx)~~ - Removed 2026-01-26, use `l7-business`
 - `MCP_DOCKER playwright/puppeteer` - use `unified-browser`
+- ~~`clawdbot/moltbot`~~ - Removed 2026-01-29, replaced by `imsg-bridge` + n8n workflow
 
 ### Specialized Subagents
 | Agent | Purpose | Access |
 |-------|---------|--------|
-| `l7-analyst` | L7 property data analysis & reports | Read-only Supabase, GDrive |
-| `trading-researcher` | Market research, Feedly Markets, quotes | Read-only TradeStation, Feedly |
+| `it-agent` | IT infrastructure, devices, credentials, MCP servers, network | Read-only + Bash diagnostics + Cloudflare |
+| `property-analyst` | Property & business data analysis (multi-project) | Read-only Supabase, GDrive |
+| `market-researcher` | Market research, Feedly, quotes (multi-data-source) | Read-only TradeStation, Feedly |
 | `email-drafter` | Draft responses, triage inbox | Read email, draft only (no send) |
 | `code-reviewer` | Security & quality code review | Read-only file access |
 
-**Usage**: "Use l7-analyst to query property data" or spawn via Task tool with `subagent_type`.
+**Usage**: "Use it-agent to check network status" or spawn via Task tool with `subagent_type`.
+**Context Variables**: `property-analyst` accepts `PROJECT_ID`, `market-researcher` accepts `DATA_SOURCE`.
+
+### JGL Capital Investment Team (`/jgl-team`)
+| Agent | Name | Role | External Models |
+|-------|------|------|-----------------|
+| **CIO** | Marcus Chen | Voice of reason, challenges assumptions, synthesizes team views | Gemini, DeepSeek R1 |
+| **Trader** | Sofia Reyes | Execution, timing, technical analysis, order flow | Grok (sentiment), TradeStation |
+| **Quant** | Raj Patel | Strategy, backtesting, signals, statistical rigor | DeepSeek R1 (math), Codex (code) |
+| **Systems Eng** | Alex Torres | Execution pipeline, broker APIs, WebSocket, infra, reliability | Codex (code review), DeepSeek V3 |
+| **Risk Mgr** | Diana Walsh | Position sizing, drawdown limits, tail risk, "what kills us?" | DeepSeek R1 (scenarios), Gemini |
+| **Analyst** | Amir Hassan | Macro, sectors, fundamentals, geopolitics, Feedly research | Grok (news), Gemini (research) |
+
+**Meeting format:** Each agent presents in character with domain expertise. CIO (Marcus) challenges all assumptions and synthesizes. Jeff (CEO) makes final decisions.
+**Invoke:** `/jgl-team` (standard meeting), `/jgl-team [topic]` (focused), `/jgl-team pulse` (quick), `/jgl-team risk`, `/jgl-team ideas`, `/jgl-team review`
 
 ### Multi-Model Collaboration (5 Models)
 Use these for second opinions, alternative approaches, and leveraging each model's strengths.
@@ -152,8 +174,8 @@ Use these for second opinions, alternative approaches, and leveraging each model
 |-------|-----------------|--------|
 | Gemini | OAuth (`gemini` CLI) | ✅ Active |
 | Codex | OAuth (`codex login`) | ✅ Active |
-| Grok | `~/.claude.json` (grok-mcp) | ✅ Active |
-| DeepSeek | `~/.claude.json` (deepseek-mcp) | ✅ Active |
+| Grok | `~/.config/grok-cli/config.json` | ✅ Active |
+| DeepSeek | `~/.config/deepseek/config.json` | ✅ Active |
 
 #### Local Models (Ollama - 32GB Mac Studio)
 | Model | Size | RAM | Use Case |
@@ -252,6 +274,8 @@ Located in `~/.claude/scripts/`:
 ## API Credentials (MCP Docker Secrets)
 | Service | Key Location | Login Method |
 |---------|--------------|--------------|
+| **Tavily** | `docker mcp secret` / MCP URL | GitHub OAuth |
+| **ElevenLabs** | `docker mcp secret` (`elevenlabs.api_key`) | API key from elevenlabs.io |
 | **Gemini CLI** | OAuth token | Google account (Gemini Advanced) |
 | **Codex CLI** | OAuth token | ChatGPT account (Plus/Pro) |
 

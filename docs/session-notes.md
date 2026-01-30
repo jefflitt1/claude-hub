@@ -1,10 +1,18 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 42)
+**Last Updated:** 2026-01-30 (Session 43)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 43 - 2026-01-30 (Skill Files + CLAUDE.md Reconciliation)
+- Created `/jgl-team` skill file — 6 named personas (Marcus Chen CIO, Sofia Reyes Trader, Raj Patel Quant, Alex Torres Systems, Diana Walsh Risk, Amir Hassan Analyst), 6 meeting formats, external model consultation protocol
+- Created `/built-sme` skill file — construction finance SME persona (loan types, draws, regulatory, Built platform mapping)
+- Created `/built-sales` skill file — Chris Voss + Challenger Sale + MEDDPICC frameworks (call prep, objections, roleplay, pipeline)
+- Created `/built-admin` skill file — sales communications (email drafting, meeting prep, CRM updates)
+- Reconciled `~/CLAUDE.md` (master) vs `CLAUDE-personal.md` (lightweight): added Built project + `/built-*` skills + `cloudflare` MCP to master; fixed personal file's subagent names, MCP names, added missing skills/MCPs/JGL team table
+- Updated grok-cli and deepseek-cli status from "Tomorrow" to active in master CLAUDE.md
 
 ### Session 42 - 2026-01-30 (JLDesktop2 PC2 Provisioning + IT Cleanup)
 - Fully provisioned JLDesktop2 (PC2) as second trading workstation (ITadmin auto-login, jglit SSH, Tailscale 100.68.163.47, TradeStation auto-start)
