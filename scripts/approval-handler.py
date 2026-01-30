@@ -44,7 +44,7 @@ POLL_INTERVAL = 1   # seconds
 # Telegram User API credentials (for mark_as_read via Telethon)
 TELEGRAM_API_ID = os.environ.get('TELEGRAM_API_ID', '34282665')
 TELEGRAM_API_HASH = os.environ.get('TELEGRAM_API_HASH', 'ba7794bc1fe83ab88ac5bdcd2e9362a7')
-TELEGRAM_SESSION_STRING = os.environ.get('TELEGRAM_SESSION_STRING', '1AZWarzgBu2msmaJSJovy_1UHE8AzitJ_EfdJBAMGYiES24c6QOPnk7zpKhgWI12aLmsvjrksipXDebrO_McNvlE2RheXUN65jv0V0BJaZt_EQkDWXVMz7sn0IW21s2BLtIdfgk_rXvNNdFhD-kUwZFDAmbsPAu0vZErV7wVXmrM1lVG31TBB0YkaiFNJBSAJD6ZmO7KTJV3ESOTTBIJUFVo2xUBleuEa0hHYrGmxVW7SZp6BjZdjALgSxIoEnSmz-wZunbqSV3O-AOqkrpnvbQQeWgvdiNsRNxccVz-mv6WWsFUY4JWWFscnQbmsFUkuqOmw41IBodOD_PLb5JNxHTsQy2_05-w=')
+TELEGRAM_SESSION_STRING = os.environ.get('TELEGRAM_SESSION_STRING', '1AZWarzgBu2seDxD_DLXBTp-GuwnNm7qyWuVvq0BLTUfFcuoYj3D-qqTxLMBsEv7TSMAZGt3-p8_dC4X5HRWofhLJUuUKYq7SsMyVmoXf51FkXUqACrdv2hUiKFQoZ_5aSd6vh8gCxTlv0FMJn3WhXDgDhCCMr_u5chhtb66P9WDoZAVLYWvhVfABIdLdkTki83aVIMYVLig2GQYWOHdAGitJPdspb1vBv6vVi3g_8gKq4bfVaJQ-DFdzsHAdokObPs-_QaOXc0hb7EU4QMSuVTGlqWnTVFjGMsvdMROAohHxnBuWPOBD9hgq1w48ZukbvKB2dWjzwBX7IVA59Rocu8K9VTs0Rn4=')
 
 # Track current session for cleanup
 _current_session_id = None

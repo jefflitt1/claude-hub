@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 43)
+**Last Updated:** 2026-01-30 (Session 44)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 44 - 2026-01-30 (Telegram Mark-as-Read for Approval Timeouts)
+- Installed Telethon (`pip3 install telethon`) for Telegram User API mark-as-read support
+- Generated new Telegram session string (old one expired due to dual-IP invalidation)
+- Updated `approval-handler.py` line 47 with new session string
+- Verified mark-as-read works end-to-end (`send_read_acknowledge` returns SUCCESS)
+- Telegram approval messages will now be marked as read after 3-minute timeout expiry
 
 ### Session 43 - 2026-01-30 (Skill Files + CLAUDE.md Reconciliation)
 - Created `/jgl-team` skill file — 6 named personas (Marcus Chen CIO, Sofia Reyes Trader, Raj Patel Quant, Alex Torres Systems, Diana Walsh Risk, Amir Hassan Analyst), 6 meeting formats, external model consultation protocol
