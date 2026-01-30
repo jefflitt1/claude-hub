@@ -1,5 +1,9 @@
 {
+  "id": "erMLnL303h0f9y1V",
   "name": "Kuma Auto-Heal",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -8,139 +12,191 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "id": "webhook-trigger",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [220, 300]
+      "position": [
+        220,
+        300
+      ],
+      "id": "0f3ded97-4790-4507-a786-785e28663b8e",
+      "webhookId": "kuma-auto-heal"
     },
     {
       "parameters": {
         "jsCode": "// Parse Kuma webhook payload\nconst body = $input.first().json.body || $input.first().json;\n\n// Kuma sends: { heartbeat: { status: 0=DOWN/1=UP, msg, ... }, monitor: { name, url, ... }, msg }\nconst heartbeat = body.heartbeat || {};\nconst monitor = body.monitor || {};\nconst msg = body.msg || '';\n\n// Only process DOWN events (status === 0)\nif (heartbeat.status === 1) {\n  return []; // UP event, ignore\n}\n\nconst monitorName = monitor.name || 'Unknown';\nconst monitorUrl = monitor.url || '';\nconst errorMsg = heartbeat.msg || msg || 'Service unreachable';\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    monitorName,\n    monitorUrl,\n    errorMsg,\n    timestamp,\n    monitorId: monitor.id,\n    status: heartbeat.status\n  }\n}];"
       },
-      "id": "parse-event",
       "name": "Parse DOWN Event",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 300]
+      "position": [
+        440,
+        300
+      ],
+      "id": "5b3d45ff-8b64-4bc0-aee7-23d47380c1a4"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/rpc/check_healing_cooldown",
-        "authentication": "genericCredentialType",
+        "authentication": "predefinedCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ service_name_param: $json.monitorName }) }}",
-        "options": { "response": { "response": { "fullResponse": true } } }
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        },
+        "nodeCredentialType": "supabaseApi"
       },
-      "id": "check-cooldown-http",
       "name": "Check Cooldown (HTTP)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [660, 300],
-      "onError": "continueRegularOutput"
+      "position": [
+        660,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "id": "02cb4593-7f93-4c4f-b18f-b62c034c0b34",
+      "credentials": {
+        "supabaseApi": {
+          "id": "HtfdX00X8v7ebxlb",
+          "name": "Supabase L7 Cloud"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "// Check cooldown response - if RPC doesn't exist, fall back to direct query approach\nconst input = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\n\n// We'll do cooldown check inline instead of relying on RPC\n// Pass through - the next node will handle cooldown via direct Supabase query\nreturn [{\n  json: {\n    ...monitorData,\n    proceedWithHeal: true\n  }\n}];"
       },
-      "id": "cooldown-fallback",
       "name": "Cooldown Check",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 300]
+      "position": [
+        880,
+        300
+      ],
+      "id": "cd9a3ee5-3795-443e-9f04-54f2cbc2ee64"
     },
     {
       "parameters": {
         "method": "GET",
         "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/self_healing_attempts?service_name=eq.{{ encodeURIComponent($json.monitorName) }}&cooldown_until=gt.{{ new Date().toISOString() }}&order=created_at.desc&limit=1",
-        "authentication": "genericCredentialType",
+        "authentication": "predefinedCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
-          ]
-        },
-        "options": {}
+        "sendHeaders": false,
+        "options": {},
+        "nodeCredentialType": "supabaseApi"
       },
-      "id": "check-cooldown-query",
       "name": "Check Recent Attempts",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1100, 300]
+      "position": [
+        1100,
+        300
+      ],
+      "id": "79395940-1e76-4528-9fc6-a0eb6688af99",
+      "credentials": {
+        "supabaseApi": {
+          "id": "HtfdX00X8v7ebxlb",
+          "name": "Supabase L7 Cloud"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "const recentAttempts = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\n\n// If there's a recent attempt still in cooldown, skip\nif (Array.isArray(recentAttempts) && recentAttempts.length > 0) {\n  return [{ json: { ...monitorData, action: 'skip_cooldown' } }];\n}\n\n// No cooldown active, proceed with healing\nreturn [{ json: { ...monitorData, action: 'heal' } }];"
       },
-      "id": "decide-action",
       "name": "Decide Action",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1320, 300]
+      "position": [
+        1320,
+        300
+      ],
+      "id": "dbdafdcd-c4ac-4537-9213-4c37f2a8c3d8"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "heal",
               "leftValue": "={{ $json.action }}",
               "rightValue": "heal",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
         }
       },
-      "id": "route-action",
       "name": "Should Heal?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1540, 300]
+      "position": [
+        1540,
+        300
+      ],
+      "id": "2a2adadc-5107-4de5-8435-8f08374c9e10"
     },
     {
       "parameters": {
         "method": "GET",
         "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/self_healing_runbooks?auto_remediate=eq.true&order=created_at.desc",
-        "authentication": "genericCredentialType",
+        "authentication": "predefinedCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" }
-          ]
-        },
-        "options": {}
+        "sendHeaders": false,
+        "options": {},
+        "nodeCredentialType": "supabaseApi"
       },
-      "id": "fetch-runbooks",
       "name": "Fetch Runbooks",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1760, 200]
+      "position": [
+        1760,
+        200
+      ],
+      "id": "77e16a91-3f54-441c-a5e0-31f9b7184f6a",
+      "credentials": {
+        "supabaseApi": {
+          "id": "HtfdX00X8v7ebxlb",
+          "name": "Supabase L7 Cloud"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "const runbooks = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\nconst monitorName = monitorData.monitorName.toLowerCase();\nconst errorMsg = (monitorData.errorMsg || '').toLowerCase();\nconst searchText = monitorName + ' ' + errorMsg;\n\n// Find matching runbook by regex pattern\nlet matchedRunbook = null;\nconst allRunbooks = Array.isArray(runbooks) ? runbooks : [];\n\nfor (const rb of allRunbooks) {\n  try {\n    const regex = new RegExp(rb.issue_pattern, 'i');\n    if (regex.test(searchText)) {\n      matchedRunbook = rb;\n      break;\n    }\n  } catch (e) {\n    // Invalid regex, skip\n  }\n}\n\nif (matchedRunbook) {\n  return [{\n    json: {\n      ...monitorData,\n      runbookId: matchedRunbook.id,\n      runbookPattern: matchedRunbook.issue_pattern,\n      remediationScript: matchedRunbook.remediation_script,\n      severity: matchedRunbook.severity,\n      hasRunbook: true\n    }\n  }];\n} else {\n  // No runbook found - use AI diagnosis\n  return [{\n    json: {\n      ...monitorData,\n      hasRunbook: false,\n      remediationScript: null,\n      severity: 'unknown'\n    }\n  }];\n}"
       },
-      "id": "match-runbook",
       "name": "Match Runbook",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1980, 200]
+      "position": [
+        1980,
+        200
+      ],
+      "id": "393fd87c-f834-4b56-abe4-f16a10cca995"
     },
     {
       "parameters": {
@@ -153,33 +209,42 @@
           "timeout": 90000
         }
       },
-      "id": "execute-fix",
       "name": "Execute Fix (Claude HTTP)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2200, 200],
-      "onError": "continueRegularOutput"
+      "position": [
+        2200,
+        200
+      ],
+      "onError": "continueRegularOutput",
+      "id": "5ab111e7-6cd3-4969-8eda-b2be2658392e"
     },
     {
       "parameters": {
         "jsCode": "// Wait 30 seconds then re-check the service\nconst monitorData = $('Parse DOWN Event').first().json;\nconst fixResult = $input.first().json;\n\n// Store fix result for later\nreturn [{\n  json: {\n    ...monitorData,\n    fixResult: JSON.stringify(fixResult).substring(0, 500),\n    fixAttempted: true\n  }\n}];"
       },
-      "id": "prepare-recheck",
       "name": "Prepare Re-check",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2420, 200]
+      "position": [
+        2420,
+        200
+      ],
+      "id": "e2750329-7ccc-4b63-b2c6-da836d05b555"
     },
     {
       "parameters": {
         "amount": 30,
         "unit": "seconds"
       },
-      "id": "wait-recovery",
       "name": "Wait 30s",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [2640, 200]
+      "position": [
+        2640,
+        200
+      ],
+      "id": "81c8ed0b-14a9-42dd-a8f3-e5d97508eb38"
     },
     {
       "parameters": {
@@ -188,78 +253,111 @@
           "timeout": 15000
         }
       },
-      "id": "recheck-service",
       "name": "Re-check Service",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2860, 200],
-      "onError": "continueRegularOutput"
+      "position": [
+        2860,
+        200
+      ],
+      "onError": "continueRegularOutput",
+      "id": "e175f4cf-0ae0-45f4-8dfe-c873066ea70c"
     },
     {
       "parameters": {
         "jsCode": "const recheckResult = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\nconst fixData = $('Prepare Re-check').first().json;\n\n// Determine if service recovered\n// If we got a valid HTTP response (not an error object), it's recovered\nconst isRecovered = recheckResult && !recheckResult.error && recheckResult.statusCode !== undefined \n  ? (recheckResult.statusCode >= 200 && recheckResult.statusCode < 500)\n  : (recheckResult && typeof recheckResult === 'object' && !recheckResult.code && !recheckResult.message?.includes('ECONNREFUSED'));\n\nconst cooldownMinutes = 30;\nconst cooldownUntil = new Date(Date.now() + cooldownMinutes * 60 * 1000).toISOString();\n\nreturn [{\n  json: {\n    monitorName: monitorData.monitorName,\n    monitorUrl: monitorData.monitorUrl,\n    errorMsg: monitorData.errorMsg,\n    fixResult: fixData.fixResult || 'none',\n    isRecovered,\n    cooldownUntil,\n    timestamp: monitorData.timestamp\n  }\n}];"
       },
-      "id": "evaluate-result",
       "name": "Evaluate Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3080, 200]
+      "position": [
+        3080,
+        200
+      ],
+      "id": "44a55d72-36b4-4427-b196-aed69e54e596"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/self_healing_attempts",
-        "authentication": "genericCredentialType",
+        "authentication": "predefinedCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "return=representation" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ issue_signature: 'kuma-' + $json.monitorName.toLowerCase().replace(/[^a-z0-9]/g, '-'), service_name: $json.monitorName, trigger_type: 'auto', status: $json.isRecovered ? 'success' : 'failed', prompt_sent: 'Auto-heal for ' + $json.monitorName, ai_response: ($json.fixResult || '').substring(0, 1000), error_message: $json.errorMsg, cooldown_until: $json.cooldownUntil, attempt_count: 1 }) }}",
-        "options": {}
+        "options": {},
+        "nodeCredentialType": "supabaseApi"
       },
-      "id": "log-attempt",
       "name": "Log Attempt to Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3300, 200],
-      "onError": "continueRegularOutput"
+      "position": [
+        3300,
+        200
+      ],
+      "onError": "continueRegularOutput",
+      "id": "5e2db12d-627e-4839-9ff4-061c9c4f5233",
+      "credentials": {
+        "supabaseApi": {
+          "id": "HtfdX00X8v7ebxlb",
+          "name": "Supabase L7 Cloud"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
             {
               "id": "recovered",
               "leftValue": "={{ $('Evaluate Result').first().json.isRecovered }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true" }
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
             }
           ],
           "combinator": "and"
         }
       },
-      "id": "check-recovered",
       "name": "Recovered?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3520, 200]
+      "position": [
+        3520,
+        200
+      ],
+      "id": "8f1b30f5-352b-4192-b52e-34ae8afb7b80"
     },
     {
       "parameters": {},
-      "id": "silent-success",
       "name": "Silent Success",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3740, 100]
+      "position": [
+        3740,
+        100
+      ],
+      "id": "2f66f924-2a4a-44bf-ad47-0f74db339e45"
     },
     {
       "parameters": {
@@ -269,114 +367,906 @@
           "parse_mode": "HTML"
         }
       },
-      "id": "alert-jeff",
       "name": "Alert Jeff (Telegram)",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [3740, 300],
+      "position": [
+        3740,
+        300
+      ],
       "credentials": {
         "telegramApi": {
           "id": "BsJt9Nzl9FDEgw3M",
           "name": "Telegram Bot"
         }
-      }
+      },
+      "id": "f14715f0-fb12-4458-a9ab-e4f0ce447ba0"
     },
     {
       "parameters": {},
-      "id": "skip-cooldown",
       "name": "Skip (In Cooldown)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1760, 400]
+      "position": [
+        1760,
+        400
+      ],
+      "id": "65065024-fb8c-453e-bd5d-b7518dff4cb2"
     }
   ],
   "connections": {
     "Webhook": {
       "main": [
-        [{ "node": "Parse DOWN Event", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse DOWN Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse DOWN Event": {
       "main": [
-        [{ "node": "Check Cooldown (HTTP)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check Cooldown (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Cooldown (HTTP)": {
       "main": [
-        [{ "node": "Cooldown Check", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Cooldown Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Cooldown Check": {
       "main": [
-        [{ "node": "Check Recent Attempts", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check Recent Attempts",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Recent Attempts": {
       "main": [
-        [{ "node": "Decide Action", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Decide Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Decide Action": {
       "main": [
-        [{ "node": "Should Heal?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Should Heal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Should Heal?": {
       "main": [
-        [{ "node": "Fetch Runbooks", "type": "main", "index": 0 }],
-        [{ "node": "Skip (In Cooldown)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Fetch Runbooks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip (In Cooldown)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fetch Runbooks": {
       "main": [
-        [{ "node": "Match Runbook", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Match Runbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Match Runbook": {
       "main": [
-        [{ "node": "Execute Fix (Claude HTTP)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Execute Fix (Claude HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Execute Fix (Claude HTTP)": {
       "main": [
-        [{ "node": "Prepare Re-check", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Prepare Re-check",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Prepare Re-check": {
       "main": [
-        [{ "node": "Wait 30s", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Wait 30s": {
       "main": [
-        [{ "node": "Re-check Service", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Re-check Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Re-check Service": {
       "main": [
-        [{ "node": "Evaluate Result", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Evaluate Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Evaluate Result": {
       "main": [
-        [{ "node": "Log Attempt to Supabase", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Log Attempt to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Log Attempt to Supabase": {
       "main": [
-        [{ "node": "Recovered?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Recovered?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Recovered?": {
       "main": [
-        [{ "node": "Silent Success", "type": "main", "index": 0 }],
-        [{ "node": "Alert Jeff (Telegram)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Silent Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Jeff (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": null,
-  "tags": []
+  "meta": null,
+  "pinData": null,
+  "activeVersionId": "87819889-889e-426f-8cef-1bfd3081646e",
+  "versionCounter": 22,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-30T15:03:45.797Z",
+      "createdAt": "2026-01-30T15:03:45.797Z",
+      "role": "workflow:owner",
+      "workflowId": "erMLnL303h0f9y1V",
+      "projectId": "lmS9m7rMVNiAe0a3",
+      "project": {
+        "updatedAt": "2025-07-25T14:19:26.646Z",
+        "createdAt": "2025-07-25T13:32:57.291Z",
+        "id": "lmS9m7rMVNiAe0a3",
+        "name": "Jeff Littell <jglittell@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "baafff79-4b16-4de2-a858-2c72a40fe7db",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-25T13:32:57.291Z",
+            "createdAt": "2025-07-25T13:32:57.291Z",
+            "userId": "baafff79-4b16-4de2-a858-2c72a40fe7db",
+            "projectId": "lmS9m7rMVNiAe0a3",
+            "user": {
+              "updatedAt": "2026-01-30T15:06:12.000Z",
+              "createdAt": "2025-07-25T13:32:56.598Z",
+              "id": "baafff79-4b16-4de2-a858-2c72a40fe7db",
+              "email": "jglittell@gmail.com",
+              "firstName": "Jeff",
+              "lastName": "Littell",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-25T14:19:50.681Z",
+                "personalization_survey_n8n_version": "1.103.2",
+                "companyIndustryExtended": [
+                  "other"
+                ],
+                "otherCompanyIndustryExtended": "Real Estate",
+                "companySize": "<20",
+                "companyType": "other",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "nDfMeiaDA9efzeUS",
+                "userActivatedAt": 1754712040092,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1757030752517
+                },
+                "defaultProjectId": "lmS9m7rMVNiAe0a3"
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-30",
+              "isPending": false
+            }
+          },
+          {
+            "updatedAt": null,
+            "createdAt": null,
+            "userId": "1000",
+            "projectId": "lmS9m7rMVNiAe0a3",
+            "user": null
+          }
+        ]
+      }
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-01-30T15:47:16.053Z",
+    "createdAt": "2026-01-30T15:47:16.053Z",
+    "versionId": "87819889-889e-426f-8cef-1bfd3081646e",
+    "workflowId": "erMLnL303h0f9y1V",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "kuma-auto-heal",
+          "responseMode": "onReceived",
+          "options": {}
+        },
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          220,
+          300
+        ],
+        "id": "0f3ded97-4790-4507-a786-785e28663b8e",
+        "webhookId": "kuma-auto-heal"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse Kuma webhook payload\nconst body = $input.first().json.body || $input.first().json;\n\n// Kuma sends: { heartbeat: { status: 0=DOWN/1=UP, msg, ... }, monitor: { name, url, ... }, msg }\nconst heartbeat = body.heartbeat || {};\nconst monitor = body.monitor || {};\nconst msg = body.msg || '';\n\n// Only process DOWN events (status === 0)\nif (heartbeat.status === 1) {\n  return []; // UP event, ignore\n}\n\nconst monitorName = monitor.name || 'Unknown';\nconst monitorUrl = monitor.url || '';\nconst errorMsg = heartbeat.msg || msg || 'Service unreachable';\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    monitorName,\n    monitorUrl,\n    errorMsg,\n    timestamp,\n    monitorId: monitor.id,\n    status: heartbeat.status\n  }\n}];"
+        },
+        "name": "Parse DOWN Event",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          440,
+          300
+        ],
+        "id": "5b3d45ff-8b64-4bc0-aee7-23d47380c1a4"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/rpc/check_healing_cooldown",
+          "authentication": "predefinedCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ service_name_param: $json.monitorName }) }}",
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true
+              }
+            }
+          },
+          "nodeCredentialType": "supabaseApi"
+        },
+        "name": "Check Cooldown (HTTP)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          660,
+          300
+        ],
+        "onError": "continueRegularOutput",
+        "id": "02cb4593-7f93-4c4f-b18f-b62c034c0b34",
+        "credentials": {
+          "supabaseApi": {
+            "id": "HtfdX00X8v7ebxlb",
+            "name": "Supabase L7 Cloud"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Check cooldown response - if RPC doesn't exist, fall back to direct query approach\nconst input = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\n\n// We'll do cooldown check inline instead of relying on RPC\n// Pass through - the next node will handle cooldown via direct Supabase query\nreturn [{\n  json: {\n    ...monitorData,\n    proceedWithHeal: true\n  }\n}];"
+        },
+        "name": "Cooldown Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          300
+        ],
+        "id": "cd9a3ee5-3795-443e-9f04-54f2cbc2ee64"
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/self_healing_attempts?service_name=eq.{{ encodeURIComponent($json.monitorName) }}&cooldown_until=gt.{{ new Date().toISOString() }}&order=created_at.desc&limit=1",
+          "authentication": "predefinedCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": false,
+          "options": {},
+          "nodeCredentialType": "supabaseApi"
+        },
+        "name": "Check Recent Attempts",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1100,
+          300
+        ],
+        "id": "79395940-1e76-4528-9fc6-a0eb6688af99",
+        "credentials": {
+          "supabaseApi": {
+            "id": "HtfdX00X8v7ebxlb",
+            "name": "Supabase L7 Cloud"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const recentAttempts = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\n\n// If there's a recent attempt still in cooldown, skip\nif (Array.isArray(recentAttempts) && recentAttempts.length > 0) {\n  return [{ json: { ...monitorData, action: 'skip_cooldown' } }];\n}\n\n// No cooldown active, proceed with healing\nreturn [{ json: { ...monitorData, action: 'heal' } }];"
+        },
+        "name": "Decide Action",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1320,
+          300
+        ],
+        "id": "dbdafdcd-c4ac-4537-9213-4c37f2a8c3d8"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "heal",
+                "leftValue": "={{ $json.action }}",
+                "rightValue": "heal",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "name": "Should Heal?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          1540,
+          300
+        ],
+        "id": "2a2adadc-5107-4de5-8435-8f08374c9e10"
+      },
+      {
+        "parameters": {
+          "method": "GET",
+          "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/self_healing_runbooks?auto_remediate=eq.true&order=created_at.desc",
+          "authentication": "predefinedCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": false,
+          "options": {},
+          "nodeCredentialType": "supabaseApi"
+        },
+        "name": "Fetch Runbooks",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1760,
+          200
+        ],
+        "id": "77e16a91-3f54-441c-a5e0-31f9b7184f6a",
+        "credentials": {
+          "supabaseApi": {
+            "id": "HtfdX00X8v7ebxlb",
+            "name": "Supabase L7 Cloud"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const runbooks = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\nconst monitorName = monitorData.monitorName.toLowerCase();\nconst errorMsg = (monitorData.errorMsg || '').toLowerCase();\nconst searchText = monitorName + ' ' + errorMsg;\n\n// Find matching runbook by regex pattern\nlet matchedRunbook = null;\nconst allRunbooks = Array.isArray(runbooks) ? runbooks : [];\n\nfor (const rb of allRunbooks) {\n  try {\n    const regex = new RegExp(rb.issue_pattern, 'i');\n    if (regex.test(searchText)) {\n      matchedRunbook = rb;\n      break;\n    }\n  } catch (e) {\n    // Invalid regex, skip\n  }\n}\n\nif (matchedRunbook) {\n  return [{\n    json: {\n      ...monitorData,\n      runbookId: matchedRunbook.id,\n      runbookPattern: matchedRunbook.issue_pattern,\n      remediationScript: matchedRunbook.remediation_script,\n      severity: matchedRunbook.severity,\n      hasRunbook: true\n    }\n  }];\n} else {\n  // No runbook found - use AI diagnosis\n  return [{\n    json: {\n      ...monitorData,\n      hasRunbook: false,\n      remediationScript: null,\n      severity: 'unknown'\n    }\n  }];\n}"
+        },
+        "name": "Match Runbook",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1980,
+          200
+        ],
+        "id": "393fd87c-f834-4b56-abe4-f16a10cca995"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "http://192.168.5.38:3847/execute",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json.hasRunbook ? { command: $json.remediationScript, timeout: 30000 } : { prompt: 'Service ' + $json.monitorName + ' is DOWN. Error: ' + $json.errorMsg + '. Diagnose and attempt to fix. Run diagnostic commands first, then attempt restart.', timeout: 60000 }) }}",
+          "options": {
+            "timeout": 90000
+          }
+        },
+        "name": "Execute Fix (Claude HTTP)",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2200,
+          200
+        ],
+        "onError": "continueRegularOutput",
+        "id": "5ab111e7-6cd3-4969-8eda-b2be2658392e"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Wait 30 seconds then re-check the service\nconst monitorData = $('Parse DOWN Event').first().json;\nconst fixResult = $input.first().json;\n\n// Store fix result for later\nreturn [{\n  json: {\n    ...monitorData,\n    fixResult: JSON.stringify(fixResult).substring(0, 500),\n    fixAttempted: true\n  }\n}];"
+        },
+        "name": "Prepare Re-check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2420,
+          200
+        ],
+        "id": "e2750329-7ccc-4b63-b2c6-da836d05b555"
+      },
+      {
+        "parameters": {
+          "amount": 30,
+          "unit": "seconds"
+        },
+        "name": "Wait 30s",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          2640,
+          200
+        ],
+        "id": "81c8ed0b-14a9-42dd-a8f3-e5d97508eb38"
+      },
+      {
+        "parameters": {
+          "url": "={{ $('Parse DOWN Event').first().json.monitorUrl }}",
+          "options": {
+            "timeout": 15000
+          }
+        },
+        "name": "Re-check Service",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          2860,
+          200
+        ],
+        "onError": "continueRegularOutput",
+        "id": "e175f4cf-0ae0-45f4-8dfe-c873066ea70c"
+      },
+      {
+        "parameters": {
+          "jsCode": "const recheckResult = $input.first().json;\nconst monitorData = $('Parse DOWN Event').first().json;\nconst fixData = $('Prepare Re-check').first().json;\n\n// Determine if service recovered\n// If we got a valid HTTP response (not an error object), it's recovered\nconst isRecovered = recheckResult && !recheckResult.error && recheckResult.statusCode !== undefined \n  ? (recheckResult.statusCode >= 200 && recheckResult.statusCode < 500)\n  : (recheckResult && typeof recheckResult === 'object' && !recheckResult.code && !recheckResult.message?.includes('ECONNREFUSED'));\n\nconst cooldownMinutes = 30;\nconst cooldownUntil = new Date(Date.now() + cooldownMinutes * 60 * 1000).toISOString();\n\nreturn [{\n  json: {\n    monitorName: monitorData.monitorName,\n    monitorUrl: monitorData.monitorUrl,\n    errorMsg: monitorData.errorMsg,\n    fixResult: fixData.fixResult || 'none',\n    isRecovered,\n    cooldownUntil,\n    timestamp: monitorData.timestamp\n  }\n}];"
+        },
+        "name": "Evaluate Result",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          3080,
+          200
+        ],
+        "id": "44a55d72-36b4-4427-b196-aed69e54e596"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "={{ $env.SUPABASE_URL || 'https://donnmhbwhpjlmpnwgdqr.supabase.co' }}/rest/v1/self_healing_attempts",
+          "authentication": "predefinedCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=representation"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ issue_signature: 'kuma-' + $json.monitorName.toLowerCase().replace(/[^a-z0-9]/g, '-'), service_name: $json.monitorName, trigger_type: 'auto', status: $json.isRecovered ? 'success' : 'failed', prompt_sent: 'Auto-heal for ' + $json.monitorName, ai_response: ($json.fixResult || '').substring(0, 1000), error_message: $json.errorMsg, cooldown_until: $json.cooldownUntil, attempt_count: 1 }) }}",
+          "options": {},
+          "nodeCredentialType": "supabaseApi"
+        },
+        "name": "Log Attempt to Supabase",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          3300,
+          200
+        ],
+        "onError": "continueRegularOutput",
+        "id": "5e2db12d-627e-4839-9ff4-061c9c4f5233",
+        "credentials": {
+          "supabaseApi": {
+            "id": "HtfdX00X8v7ebxlb",
+            "name": "Supabase L7 Cloud"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "recovered",
+                "leftValue": "={{ $('Evaluate Result').first().json.isRecovered }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "name": "Recovered?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          3520,
+          200
+        ],
+        "id": "8f1b30f5-352b-4192-b52e-34ae8afb7b80"
+      },
+      {
+        "parameters": {},
+        "name": "Silent Success",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          3740,
+          100
+        ],
+        "id": "2f66f924-2a4a-44bf-ad47-0f74db339e45"
+      },
+      {
+        "parameters": {
+          "chatId": "7938188628",
+          "text": "=\ud83d\udea8 <b>AUTO-HEAL FAILED:</b> {{ $('Evaluate Result').first().json.monitorName }}\n\n<b>Error:</b> {{ $('Evaluate Result').first().json.errorMsg }}\n<b>URL:</b> <code>{{ $('Evaluate Result').first().json.monitorUrl }}</code>\n<b>Fix attempted:</b> {{ $('Evaluate Result').first().json.fixResult }}\n<b>Status:</b> Still down after auto-fix attempt\n<b>Time:</b> {{ $('Evaluate Result').first().json.timestamp }}\n\n<i>Manual intervention required.</i>",
+          "additionalFields": {
+            "parse_mode": "HTML"
+          }
+        },
+        "name": "Alert Jeff (Telegram)",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1.2,
+        "position": [
+          3740,
+          300
+        ],
+        "credentials": {
+          "telegramApi": {
+            "id": "BsJt9Nzl9FDEgw3M",
+            "name": "Telegram Bot"
+          }
+        },
+        "id": "f14715f0-fb12-4458-a9ab-e4f0ce447ba0"
+      },
+      {
+        "parameters": {},
+        "name": "Skip (In Cooldown)",
+        "type": "n8n-nodes-base.noOp",
+        "typeVersion": 1,
+        "position": [
+          1760,
+          400
+        ],
+        "id": "65065024-fb8c-453e-bd5d-b7518dff4cb2"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse DOWN Event",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse DOWN Event": {
+        "main": [
+          [
+            {
+              "node": "Check Cooldown (HTTP)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Cooldown (HTTP)": {
+        "main": [
+          [
+            {
+              "node": "Cooldown Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cooldown Check": {
+        "main": [
+          [
+            {
+              "node": "Check Recent Attempts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Recent Attempts": {
+        "main": [
+          [
+            {
+              "node": "Decide Action",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Decide Action": {
+        "main": [
+          [
+            {
+              "node": "Should Heal?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should Heal?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Runbooks",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Skip (In Cooldown)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Runbooks": {
+        "main": [
+          [
+            {
+              "node": "Match Runbook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Match Runbook": {
+        "main": [
+          [
+            {
+              "node": "Execute Fix (Claude HTTP)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Execute Fix (Claude HTTP)": {
+        "main": [
+          [
+            {
+              "node": "Prepare Re-check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Re-check": {
+        "main": [
+          [
+            {
+              "node": "Wait 30s",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Wait 30s": {
+        "main": [
+          [
+            {
+              "node": "Re-check Service",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Re-check Service": {
+        "main": [
+          [
+            {
+              "node": "Evaluate Result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Evaluate Result": {
+        "main": [
+          [
+            {
+              "node": "Log Attempt to Supabase",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Log Attempt to Supabase": {
+        "main": [
+          [
+            {
+              "node": "Recovered?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Recovered?": {
+        "main": [
+          [
+            {
+              "node": "Silent Success",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Alert Jeff (Telegram)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Jeff Littell",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-30T15:47:16.145Z",
+        "id": 608,
+        "workflowId": "erMLnL303h0f9y1V",
+        "versionId": "87819889-889e-426f-8cef-1bfd3081646e",
+        "event": "activated",
+        "userId": "baafff79-4b16-4de2-a858-2c72a40fe7db"
+      }
+    ]
+  }
 }

@@ -1,12 +1,19 @@
 {
+  "id": "6Bmnyc4KubPGUujA",
   "name": "Google Tasks Completion Sync",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "id": "webhook-trigger",
       "name": "Webhook Trigger",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 300],
+      "position": [
+        0,
+        300
+      ],
       "webhookId": "google-tasks-complete",
       "parameters": {
         "httpMethod": "POST",
@@ -20,7 +27,10 @@
       "name": "Extract Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 300],
+      "position": [
+        220,
+        300
+      ],
       "parameters": {
         "jsCode": "const body = $json.body || $json;\nconst task_id = body.task_id;\nconst google_task_id = body.google_task_id;\n\nif (!task_id || !google_task_id) {\n  throw new Error('Missing required fields: task_id and google_task_id');\n}\n\nreturn [{ json: { task_id, google_task_id } }];"
       }
@@ -30,7 +40,10 @@
       "name": "Lookup Sync Record",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [440, 300],
+      "position": [
+        440,
+        300
+      ],
       "parameters": {
         "operation": "getAll",
         "tableId": "jeff_google_tasks_sync",
@@ -51,7 +64,10 @@
       "name": "Has Sync Record?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [660, 300],
+      "position": [
+        660,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -79,7 +95,10 @@
       "name": "No Sync Record",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 500],
+      "position": [
+        880,
+        500
+      ],
       "parameters": {
         "jsCode": "return [{ json: { success: false, error: 'No Google Tasks sync record found for this task' } }];"
       }
@@ -89,7 +108,10 @@
       "name": "Prepare Complete Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [880, 300],
+      "position": [
+        880,
+        300
+      ],
       "parameters": {
         "jsCode": "const syncRecord = $json;\nconst google_task_id = syncRecord.google_task_id;\nconst google_list_id = syncRecord.google_list_id;\nconst sync_id = syncRecord.id;\n\nreturn [{ json: { google_task_id, google_list_id, sync_id } }];"
       }
@@ -99,7 +121,10 @@
       "name": "Mark Complete in Google",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1100, 300],
+      "position": [
+        1100,
+        300
+      ],
       "parameters": {
         "method": "PATCH",
         "url": "=https://tasks.googleapis.com/tasks/v1/lists/{{ $json.google_list_id }}/tasks/{{ $json.google_task_id }}",
@@ -108,13 +133,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ status: 'completed' }) }}",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "credentials": {
         "googleTasksOAuth2Api": {
@@ -128,7 +158,10 @@
       "name": "Update Sync Record",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
-      "position": [1320, 300],
+      "position": [
+        1320,
+        300
+      ],
       "parameters": {
         "operation": "update",
         "tableId": "jeff_google_tasks_sync",
@@ -136,8 +169,14 @@
         "id": "={{ $('Prepare Complete Request').item.json.sync_id }}",
         "fieldsUi": {
           "fieldValues": [
-            { "fieldName": "last_synced_at", "fieldValue": "={{ new Date().toISOString() }}" },
-            { "fieldName": "sync_status", "fieldValue": "completed" }
+            {
+              "fieldName": "last_synced_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldName": "sync_status",
+              "fieldValue": "completed"
+            }
           ]
         }
       },
@@ -153,7 +192,10 @@
       "name": "Success Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1540, 300],
+      "position": [
+        1540,
+        300
+      ],
       "parameters": {
         "jsCode": "return [{ json: { success: true, message: 'Task marked as completed in Google Tasks and sync record updated' } }];"
       }
@@ -162,38 +204,86 @@
   "connections": {
     "Webhook Trigger": {
       "main": [
-        [{ "node": "Extract Payload", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Extract Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Extract Payload": {
       "main": [
-        [{ "node": "Lookup Sync Record", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Lookup Sync Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Lookup Sync Record": {
       "main": [
-        [{ "node": "Has Sync Record?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Sync Record?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Sync Record?": {
       "main": [
-        [{ "node": "Prepare Complete Request", "type": "main", "index": 0 }],
-        [{ "node": "No Sync Record", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Prepare Complete Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Sync Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Prepare Complete Request": {
       "main": [
-        [{ "node": "Mark Complete in Google", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Mark Complete in Google",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Mark Complete in Google": {
       "main": [
-        [{ "node": "Update Sync Record", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Update Sync Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Update Sync Record": {
       "main": [
-        [{ "node": "Success Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -201,6 +291,387 @@
     "executionOrder": "v1",
     "saveExecutionProgress": true,
     "saveDataSuccessExecution": "all",
-    "timezone": "America/New_York"
+    "timezone": "America/New_York",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "activeVersionId": "a6213bc7-a89d-4102-8abc-0b919711447a",
+  "versionCounter": 9,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-01-30T15:29:21.742Z",
+      "createdAt": "2026-01-30T15:29:21.742Z",
+      "role": "workflow:owner",
+      "workflowId": "6Bmnyc4KubPGUujA",
+      "projectId": "lmS9m7rMVNiAe0a3",
+      "project": {
+        "updatedAt": "2025-07-25T14:19:26.646Z",
+        "createdAt": "2025-07-25T13:32:57.291Z",
+        "id": "lmS9m7rMVNiAe0a3",
+        "name": "Jeff Littell <jglittell@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "baafff79-4b16-4de2-a858-2c72a40fe7db",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-25T13:32:57.291Z",
+            "createdAt": "2025-07-25T13:32:57.291Z",
+            "userId": "baafff79-4b16-4de2-a858-2c72a40fe7db",
+            "projectId": "lmS9m7rMVNiAe0a3",
+            "user": {
+              "updatedAt": "2026-01-30T15:06:12.000Z",
+              "createdAt": "2025-07-25T13:32:56.598Z",
+              "id": "baafff79-4b16-4de2-a858-2c72a40fe7db",
+              "email": "jglittell@gmail.com",
+              "firstName": "Jeff",
+              "lastName": "Littell",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-25T14:19:50.681Z",
+                "personalization_survey_n8n_version": "1.103.2",
+                "companyIndustryExtended": [
+                  "other"
+                ],
+                "otherCompanyIndustryExtended": "Real Estate",
+                "companySize": "<20",
+                "companyType": "other",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "nDfMeiaDA9efzeUS",
+                "userActivatedAt": 1754712040092,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1757030752517
+                },
+                "defaultProjectId": "lmS9m7rMVNiAe0a3"
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-01-30",
+              "isPending": false
+            }
+          },
+          {
+            "updatedAt": null,
+            "createdAt": null,
+            "userId": "1000",
+            "projectId": "lmS9m7rMVNiAe0a3",
+            "user": null
+          }
+        ]
+      }
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-01-30T15:36:14.262Z",
+    "createdAt": "2026-01-30T15:36:14.262Z",
+    "versionId": "a6213bc7-a89d-4102-8abc-0b919711447a",
+    "workflowId": "6Bmnyc4KubPGUujA",
+    "nodes": [
+      {
+        "id": "webhook-trigger",
+        "name": "Webhook Trigger",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          300
+        ],
+        "webhookId": "google-tasks-complete",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "google-tasks-complete",
+          "responseMode": "lastNode",
+          "options": {}
+        }
+      },
+      {
+        "id": "extract-payload",
+        "name": "Extract Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          220,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const body = $json.body || $json;\nconst task_id = body.task_id;\nconst google_task_id = body.google_task_id;\n\nif (!task_id || !google_task_id) {\n  throw new Error('Missing required fields: task_id and google_task_id');\n}\n\nreturn [{ json: { task_id, google_task_id } }];"
+        }
+      },
+      {
+        "id": "lookup-sync-record",
+        "name": "Lookup Sync Record",
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          440,
+          300
+        ],
+        "parameters": {
+          "operation": "getAll",
+          "tableId": "jeff_google_tasks_sync",
+          "returnAll": false,
+          "limit": 1,
+          "filterType": "string",
+          "filterString": "=google_task_id=eq.{{ $json.google_task_id }}"
+        },
+        "credentials": {
+          "supabaseApi": {
+            "id": "HtfdX00X8v7ebxlb",
+            "name": "Supabase L7 Cloud"
+          }
+        }
+      },
+      {
+        "id": "has-sync-record",
+        "name": "Has Sync Record?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          660,
+          300
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "sync-exists",
+                "leftValue": "={{ $json.id !== undefined }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        }
+      },
+      {
+        "id": "no-sync-record",
+        "name": "No Sync Record",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          500
+        ],
+        "parameters": {
+          "jsCode": "return [{ json: { success: false, error: 'No Google Tasks sync record found for this task' } }];"
+        }
+      },
+      {
+        "id": "prepare-complete",
+        "name": "Prepare Complete Request",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          880,
+          300
+        ],
+        "parameters": {
+          "jsCode": "const syncRecord = $json;\nconst google_task_id = syncRecord.google_task_id;\nconst google_list_id = syncRecord.google_list_id;\nconst sync_id = syncRecord.id;\n\nreturn [{ json: { google_task_id, google_list_id, sync_id } }];"
+        }
+      },
+      {
+        "id": "mark-complete-google",
+        "name": "Mark Complete in Google",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1100,
+          300
+        ],
+        "parameters": {
+          "method": "PATCH",
+          "url": "=https://tasks.googleapis.com/tasks/v1/lists/{{ $json.google_list_id }}/tasks/{{ $json.google_task_id }}",
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "googleTasksOAuth2Api",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({ status: 'completed' }) }}",
+          "options": {
+            "timeout": 10000
+          }
+        },
+        "credentials": {
+          "googleTasksOAuth2Api": {
+            "id": "eslbS4vLRH5FXzuN",
+            "name": "Google Tasks JGL"
+          }
+        }
+      },
+      {
+        "id": "update-sync-record",
+        "name": "Update Sync Record",
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          1320,
+          300
+        ],
+        "parameters": {
+          "operation": "update",
+          "tableId": "jeff_google_tasks_sync",
+          "matchType": "id",
+          "id": "={{ $('Prepare Complete Request').item.json.sync_id }}",
+          "fieldsUi": {
+            "fieldValues": [
+              {
+                "fieldName": "last_synced_at",
+                "fieldValue": "={{ new Date().toISOString() }}"
+              },
+              {
+                "fieldName": "sync_status",
+                "fieldValue": "completed"
+              }
+            ]
+          }
+        },
+        "credentials": {
+          "supabaseApi": {
+            "id": "HtfdX00X8v7ebxlb",
+            "name": "Supabase L7 Cloud"
+          }
+        }
+      },
+      {
+        "id": "success-response",
+        "name": "Success Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1540,
+          300
+        ],
+        "parameters": {
+          "jsCode": "return [{ json: { success: true, message: 'Task marked as completed in Google Tasks and sync record updated' } }];"
+        }
+      }
+    ],
+    "connections": {
+      "Webhook Trigger": {
+        "main": [
+          [
+            {
+              "node": "Extract Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Payload": {
+        "main": [
+          [
+            {
+              "node": "Lookup Sync Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Lookup Sync Record": {
+        "main": [
+          [
+            {
+              "node": "Has Sync Record?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Sync Record?": {
+        "main": [
+          [
+            {
+              "node": "Prepare Complete Request",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "No Sync Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Complete Request": {
+        "main": [
+          [
+            {
+              "node": "Mark Complete in Google",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Complete in Google": {
+        "main": [
+          [
+            {
+              "node": "Update Sync Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Update Sync Record": {
+        "main": [
+          [
+            {
+              "node": "Success Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Jeff Littell",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-01-30T15:36:14.337Z",
+        "id": 601,
+        "workflowId": "6Bmnyc4KubPGUujA",
+        "versionId": "a6213bc7-a89d-4102-8abc-0b919711447a",
+        "event": "activated",
+        "userId": "baafff79-4b16-4de2-a858-2c72a40fe7db"
+      }
+    ]
   }
 }
