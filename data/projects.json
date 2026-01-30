@@ -142,7 +142,16 @@
     "status": "active",
     "parentId": null,
     "created": "2026-01-17",
-    "updated": "2026-01-18",
+    "updated": "2026-01-28",
+    "integrations": {
+      "tradestation": {
+        "status": "active",
+        "purpose": "Market data, quotes, trading API",
+        "authType": "Auth0 (v3)",
+        "mcpServer": "tradestation",
+        "configuredDate": "2026-01-28"
+      }
+    },
     "repo": "https://github.com/jefflitt1/jgl-capital",
     "localPath": "projects/jgl-capital/",
     "tags": ["trading", "tradestation", "easylanguage", "systematic", "trend-following"],

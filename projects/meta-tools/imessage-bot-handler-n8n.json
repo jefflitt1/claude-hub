@@ -1,0 +1,194 @@
+{
+  "name": "iMessage Bot Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "imessage",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// iMessage Context Injection + Prefix Routing\n// Mirrors Telegram bot context injection pattern\n\nconst BOT_PROJECT_MAP = {\n  'jgl': {\n    project: 'jgl-capital',\n    persona: 'JGL Capital Trading Assistant',\n    context: 'You are the JGL Capital trading assistant. Help with market analysis, trade ideas, portfolio review, and risk management.',\n    session_prefix: 'imessage_jgl'\n  },\n  'trade': {\n    project: 'jgl-capital',\n    persona: 'JGL Capital Trading Assistant',\n    context: 'You are the JGL Capital trading assistant. Help with market analysis, trade ideas, portfolio review, and risk management.',\n    session_prefix: 'imessage_jgl'\n  },\n  'l7': {\n    project: 'l7-partners',\n    persona: 'L7 Partners Property Manager',\n    context: 'You are the L7 Partners property management assistant. Help with tenant issues, maintenance, lease management, and property operations.',\n    session_prefix: 'imessage_l7'\n  },\n  'property': {\n    project: 'l7-partners',\n    persona: 'L7 Partners Property Manager',\n    context: 'You are the L7 Partners property management assistant. Help with tenant issues, maintenance, lease management, and property operations.',\n    session_prefix: 'imessage_l7'\n  },\n  'magic': {\n    project: 'magic-agent',\n    persona: 'Magic Knowledge Base',\n    context: 'You are the Magic knowledge base assistant. Help with magic-related questions and knowledge.',\n    session_prefix: 'imessage_magic'\n  }\n};\n\nconst DEFAULT_PROJECT = {\n  project: 'general',\n  persona: \"Jeff's Personal Assistant\",\n  context: \"You are Jeff's personal AI assistant. Be helpful, concise, and direct. Jeff is a real estate and trading professional.\",\n  session_prefix: 'imessage_general'\n};\n\nconst input = $input.first().json;\nconst sender = input.sender || '';\nlet text = (input.text || '').trim();\nconst chatId = input.chat_id || '';\nconst guid = input.guid || '';\n\n// Parse prefix: /jgl, /trade, /l7, /property, /magic\nlet project = DEFAULT_PROJECT;\nconst prefixMatch = text.match(/^\\/([a-z]+)\\s+/i);\nif (prefixMatch) {\n  const prefix = prefixMatch[1].toLowerCase();\n  if (BOT_PROJECT_MAP[prefix]) {\n    project = BOT_PROJECT_MAP[prefix];\n    text = text.slice(prefixMatch[0].length).trim();\n  }\n}\n\n// Build session ID for chat history tracking\nconst sessionId = project.session_prefix + '_' + sender.replace(/[^a-zA-Z0-9]/g, '');\n\n// Build prompt with context\nconst fullPrompt = project.context + '\\n\\nUser message from ' + sender + ':\\n' + text;\n\nreturn {\n  json: {\n    sender: sender,\n    text: text,\n    original_text: input.text,\n    chat_id: chatId,\n    guid: guid,\n    project: project.project,\n    persona: project.persona,\n    session_id: sessionId,\n    prompt: fullPrompt,\n    bridge_send_url: 'http://100.67.99.120:3848/send'\n  }\n};"
+      },
+      "id": "context-injection",
+      "name": "Context Injection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://100.67.99.120:3847/claude",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.CLAUDE_HTTP_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ prompt: $json.prompt, session_id: $json.session_id }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "call-claude",
+      "name": "Call Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Claude's response and prepare send payload\nconst claudeResponse = $input.first().json;\nconst contextData = $('Context Injection').first().json;\n\nlet responseText = '';\nif (claudeResponse.success && claudeResponse.output) {\n  responseText = claudeResponse.output.trim();\n} else if (claudeResponse.error) {\n  responseText = 'Error: ' + (claudeResponse.error || 'Unknown error').slice(0, 500);\n} else {\n  responseText = 'Sorry, I could not process that request.';\n}\n\n// Truncate if extremely long\nif (responseText.length > 16000) {\n  responseText = responseText.slice(0, 16000) + '\\n\\n[Response truncated]';\n}\n\nreturn {\n  json: {\n    to: contextData.sender,\n    text: responseText,\n    bridge_send_url: contextData.bridge_send_url\n  }\n};"
+      },
+      "id": "prepare-reply",
+      "name": "Prepare Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.bridge_send_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.IMSG_BRIDGE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.to, text: $json.text }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "send-reply",
+      "name": "Send Reply via Bridge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Error handler - send error message back to user\nconst contextData = $('Context Injection').first().json;\n\nreturn {\n  json: {\n    to: contextData.sender,\n    text: 'Sorry, something went wrong processing your message. Please try again.',\n    bridge_send_url: contextData.bridge_send_url\n  }\n};"
+      },
+      "id": "error-handler",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.bridge_send_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $env.IMSG_BRIDGE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: $json.to, text: $json.text }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "send-error-reply",
+      "name": "Send Error Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Context Injection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Context Injection": {
+      "main": [
+        [
+          {
+            "node": "Call Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Claude": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Reply via Bridge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Handler": {
+      "main": [
+        [
+          {
+            "node": "Send Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "iMessage"
+    },
+    {
+      "name": "bot"
+    }
+  ]
+}

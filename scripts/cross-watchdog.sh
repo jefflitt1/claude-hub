@@ -37,6 +37,21 @@ else
 fi
 STATE_FILE="${STATE_DIR}/watchdog-state.json"
 
+# --- Auto-Fix Commands ---
+# Maps check key to restart command (bash associative arrays not available on all systems, use case)
+get_fix_command() {
+    local key="$1"
+    case "$key" in
+        pi_n8n)           echo "ssh root@${PI_IP} 'docker restart n8n'" ;;
+        pi_beszel_hub)    echo "ssh root@${PI_IP} 'docker restart beszel'" ;;
+        pi_uptime_kuma)   echo "ssh root@${PI_IP} 'docker restart uptime-kuma'" ;;
+        studio_ollama)    echo "ssh jgl@${STUDIO_IP} 'brew services restart ollama'" ;;
+        studio_beszel_hub) echo "ssh jgl@${STUDIO_IP} 'source ~/.zshrc; docker restart beszel'" ;;
+        studio_uptime_kuma) echo "ssh jgl@${STUDIO_IP} 'source ~/.zshrc; docker restart uptime-kuma'" ;;
+        *)                echo "" ;;  # No auto-fix for ping checks
+    esac
+}
+
 # --- Functions ---
 
 log() {
@@ -93,7 +108,48 @@ set_state() {
     fi
 }
 
-# Run a check, alert only on state TRANSITIONS (up->down or down->up)
+# Attempt auto-fix for a service, return 0 if fix succeeded
+attempt_auto_fix() {
+    local name="$1"
+    local check_type="$2"
+    local target="$3"
+    local key="$4"
+
+    local fix_cmd
+    fix_cmd=$(get_fix_command "$key")
+
+    if [ -z "$fix_cmd" ]; then
+        log "AUTO-FIX: No fix command for $name"
+        return 1
+    fi
+
+    log "AUTO-FIX: Attempting restart for $name: $fix_cmd"
+    if eval "$fix_cmd" > /dev/null 2>&1; then
+        log "AUTO-FIX: Command executed, waiting 30s for recovery..."
+        sleep 30
+
+        # Re-check the service
+        local recovered=false
+        if [ "$check_type" = "ping" ]; then
+            check_ping "$target" && recovered=true
+        elif [ "$check_type" = "http" ]; then
+            check_http "$target" && recovered=true
+        fi
+
+        if [ "$recovered" = true ]; then
+            log "AUTO-FIX: $name recovered after restart"
+            return 0
+        else
+            log "AUTO-FIX: $name still down after restart"
+            return 1
+        fi
+    else
+        log "AUTO-FIX: Command failed for $name"
+        return 1
+    fi
+}
+
+# Run a check, attempt auto-fix on failure, alert only if fix fails
 run_check() {
     local name="$1"
     local check_type="$2"  # "ping" or "http"
@@ -123,19 +179,33 @@ Time: $(date '+%Y-%m-%d %H:%M:%S')"
         fi
         set_state "$key" "up"
     else
-        # Service is DOWN
+        # Service is DOWN - attempt auto-fix before alerting
         if [ "$prev_state" != "down" ]; then
-            # State transition: was up (or unknown) -> now down. Alert once.
-            log "DOWN: $name ($target) -- ALERTING"
-            send_telegram "$(printf '\xf0\x9f\x94\xb4') <b>DOWN:</b> $name unreachable
+            # First detection: try auto-fix
+            if attempt_auto_fix "$name" "$check_type" "$target" "$key"; then
+                # Auto-fix worked! Log silently, no Telegram needed
+                log "AUTO-HEALED: $name (Jeff never knows)"
+                set_state "$key" "up"
+            else
+                # Auto-fix failed or unavailable - alert Jeff
+                local fix_cmd
+                fix_cmd=$(get_fix_command "$key")
+                local tried_msg=""
+                if [ -n "$fix_cmd" ]; then
+                    tried_msg="
+Tried: <code>${fix_cmd}</code> (failed)"
+                fi
+                log "DOWN: $name ($target) -- auto-fix failed, ALERTING"
+                send_telegram "$(printf '\xf0\x9f\x94\xb4') <b>DOWN:</b> $name unreachable
 Target: <code>$target</code>
-Source: ${WATCHDOG_DEVICE}
+Source: ${WATCHDOG_DEVICE}${tried_msg}
 Time: $(date '+%Y-%m-%d %H:%M:%S')"
+                set_state "$key" "down"
+            fi
         else
             # Already known to be down, stay silent
             log "DOWN: $name ($target) (still down, no re-alert)"
         fi
-        set_state "$key" "down"
     fi
 }
 

@@ -182,7 +182,29 @@ studio
 - N8N_URL / N8N_API_KEY
 - FEEDLY_ACCESS_TOKEN
 - GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
-- TRADESTATION_* (placeholder, need real creds)
+- TRADESTATION_* (✅ CONFIGURED 2026-01-28)
+
+### TradeStation API (Configured 2026-01-28)
+
+| Setting | Value |
+|---------|-------|
+| Auth Type | Auth0 (v3 endpoints) |
+| Client ID | `6sap0C7hjhU9lTKjV57T8FMMhE5cqtPi` |
+| Redirect URI | `http://localhost:3000` |
+| Environment | `simulation` (switch to `live` for production) |
+| Refresh Token | Configured in ~/.zshrc on both Macs |
+| MCP Location | `~/Documents/Claude Code/claude-agents/projects/jgl-capital/mcp-servers/tradestation_mcp/` |
+
+**Token Expiry:** Pro market data subscribers have 24-hour token expiry. Monitor and re-auth if needed.
+
+**Available Tools:**
+- `marketData` - Real-time quotes
+- `barChart` - Historical price bars
+- `getSymbolDetails` - Symbol information
+- `getOptionExpirations` / `getOptionStrikes` - Options chain data
+- `getAccounts` / `getBalances` / `getPositions` - Account info
+- `getOrders` / `getExecutions` - Order history
+- `confirmOrder` - Order preview (read-only, no execution)
 
 ## Cloudflare Tunnel Configuration
 
@@ -304,7 +326,7 @@ Two physical Windows PCs currently running TradeStation need to be audited befor
 
 ### Infrastructure Improvements
 - [ ] **Frigate NVR setup on Pi 5** - Security camera AI with Hailo NPU
-- [ ] **Configure TradeStation credentials** - Need real API creds for MCP
+- [x] **Configure TradeStation credentials** - ✅ Done 2026-01-28 (Auth0 API, both Macs)
 - [ ] **Network diagram (visual)** - Create 1-page visual topology
 - [ ] **IT admin handoff checklist** - Runbook format for secretary/IT handoff
 

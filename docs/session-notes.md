@@ -1,10 +1,22 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 34)
+**Last Updated:** 2026-01-30 (Session 35)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 35 - 2026-01-30 (Mac Studio Remote Access, SSH Fixes & Infrastructure Cleanup)
+- Traced orchart Telegram alert source to `central_collector.py` on Mac Studio — disabled permanently
+- Fixed Mac Studio SSH (`jgl@100.67.99.120`) and Pi SSH (`jeffn8n@100.77.124.12`) — documented correct users
+- Fixed Mac Studio display sleep — `displaysleep=0`, `powernap=0`, `SleepDisabled=1`
+- Removed stale Tailscale VM devices
+- Created Uptime Kuma TradeStation (Desktop1) TCP monitor
+- Updated Cloudflare tunnel with `mac-vnc.l7-partners.com` and `trading-pc2.l7-partners.com` (placeholder)
+- Enabled VNC on Mac Studio (port 5900 open) via Remote Management settings
+- Enabled Jump Desktop Connect Screen Recording permission on Mac Studio
+- Updated CLAUDE.md with Mac Studio & Pi Quick References
+- Decision: Jump Desktop Fluid + VNC are primary Mac Studio remote access; Cloudflare tunnels for RDP/VNC require client-side cloudflared
 
 ### Session 34 - 2026-01-30 (JLDesktop1 Jump Desktop Connect & Headless Access Fix)
 - Diagnosed Jump Desktop RDP error "Connection closed by server" (Code: 0x5) on JLDesktop1

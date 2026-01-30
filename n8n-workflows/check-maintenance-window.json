@@ -1,0 +1,146 @@
+{
+  "name": "Check Maintenance Window",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "When Called By Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM planned_maintenance WHERE status IN ('scheduled', 'in_progress') AND start_time <= NOW() AND end_time >= NOW() LIMIT 1",
+        "options": {}
+      },
+      "id": "check-maintenance",
+      "name": "Check Active Maintenance",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "HtfdX00X8v7ebxlb",
+          "name": "Supabase L7 Cloud"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.length > 0 }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "is-maintenance",
+      "name": "Is Maintenance Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "maintenance_active",
+              "value": true
+            }
+          ],
+          "string": [
+            {
+              "name": "device_name",
+              "value": "={{ $json[0].device_name }}"
+            },
+            {
+              "name": "reason",
+              "value": "={{ $json[0].reason }}"
+            },
+            {
+              "name": "end_time",
+              "value": "={{ $json[0].end_time }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "maintenance-true",
+      "name": "Return Maintenance Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "values": {
+          "boolean": [
+            {
+              "name": "maintenance_active",
+              "value": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "maintenance-false",
+      "name": "Return No Maintenance",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [850, 400]
+    }
+  ],
+  "connections": {
+    "When Called By Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Check Active Maintenance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Active Maintenance": {
+      "main": [
+        [
+          {
+            "node": "Is Maintenance Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Maintenance Active?": {
+      "main": [
+        [
+          {
+            "node": "Return Maintenance Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return No Maintenance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Reusable sub-workflow to check if maintenance window is active. Call from other workflows and check maintenance_active boolean."
+  }
+}

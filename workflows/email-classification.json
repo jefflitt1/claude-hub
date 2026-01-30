@@ -237,7 +237,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ gmail_thread_id: $json.threadId, account: $json.account, subject: $json.subject, from_email: $json.senderEmail, from_name: $json.senderName, snippet: $json.snippet, classification: $json.classification, classification_confidence: $json.confidence, suggested_action: $json.suggested_action, classified_by: $json.model, classified_at: new Date().toISOString(), priority: $json.classification === 'urgent' ? 'urgent' : ['needs_response', 'intel_cre'].includes($json.classification) ? 'high' : ['intel_markets'].includes($json.classification) ? 'normal' : 'low', needs_response: ['needs_response', 'urgent'].includes($json.classification), status: 'active', last_message_at: $json.date }) }}",
+        "jsonBody": "={{ JSON.stringify({ gmail_thread_id: $json.threadId, account: $json.account, subject: $json.subject, from_email: $json.senderEmail, from_name: $json.senderName, snippet: $json.snippet, classification: $json.classification, classification_confidence: $json.confidence, suggested_action: $json.suggested_action, classified_by: $json.model, classified_at: new Date().toISOString(), priority: $json.classification === 'urgent' ? 'urgent' : ['needs_response', 'intel_cre'].includes($json.classification) ? 'high' : ['intel_markets'].includes($json.classification) ? 'normal' : 'low', needs_response: ['needs_response', 'urgent'].includes($json.classification), status: 'active', last_message_at: new Date(parseInt($json.date)).toISOString() }) }}",
         "options": { "timeout": 10000 }
       }
     },
