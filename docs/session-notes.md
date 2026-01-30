@@ -6,15 +6,19 @@
 
 ## Completed This Session
 
-### Session 41 - 2026-01-30 (JGL Visualization & Optimization Modules + Repo Cleanup)
+### Session 41 - 2026-01-30 (JGL Visualization & Optimization Modules + Repo Cleanup + Doc Audit)
 - Built visualization module (4 files): ChartBuilder (Plotly candlesticks, trade markers, stop/target lines, shading), IndicatorOverlay (strategy-agnostic), themes
 - Built optimization module (4 files): ParameterSweep (parallel grid search), ResultComparator (heatmaps, equity curves), OptimizationReport (HTML dashboard)
 - Added plot protocol to SignalBase (`get_plot_config()`, `compute_plot_data()`) — implemented in MomentumBreakout
-- Added `result.plot()` to BacktestResult + date range in chart titles
+- Added `result.plot()` to BacktestResult + date range and generation timestamp in chart titles
 - Created jgl-capital as independent GitHub repo (jefflitt1/jgl-capital) — 40 files, 4848 lines
 - Removed empty `supabase-mcp-server` from claude-hub
 - Pulled 6 Lovable commits into l7partners-rewrite
 - Verified git sync: all 3 repos (claude-hub, jgl-capital, l7partners-rewrite) at 0 behind/0 ahead
+- Full secretary agent documentation audit — flagged 25 issues across docs
+- Updated jgl-capital CLAUDE.md: added Python trading_system section (8 modules), data locations, fixed TradeStation status
+- Added `jgl-psychology` and `jgl-secretary` to `data/agents.json` (were in .claude/agents/ but missing from global registry)
+- Added `jgl-secretary` to project connections + `trading_system` section in `data/projects.json`
 
 ### Session 40 - 2026-01-30 (JLDesktop PC1 User Migration & Cleanup)
 - Full IT health check on JLDesktop (PC1) — all services confirmed working
