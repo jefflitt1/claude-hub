@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 46)
+**Last Updated:** 2026-01-30 (Session 48)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 48 - 2026-01-30 (Self-Healing Monitor Beszel Fix — Docker DNS + Retry Logic)
+- Fixed recurring Beszel Hub timeout false positives in Self-Healing Monitor workflow (`JaTL7b6ka9mH4MuJ`)
+- Tested and ruled out Tailscale IP (unreachable from Docker) and `host.docker.internal` (unsupported on Pi Docker version)
+- Reverted to Docker DNS (`http://beszel:8090`) — confirmed working by reference to monitoring-sync workflow
+- Added retry logic (2 attempts, 2s pause) to all 8 service health checks — transient timeouts no longer trigger alerts
+- Verified 8/8 services healthy in 2.6s
 
 ### Session 47 - 2026-01-30 (Mac Studio Remote Access — DismissDialogs.app for TCC Prompt Recovery)
 - Diagnosed Jump Desktop connection failure to Mac Studio — network was fine, Jump Desktop Connect running; root cause was macOS TCC permission dialog (Telegram microphone access) blocking screen capture
