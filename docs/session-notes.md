@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-31 (Session 50)
+**Last Updated:** 2026-01-31 (Session 51)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 51 - 2026-01-31 (Email Classification ML Infrastructure + n8n Pipeline Fix)
+- Designed 3-phase ML improvement: Phase 1 (pgvector few-shot), Phase 2 (LoRA fine-tuning), Phase 3 (self-improving pipeline)
+- Set up ~/mlx-env Python venv with mlx-lm for future LoRA fine-tuning on Apple Silicon
+- Created Email Review UI at /jgl/email-review (filterable table, correction dialog, stats, pagination)
+- Created & ran migration 009: jeff_email_examples table with pgvector (VECTOR(384)), HNSW index, find_similar_email_examples(), auto-example triggers, classification_metrics view
+- Fixed 8 bugs in n8n Email Classification Pipeline (db50ZNo16dTNcfAY): Gmail field capitalization, DeepSeek R1 thinking/response parsing, JSON markdown fencing, num_predict 200→500, timeout 30s→90s, missing Insert Classification Record node, regex fallback parser
 
 ### Session 50 - 2026-01-31 (Mac Studio Display Sleep Configuration)
 - Configured Mac Studio display sleep to 10 minutes (`pmset -c displaysleep 10`) — monitors go black after inactivity
@@ -792,7 +799,12 @@
 
 ### High Priority
 
-1. ~~**Build admin.l7-partners.com dashboard**~~ - **COMPLETE** - 14-page admin portal live at admin.l7-partners.com
+1. **Clean up 38 garbage rows in jeff_email_threads** - Run: `DELETE FROM jeff_email_threads WHERE from_email = 'Unknown' AND classified_by = 'deepseek-r1:14b-fallback';`
+2. **Verify n8n email classification pipeline** - Check next execution produces proper classifications after 8-bug fix
+3. **Build embedding generation for email examples** - n8n workflow or Edge Function using nomic-embed-text for few-shot retrieval
+4. **Wire few-shot retrieval into classification pipeline** - Call find_similar_email_examples() before LLM classification
+5. **Build real estate listing extraction pipeline** - Dedicated extraction prompt → listing_inbox table → weekly digest
+6. ~~**Build admin.l7-partners.com dashboard**~~ - **COMPLETE** - 14-page admin portal live at admin.l7-partners.com
 2. ~~**Mac Studio arrives TODAY**~~ - **COMPLETE** - Full hub setup with 17 MCP servers, Telegram bot, scheduled automations
 3. ~~**Decide Windows VM platform**~~ → **VMware Fusion Pro** (free, avoids Parallels freezing issues)
 4. ~~**Purchase Windows 11 Pro ARM64 licenses**~~ → **Try transfer first, then Kinguin keys (~$30-60)**
