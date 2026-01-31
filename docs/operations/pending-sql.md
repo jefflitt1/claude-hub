@@ -317,7 +317,11 @@ launchctl unload ~/Library/LaunchAgents/com.l7partners.vnc-access.plist
 
 ---
 
-# PENDING: Skill Registry (2026-01-26)
+# ✅ COMPLETED: Skill Registry (2026-01-30)
+Deployed table, registered 8 missing skills (jeff, consult, reading, workflow-coach, jgl-team, built-sme, built-sales, built-admin), populated 15 skill-project mappings.
+Also registered 2 missing projects (jgl-capital, built).
+
+## ORIGINAL SPEC:
 
 ## skill_project_mappings table
 
@@ -480,6 +484,108 @@ COMMENT ON COLUMN self_healing_runbooks.auto_remediate IS 'Whether to automatica
 ```
 
 ---
+
+# ✅ COMPLETED: Built Technologies Sales Tables (2026-01-30)
+
+## built_deals — Pipeline tracking with MEDDPICC
+
+```sql
+CREATE TABLE IF NOT EXISTS built_deals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  institution TEXT NOT NULL,
+  stage TEXT DEFAULT 'prospecting' CHECK (stage IN (
+    'prospecting', 'discovery', 'demo', 'evaluation',
+    'negotiation', 'closed_won', 'closed_lost'
+  )),
+  confidence INTEGER DEFAULT 0 CHECK (confidence >= 0 AND confidence <= 100),
+  deal_value NUMERIC,
+  champion TEXT,
+  economic_buyer TEXT,
+  decision_criteria TEXT,
+  decision_process TEXT,
+  identified_pain TEXT,
+  paper_process TEXT,
+  competition TEXT,
+  metrics TEXT,
+  notes TEXT,
+  next_step TEXT,
+  next_step_date DATE,
+  risk_flags TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_built_deals_stage ON built_deals(stage);
+CREATE INDEX idx_built_deals_institution ON built_deals(institution);
+CREATE INDEX idx_built_deals_next_step ON built_deals(next_step_date) WHERE next_step_date IS NOT NULL;
+
+ALTER TABLE built_deals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for authenticated users" ON built_deals FOR ALL USING (true);
+
+COMMENT ON TABLE built_deals IS 'Built Technologies sales pipeline with MEDDPICC qualification fields';
+```
+
+## built_contacts — Prospects, champions, economic buyers
+
+```sql
+CREATE TABLE IF NOT EXISTS built_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id UUID REFERENCES built_deals(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  title TEXT,
+  institution TEXT,
+  email TEXT,
+  phone TEXT,
+  role TEXT CHECK (role IN ('champion', 'economic_buyer', 'technical_buyer', 'influencer', 'blocker', 'other')),
+  notes TEXT,
+  last_contact DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_built_contacts_deal ON built_contacts(deal_id);
+CREATE INDEX idx_built_contacts_institution ON built_contacts(institution);
+CREATE INDEX idx_built_contacts_role ON built_contacts(role);
+
+ALTER TABLE built_contacts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for authenticated users" ON built_contacts FOR ALL USING (true);
+
+COMMENT ON TABLE built_contacts IS 'Prospect and stakeholder contacts for Built Technologies sales';
+```
+
+## built_interactions — Call logs, emails, meeting notes
+
+```sql
+CREATE TABLE IF NOT EXISTS built_interactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id UUID REFERENCES built_deals(id) ON DELETE CASCADE,
+  contact_id UUID REFERENCES built_contacts(id) ON DELETE SET NULL,
+  type TEXT NOT NULL CHECK (type IN ('call', 'email', 'meeting', 'demo', 'follow_up', 'internal', 'other')),
+  summary TEXT NOT NULL,
+  details TEXT,
+  action_items JSONB DEFAULT '[]',
+  meddpicc_updates JSONB DEFAULT '{}',
+  voss_notes TEXT,
+  outcome TEXT,
+  next_step TEXT,
+  next_step_date DATE,
+  interaction_date TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_built_interactions_deal ON built_interactions(deal_id);
+CREATE INDEX idx_built_interactions_contact ON built_interactions(contact_id);
+CREATE INDEX idx_built_interactions_date ON built_interactions(interaction_date DESC);
+CREATE INDEX idx_built_interactions_type ON built_interactions(type);
+
+ALTER TABLE built_interactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable all for authenticated users" ON built_interactions FOR ALL USING (true);
+
+COMMENT ON TABLE built_interactions IS 'Sales interaction log with MEDDPICC updates and Voss technique notes';
+```
+
+---
 Created: 2026-01-20
-Updated: 2026-01-26
+Updated: 2026-01-30
 Run these in Supabase Dashboard → SQL Editor

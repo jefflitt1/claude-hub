@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 48)
+**Last Updated:** 2026-01-30 (Session 49)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 49 - 2026-01-30 (Claude Code System Audit — 8 Recommendations Implemented)
+- Full system audit: slimmed ~/CLAUDE.md (287→110 lines), created 3 .claudeignore files, scoped MCP servers (15 global + 2 project-scoped)
+- Created 3 protective hooks in ~/.claude/hooks/ (block-force-push, block-sensitive-files, warn-staged-secrets)
+- Consolidated all credentials into ~/.claude/credentials.env (chmod 600), removed secrets from all JSON configs
+- Registered missing projects/skills in Supabase, populated 15 skill_project_mappings
+- Fixed TradeStation MCP path in jgl-capital/.mcp.json (wrong base directory)
+- Created Built Technologies workspace: CLAUDE.md + 3 Supabase tables (built_deals, built_contacts, built_interactions)
+- Updated pending-sql.md: skill registry + Built tables marked completed
 
 ### Session 48 - 2026-01-30 (Self-Healing Monitor Beszel Fix — Docker DNS + Retry Logic)
 - Fixed recurring Beszel Hub timeout false positives in Self-Healing Monitor workflow (`JaTL7b6ka9mH4MuJ`)
