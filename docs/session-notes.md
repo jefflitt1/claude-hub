@@ -1,10 +1,17 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 45)
+**Last Updated:** 2026-01-30 (Session 46)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 46 - 2026-01-30 (JLDesktop PC1 Post-Migration Cleanup — Permissions, TeamViewer, Registry)
+- Fixed TradeStation "Failed to create file finfo.txt" on PC1 — orphaned SID from deleted jglit user blocked non-elevated writes; granted ITadmin explicit full control on 77,592 files
+- Scanned full user profile for remaining orphaned SID permissions — none found
+- Removed orphaned jglit profile registry key (ProfileList) and deleted empty `C:\Users\jglit\` directory
+- Uninstalled TeamViewer from PC1 (service + program files + AppData — was still running despite PC2 cleanup)
+- Updated JLDesktop-PC1-verified-config.md and CLAUDE.md with cleanup details
 
 ### Session 45 - 2026-01-30 (n8n Self-Healing Monitor Fix — fetch + Docker networking)
 - Fixed Self-Healing Monitor workflow (`JaTL7b6ka9mH4MuJ`) — was failing every 15 min with 3 bugs

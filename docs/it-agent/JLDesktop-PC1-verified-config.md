@@ -139,6 +139,7 @@ C:\ProgramData\ssh\administrators_authorized_keys
 ## Removed Software (2026-01-30)
 - NordVPN: Uninstalled
 - NordUpdater: Uninstalled
+- TeamViewer: Service deleted, installation removed (`C:\Program Files (x86)\TeamViewer\`), AppData cleaned
 - Notifications: Disabled for claudeadmin (ITadmin) user
 
 ## Migration Notes
@@ -239,6 +240,7 @@ Get-PSDrive C
 |------|--------|
 | 2026-01-30 | Deleted `jglit` user account. Migrated all data to ITadmin (claudeadmin profile). TradeStation data (18GB), Downloads (1.9GB), Pictures (26MB) copied to C:\Users\claudeadmin\. Desktop (1.1GB) backed up to D:\jglit-backup\. 4 backup tasks recreated under ITadmin. 9 junk tasks removed. SSH now via ITadmin. ~63GB reclaimed on C:. Hardware corrected: Dell XPS 8940 (not HP OMEN). |
 | 2026-01-30 | Jump Desktop Connect installed (Fluid protocol). Resolves RDP session conflict with auto-logged ITadmin console. |
+| 2026-01-30 | Post-migration cleanup: Fixed TradeStation "Failed to create file finfo.txt" error (orphaned SID permissions — granted ITadmin explicit full control on 77,592 files). Removed orphaned jglit profile registry key + `C:\Users\jglit\` directory. Uninstalled TeamViewer (service + program files + AppData). Scanned for remaining orphaned SIDs — clean. |
 | 2026-01-29 | Initial production setup. ITadmin auto-login, TradeStation auto-start, headless verified. Replaces decommissioned Windows VMs. |
 
 ---
