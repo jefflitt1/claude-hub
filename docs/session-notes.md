@@ -6,6 +6,14 @@
 
 ## Completed This Session
 
+### Session 47 - 2026-01-30 (Mac Studio Remote Access — DismissDialogs.app for TCC Prompt Recovery)
+- Diagnosed Jump Desktop connection failure to Mac Studio — network was fine, Jump Desktop Connect running; root cause was macOS TCC permission dialog (Telegram microphone access) blocking screen capture
+- Enabled Screen Sharing (VNC) on Mac Studio via SSH as fallback remote access method
+- Created `/Applications/DismissDialogs.app` on Mac Studio — .app bundle wrapper that dismisses system permission dialogs via System Events AppleScript
+- Added DismissDialogs.app to Accessibility permissions on Mac Studio (macOS requires .app bundle, not raw binaries)
+- Verified remote dialog dismissal works over SSH: `ssh jgl@100.67.99.120 'open /Applications/DismissDialogs.app'`
+- Decision: .app bundle approach required because macOS won't add `/usr/bin/osascript` directly to Accessibility; `open` command required to preserve app bundle context over SSH
+
 ### Session 46 - 2026-01-30 (JLDesktop PC1 Post-Migration Cleanup — Permissions, TeamViewer, Registry)
 - Fixed TradeStation "Failed to create file finfo.txt" on PC1 — orphaned SID from deleted jglit user blocked non-elevated writes; granted ITadmin explicit full control on 77,592 files
 - Scanned full user profile for remaining orphaned SID permissions — none found
