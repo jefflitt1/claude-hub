@@ -1,10 +1,15 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-30 (Session 49)
+**Last Updated:** 2026-01-31 (Session 50)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 50 - 2026-01-31 (Mac Studio Display Sleep Configuration)
+- Configured Mac Studio display sleep to 10 minutes (`pmset -c displaysleep 10`) — monitors go black after inactivity
+- Verified password-on-wake already disabled (`askForPassword = 0`) — no lock screen on wake
+- Confirmed computer sleep remains at 0 (always on) — only displays turn off
 
 ### Session 49 - 2026-01-30 (Claude Code System Audit — 8 Recommendations Implemented)
 - Full system audit: slimmed ~/CLAUDE.md (287→110 lines), created 3 .claudeignore files, scoped MCP servers (15 global + 2 project-scoped)
