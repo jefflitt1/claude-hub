@@ -1,10 +1,19 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-31 (Session 51)
+**Last Updated:** 2026-01-31 (Session 52)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 52 - 2026-01-31 (Desktop Notification Lockdown + Desktop2 Setup + SSH Key Auth)
+- Investigated TradeStation CAL finfo.txt error on desktop1 — added Defender exclusions for TradeStation folders on both desktops
+- Disabled all Windows + Chrome notifications on both desktops (toast, notification center, weather widget, news & interests, Chrome Group Policy)
+- Renamed desktop2 to JLDesktop2, installed Jump Desktop Connect (Fluid protocol), confirmed in My Computers sidebar
+- Full reboot test on desktop2 — auto-login, Tailscale, Jump Desktop all auto-starting
+- Disabled Tailscale key expiry on both desktops
+- Set up SSH key auth from Mac to both desktops (`ssh desktop1`, `ssh desktop2`) — fixed Windows OpenSSH administrators_authorized_keys
+- Created deferred task: BIOS Power On After AC Loss (both desktops, next physical access)
 
 ### Session 51 - 2026-01-31 (Email Classification ML Infrastructure + n8n Pipeline Fix)
 - Designed 3-phase ML improvement: Phase 1 (pgvector few-shot), Phase 2 (LoRA fine-tuning), Phase 3 (self-improving pipeline)
