@@ -1,10 +1,13 @@
 # Claude Hub Session Notes
-**Last Updated:** 2026-01-31 (Session 52)
+**Last Updated:** 2026-01-31 (Session 53)
 **Purpose:** Active items and current state only. Historical session logs are in `session-logs/archive/`.
 
 ---
 
 ## Completed This Session
+
+### Session 53 - 2026-01-31 (Agent Frontmatter Fix)
+- Fixed agent parse error for `~/.claude/agents/it-infrastructure.md` — added required YAML frontmatter with `name: IT Infrastructure`
 
 ### Session 52 - 2026-01-31 (Desktop Notification Lockdown + Desktop2 Setup + SSH Key Auth)
 - Investigated TradeStation CAL finfo.txt error on desktop1 — added Defender exclusions for TradeStation folders on both desktops
